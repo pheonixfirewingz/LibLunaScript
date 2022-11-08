@@ -1,0 +1,17 @@
+debug-windows
+debug-windows-store
+debug-linux
+vulkan-loader
+build
+debug-osx
+vcpkg_installed
+src/lib/Cmake.h
+.vs
+.vscode
+.idea
+base
+
+out
+node_modules
+.vscode-test/
+*.vsix
