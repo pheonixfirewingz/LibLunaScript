@@ -14,8 +14,8 @@
 #define CMAKE_CXX_COMPILER_ID = "GNU"
 #endif
 
-#ifndef CMAKE_SYSTEM_NUMBER
-/* #undef CMAKE_SYSTEM_NUMBER */
+#ifndef CMAKE_LIB_MODE
+#define CMAKE_LIB_MODE 0
 #endif
 
 #ifndef CMAKE_COMPILER_NUMBER

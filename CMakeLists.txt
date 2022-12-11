@@ -14,23 +14,23 @@ else()
     message(FATAL_ERROR "compiler not supported")
 endif()
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    set(CMAKE_SYSTEM_NUMBER 0)
-    message(INFO " - building for Linux....")
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "WindowsStore")
-    set(CMAKE_SYSTEM_NUMBER 1)
-    message(INFO " -  building for WindowsStore....")
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    set(CMAKE_SYSTEM_NUMBER 2)
-    message(INFO " - building for Windows....")
-else()
-    message(FATAL_ERROR "system not supported")
-endif()
 configure_file(src/Cmake.h.in ../src/Cmake.h @ONLY)
+#options
+Set(LIB_MODE OFF)
+#options end 
 
-set(compiler_source src/compiler/Lexer.cpp src/compiler/CodeGen.cpp)
+set(compiler_source 
+src/compiler/Lexer.cpp 
+src/compiler/CodeGen.cpp
+src/compiler/Main.cpp
+)
 
-add_library(libLunaScript SHARED ${compiler_source})
-set_property(TARGET libLunaScript PROPERTY CXX_STANDARD 20)
-target_include_directories(libLunaScript PRIVATE ${PROJECT_SOURCE_DIR}/include STATIC)
-target_compile_options(libLunaScript PRIVATE -Wall -Wextra -Werror)
+if(${LIB_MODE})
+    add_library(LunaScript SHARED ${compiler_source})
+else()
+    add_executable(LunaScript ${compiler_source})
+endif()
+
+set_property(TARGET LunaScript PROPERTY CXX_STANDARD 20)
+target_include_directories(LunaScript PRIVATE ${PROJECT_SOURCE_DIR}/include STATIC)
+target_compile_options(LunaScript PRIVATE -Wall -Wextra -Werror -g3)
