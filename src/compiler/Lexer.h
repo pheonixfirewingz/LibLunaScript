@@ -24,6 +24,7 @@ typedef enum LexTokenEnum : uint8_t
     T_OR,
     T_R_ARROW,
     T_L_ARROW,
+    T_S_ARROW,
     T_MODULO,
     T_QUOTE,
     T_SINGLE_LETTER_QUOTE,

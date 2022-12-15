@@ -20,8 +20,11 @@ static inline bool isWhiteSpace(const lexToken &token) noexcept
 
 static inline void eatWhitespace(const std::vector<lexToken> &lexer, uint32_t *i) noexcept
 {
-    while (isWhiteSpace(lexer[*i]))
-        (*i)++;
+    while (isWhiteSpace(lexer[std::min<uint32_t>(lexer.size(), *i)]) && *i != lexer.size())
+    {
+        const uint32_t n = ++(*i);
+        *i = std::min<uint32_t>(lexer.size(), n);
+    }
 }
 
 static inline bool isDataType(const lexToken &token) noexcept
@@ -158,7 +161,14 @@ const ASTExpression *parseVar(const std::vector<lexToken> &lexer, uint32_t *i) n
     {
         node->type = ASTE_VAR_DEFINED;
         ASTLiteral *literal;
-        ASTDataType data_type = parseDataType(lexer[(*i)++]);
+        ASTDataType data_type;
+        [[unlikely]] if (!isDataType(lexer[*i]))
+        {
+            error(lexer[*i], "this is not a supported data type");
+            return node;
+        }
+        else 
+            data_type = parseDataType(lexer[(*i)++]);
         eatWhitespace(lexer, i);
         [[unlikely]] if (!isValidName(lexer[*i]))
             error(lexer[*i], "this is not a valid param name");
@@ -201,7 +211,8 @@ const ASTExpression *parseArgs(const std::vector<lexToken> &lexer, uint32_t *i) 
     ASTExpression *expression = new (std::nothrow) ASTExpression();
     expression->type = ASTE_PRAM_LIST;
     eatWhitespace(lexer, i);
-    // we are being bad people by using this
+    if (lexer[*i].token == T_L_CURLY)
+        (*i)++;
     if (lexer[*i].token == T_R_CURLY)
     {
         (*i)++;
@@ -269,7 +280,7 @@ const ASTBlock *parseBlock(const std::vector<lexToken> &lexer, uint32_t *i) noex
         else if (isDataType(lexer[(*i)]))
             block->list.emplace_back(parseVar(lexer, i));
         else
-            error(lexer[(*i)], "this is not a valid in this scope");
+            error(lexer[(*i)++], "this is not a valid in this scope");
         eatWhitespace(lexer, i);
     } while (lexer[*i].token != T_R_SQUIGGLY);
     return std::move(block);
@@ -289,33 +300,42 @@ const ASTRoot *parse(const std::vector<lexToken> &&in) noexcept
             [[unlikely]] if (!isValidName(lexer[i]))
                 error(lexer[i], "this is not a valid function name");
             ASTFuncDef *node = new (std::nothrow) ASTFuncDef(std::move(lexer[i++].str_token));
-            if (lexer[i++].token != T_L_CURLY)
-            {
-                error(lexer[i], "this is not a valid function args opener");
-                break;
-            }
-            node->args = parseArgs(lexer, &i);
+            if (lexer[i].token != T_L_CURLY)
+                error(lexer[i++], "this is not a valid function args opener");
+            else
+                node->args = parseArgs(lexer, &i);
             eatWhitespace(lexer, &i);
-            if (lexer[i].token != T_SUB && lexer[i + 1].token != T_L_ARROW)
+            if (lexer[i].token != T_S_ARROW)
+            {
                 node->return_type = VOID_TYPE;
+                if (isDataType(lexer[i]))
+                    error(lexer[i++], "you forgot to declare the return type -> to tell me what you are returning");
+                else if (lexer[i].token != T_L_SQUIGGLY)
+                    error(lexer[i++], "syntax error garbage return type");
+            }
             else
             {
-                i += 2;
+                i++;
                 eatWhitespace(lexer, &i);
                 if (!isDataType(lexer[i]))
-                    error(lexer[i], "this is not a supported data type");
-                node->return_type = parseDataType(lexer[i++]);
+                    error(lexer[i++], "this is not a supported data type");
+                else
+                    node->return_type = parseDataType(lexer[i++]);
             }
             eatWhitespace(lexer, &i);
             if (lexer[i].token != T_L_SQUIGGLY)
                 error(lexer[i], "this is not a valid function block opener");
-            node->body = parseBlock(lexer, &i);
+            else
+                node->body = parseBlock(lexer, &i);
             root->children.emplace_back(std::move(node));
         }
         else if (isDataType(lexer[i]))
             root->children.emplace_back(parseVar(lexer, &i));
         else
-            error(lexer[i], "this is not a valid in this scope");
+        {
+            error(lexer[i], "this is not a valid in global scope");
+            return new (std::nothrow) ASTRoot();
+        }
     }
     return root;
 }

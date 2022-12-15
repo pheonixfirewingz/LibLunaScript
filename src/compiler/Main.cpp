@@ -1,8 +1,21 @@
 #include "../Cmake.h"
 #include "Lexer.h"
 #include "Parser.h"
-#include <gtest/gtest.h>
+#ifndef TESTS_MODE
 
+int main(int, char **)
+{
+    const char *source = "";
+    enableSoftErrors();
+    auto ast = toJson(parse(std::move(lexIt(std::move(source)))),true);
+    while (hasErrors())
+        printf("COMPILER ERROR: %s\n", popSoftErrorOffStack());
+    disableSoftErrors();
+    puts(ast.c_str());
+    return 0;
+}
+#else
+#    include <gtest/gtest.h>
 // global variables
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -511,18 +524,19 @@ TEST(AST, PARSE_VAR_BAD_SYNTEX)
     }
 }
 
-// TEST(AST, FUNCTION_BAD_SYNTEX)
-// {
-//     const char *source_array[] = {
-//         "main() -> int32 { ret 0}",      "func main) -> int32 { ret 0}", "func main() - int32 { ret 0}",
-//         "func main() -> int36 { ret 0}", "func main() -> int32 { rt 0}", "func main() -> int32 { ret . }",
-//         "func main() -> int32 { ret 0 ", "func main() -> int32  ret 0}", "func int32() -> int32 { ret 0}",
-//         "func main() > int32 { ret 0}",  "func main() - int32 { ret 0}", "fuc main() -> int32 { ret 0}"};
-//     for (const char *c : source_array)
-//     {
-//         enableSoftErrors();
-//         (void)parse(std::move(lexIt(std::move(c))));
-//         EXPECT_TRUE(hasErrors());
-//         disableSoftErrors();
-//     }
-// }
+TEST(AST, FUNCTION_BAD_SYNTEX)
+{
+    const char *source_array[] = {
+        "main() -> int32 { ret 0}",      "func main) -> int32 { ret 0}", "func main() - int32 { ret 0}",
+        "func main() -> int36 { ret 0}", "func main() -> int32 { rt 0}", "func main() -> int32 { ret . }",
+        "func main() -> int32 { ret 0 ", "func main() -> int32  ret 0}", "func int32() -> int32 { ret 0}",
+        "func main() > int32 { ret 0}",  "func main() - int32 { ret 0}", "fuc main() -> int32 { ret 0}"};
+    for (const char *c : source_array)
+    {
+        enableSoftErrors();
+        (void)parse(std::move(lexIt(std::move(c))));
+        EXPECT_TRUE(hasErrors());
+        disableSoftErrors();
+    }
+}
+#endif

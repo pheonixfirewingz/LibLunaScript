@@ -21,10 +21,12 @@ static const internal_std::ReadOnlyLookupTable<size_t, LexTokenEnum> lookup = {
     {std::hash<std::string>{}("\""), T_QUOTE},        {std::hash<std::string>{}("\'"), T_SINGLE_LETTER_QUOTE},
 };
 
-static const inline std::regex regex("(([A-Za-z0-9-]+)|(\\s)|([\\\",\\\\',\\(,\\),\\[,\\],\\<,\\>,\\{,\\},\\,:,\\.])|([_,+,=,*,/]+))",std::regex_constants::icase);
+static const inline std::regex regex(
+    "(([A-Za-z0-9-]+)|(\\s)|([\\\",\\\\',\\(,\\),\\[,\\],\\<,\\>,\\{,\\},\\,:,\\.])|([_,+,=,*,/]+))",
+    std::regex_constants::icase);
 
 static const internal_std::ReadOnlyLookupTable<size_t, bool> reject = {{std::hash<std::string>{}("\n"), true},
-                                                                {std::hash<std::string>{}("\r"), false}};
+                                                                       {std::hash<std::string>{}("\r"), false}};
 
 static inline const std::vector<std::string> tokenizeString(const std::string &&str)
 {
@@ -42,13 +44,25 @@ const std::vector<lexToken> lexIt(const std::string &&source) noexcept
     std::vector<lexToken> tokens;
     auto split = tokenizeString(std::move(source));
     tokens.reserve(split.size());
+    uint32_t i = 1;
+    const uint32_t size = split.size() - 1;
+    bool skip = false;
     for (const auto &word : split)
     {
+        if (skip)
+        {
+            skip = false;
+            const uint32_t n = ++i;
+            i = std::min<uint32_t>(size, n);
+            continue;
+        }
         auto o = reject.find(std::hash<std::string>{}(word));
         if (o != NULL)
         {
             if (*o)
                 line++;
+            const uint32_t n = ++i;
+            i = std::min<uint32_t>(size, n);
             continue;
         }
         lexToken token;
@@ -59,8 +73,24 @@ const std::vector<lexToken> lexIt(const std::string &&source) noexcept
             token.str_token = std::move(word);
         }
         else
-            token.token = *t;
+        {
+            auto k = lookup.find(std::hash<std::string>{}(split[i]));
+            if (k == NULL)
+                token.token = *t;
+            else
+            {
+                if ((*k) == T_L_ARROW && (*t) == T_SUB)
+                {
+                    token.token = T_S_ARROW;
+                    skip = true;
+                }
+                else
+                    token.token = *t;
+            }
+        }
         token.line = line;
+        const uint32_t n = ++i;
+        i = std::min<uint32_t>(size, n);
         if (!(tokens.back() == token))
             tokens.emplace_back(token);
     }
