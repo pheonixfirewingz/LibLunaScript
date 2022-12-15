@@ -43,7 +43,7 @@ struct ReadOnlyLookupTable : public internal_std::ForwardIterator<TableEntry<Key
     ReadOnlyLookupTable() noexcept = default;
     ReadOnlyLookupTable(std::initializer_list<TableEntry<Key, Value>> entries) noexcept 
     {
-         table = new TableEntry<Key, Value>[(size_of_table = entries.size())];
+         table = new (std::nothrow) TableEntry<Key, Value>[(size_of_table = entries.size())];
          size_t index = 0;
          for(auto& entry : entries)
            table[index++] = entry;
@@ -75,14 +75,13 @@ struct ReadOnlyLookupTable : public internal_std::ForwardIterator<TableEntry<Key
       return table;
     }
     
-    const Value &find(const Key & key) const noexcept
+    constexpr Value* find(const Key & key) const noexcept
     {
       for(size_t i = 0; i < size_of_table; i++)
       {
-        if(table[i] == key) return table[i].value;
+        if(table[i] == key) return &table[i].value;
       }
-      assert(true);
-      return table[0].value;
+      return nullptr;
     }
 };
 } // namespace lstd
