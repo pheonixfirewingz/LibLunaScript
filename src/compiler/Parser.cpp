@@ -1,6 +1,10 @@
 #include "Parser.h"
 #include <stack>
 #include <stdio.h>
+#include <tuple>
+#include <vector>
+#include <string>
+#include <new>
 
 static std::stack<const char *> *gf_error_stack;
 
@@ -48,6 +52,24 @@ static inline bool isDataType(const lexToken &token) noexcept
     }
 }
 
+static inline bool isBinaryExpr(const lexToken &token) noexcept
+{
+    switch (token.token)
+    {
+    case T_ADD:
+    case T_SUB:
+    case T_MUL:
+    case T_DIV:
+    case T_AND:
+    case T_OR:
+    case T_XOR:
+    case T_MODULO:
+        return true;
+    default:
+        return false;
+    }
+}
+
 static inline bool isInteger(const lexToken &token) noexcept
 {
     switch (token.token)
@@ -72,6 +94,31 @@ static inline bool isInteger(const lexToken &token) noexcept
     case T_STRING:
     default:
         return false;
+    }
+}
+
+static inline const std::tuple<uint8_t, ASTOperatorType> parseOPType(const lexToken &token) noexcept
+{
+    switch (token.token)
+    {
+    case T_ADD:
+        return std::make_tuple<uint8_t, ASTOperatorType>(5, ADD_TYPE);
+    case T_SUB:
+        return std::make_tuple<uint8_t, ASTOperatorType>(5, SUB_TYPE);
+    case T_MUL:
+        return std::make_tuple<uint8_t, ASTOperatorType>(6, MUL_TYPE);
+    case T_DIV:
+        return std::make_tuple<uint8_t, ASTOperatorType>(6, DIV_TYPE);
+    case T_AND:
+        return std::make_tuple<uint8_t, ASTOperatorType>(1, AND_TYPE);
+    case T_OR:
+        return std::make_tuple<uint8_t, ASTOperatorType>(1, OR_TYPE);
+    case T_XOR:
+        return std::make_tuple<uint8_t, ASTOperatorType>(1, XOR_TYPE);
+    case T_MODULO:
+        return std::make_tuple<uint8_t, ASTOperatorType>(6, MOD_TYPE);
+    [[unlikely]] default:
+        return std::make_tuple<uint8_t, ASTOperatorType>(0, NOT_DETERMINED_OP_TYPE);
     }
 }
 
@@ -100,7 +147,7 @@ static inline ASTDataType parseDataType(const lexToken &token) noexcept
     case T_FLOAT64:
         return FLOAT64_TYPE;
     [[unlikely]] default:
-        return NOT_DETERMINED_TYPE;
+        return NOT_DETERMINED_DATA_TYPE;
     }
 }
 
@@ -154,20 +201,61 @@ ASTLiteral *parseLiteral(const std::vector<lexToken> &lexer, uint32_t *i) noexce
     return std::move(literal);
 }
 
+const ASTBinaryExpression *parseBinaryExpr(const uint8_t presidents_inflator,const std::vector<lexToken> &lexer, uint32_t *i) noexcept
+{
+    eatWhitespace(lexer, i);
+    ASTBinaryExpression *expr = new (std::nothrow) ASTBinaryExpression();
+    ASTLiteral *lit_1 = parseLiteral(lexer, i);
+    if (lexer[(*i) - 2].token == T_DOT)
+        lit_1->data_type = FLOAT_ANY_TYPE;
+    else if (lexer[(*i) - 1].token == T_IDENTIFIER && !isInteger(lexer[(*i) - 1]))
+        lit_1->data_type = NOT_DETERMINED_DATA_TYPE;
+    else
+        lit_1->data_type = UINT_ANY_TYPE;
+    expr->left = std::move(lit_1);
+    eatWhitespace(lexer, i);
+    const std::tuple<uint16_t, ASTOperatorType> type = parseOPType(lexer[(*i)++]);
+    expr->op = std::get<1>(type);
+    expr->presidents = std::get<0>(type) + presidents_inflator;
+    eatWhitespace(lexer, i);
+    uint32_t fake_i = std::min<uint32_t>((*i) + 1, lexer.size());
+    if (lexer[fake_i].token == T_DOT)
+        fake_i += 2;
+    eatWhitespace(lexer, &fake_i);
+    if (isBinaryExpr(lexer[fake_i]))
+    {
+        const ASTBinaryExpression *r_expr = parseBinaryExpr(1 + presidents_inflator,lexer, i);
+        [[unlikely]] if (!r_expr)
+            r_expr = new (std::nothrow) ASTBinaryExpression();
+        expr->right = std::move(r_expr);
+    }
+    else
+    {
+        ASTLiteral *lit_2 = parseLiteral(lexer, i);
+        if (lexer[(*i) - 2].token == T_DOT)
+            lit_2->data_type = FLOAT_ANY_TYPE;
+        else if (lexer[(*i) - 1].token == T_IDENTIFIER && !isInteger(lexer[(*i) - 1]))
+            lit_2->data_type = NOT_DETERMINED_DATA_TYPE;
+        else
+            lit_2->data_type = UINT_ANY_TYPE;
+        expr->right = std::move(lit_2);
+    }
+    return expr;
+}
+
 const ASTExpression *parseVar(const std::vector<lexToken> &lexer, uint32_t *i) noexcept
 {
     ASTExpression *node = new (std::nothrow) ASTExpression();
     try
     {
         node->type = ASTE_VAR_DEFINED;
-        ASTLiteral *literal;
         ASTDataType data_type;
         [[unlikely]] if (!isDataType(lexer[*i]))
         {
             error(lexer[*i], "this is not a supported data type");
             return node;
         }
-        else 
+        else
             data_type = parseDataType(lexer[(*i)++]);
         eatWhitespace(lexer, i);
         [[unlikely]] if (!isValidName(lexer[*i]))
@@ -178,7 +266,7 @@ const ASTExpression *parseVar(const std::vector<lexToken> &lexer, uint32_t *i) n
         if (lexer[(*i)].token != T_EQUAL)
         {
             eatWhitespace(lexer, i);
-            literal = new (std::nothrow) ASTLiteral();
+            ASTLiteral *literal = new (std::nothrow) ASTLiteral();
             literal->data_type = data_type;
             if (literal->data_type >= INT8_TYPE && literal->data_type <= UINT64_TYPE)
                 literal->value = "0";
@@ -186,17 +274,33 @@ const ASTExpression *parseVar(const std::vector<lexToken> &lexer, uint32_t *i) n
                 literal->value = "0.0";
             else
                 literal->value = "";
+            node->list.emplace_back(std::move(literal));
         }
         else
         {
             (*i)++;
             eatWhitespace(lexer, i);
-            literal = parseLiteral(lexer, i);
-            [[unlikely]] if (!literal)
-                literal = new (std::nothrow) ASTLiteral();
-            literal->data_type = data_type;
+            uint32_t fake_i = *i;
+            fake_i++;
+            if (lexer[fake_i].token == T_DOT)
+                fake_i += 2;
+            eatWhitespace(lexer, &fake_i);
+            if (isBinaryExpr(lexer[fake_i]))
+            {
+                const ASTBinaryExpression *expr = parseBinaryExpr(0,lexer, i);
+                [[unlikely]] if (!expr)
+                    expr = new (std::nothrow) ASTBinaryExpression();
+                node->list.emplace_back(std::move(expr));
+            }
+            else
+            {
+                ASTLiteral *literal = parseLiteral(lexer, i);
+                [[unlikely]] if (!literal)
+                    literal = new (std::nothrow) ASTLiteral();
+                literal->data_type = std::move(data_type);
+                node->list.emplace_back(std::move(literal));
+            }
         }
-        node->list.emplace_back(std::move(literal));
     }
     catch (std::exception &e)
     {

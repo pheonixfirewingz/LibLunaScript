@@ -1,4 +1,6 @@
 #include "Parser.h"
+#include <rapidjson/prettywriter.h>
+#include <rapidjson/stringbuffer.h>
 
 const char * idToString(const ASTTypeID& id) noexcept
 {
@@ -19,7 +21,7 @@ const char * idToStringT(const ASTDataType& id) noexcept
 {
     switch (id)
     {
-    case NOT_DETERMINED_TYPE: return "To Be Determined";
+    case NOT_DETERMINED_DATA_TYPE: return "To Be Determined";
     case VOID_TYPE: return "Void";
     case INT8_TYPE: return "int8";
     case INT16_TYPE: return "int16";
@@ -31,6 +33,9 @@ const char * idToStringT(const ASTDataType& id) noexcept
     case UINT64_TYPE: return "uint64";
     case FLOAT32_TYPE: return "float32";
     case FLOAT64_TYPE: return "float64";
+    case FLOAT_ANY_TYPE: return "any float";
+    case UINT_ANY_TYPE: return "any uint";
+    case INT_ANY_TYPE: return "any int";
     default: return "unknown";
     }
 }
@@ -56,6 +61,8 @@ const char * idToStringO(const ASTOperatorType& id) noexcept
         case MUL_TYPE: return "*";
         case AND_TYPE: return "and";
         case OR_TYPE: return "or";
+        case XOR_TYPE: return "xor";
+        case MOD_TYPE: return "modulo";
         default: return "unknown";
     }
 }
@@ -127,6 +134,8 @@ void writeBranch(T* writer,const ASTNode* node)
         }
         case AST_BINARY:{
             const ASTBinaryExpression* real_node = static_cast<const ASTBinaryExpression*>(node);
+            writer->Key("presidents");
+            writer->Uint(real_node->presidents);
             writer->Key("op");
             writer->String(idToStringO(real_node->op));
             writer->Key("right");

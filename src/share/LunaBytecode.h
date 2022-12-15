@@ -3,19 +3,19 @@
 
 namespace LunaScript
 {
-// max instructions 63. or 0-62
+// max instructions 31. or 0-31
 typedef enum LunaScriptByteCode : uint8_t
 {
-    OP_ADD = 0x00,   // 62
-    OP_SUB = 0x01,   // 61
-    OP_DIV = 0x02,   // 60
-    OP_MUL = 0x03,   // 59
-    OP_JMP = 0x04,   // 58
-    OP_CMP = 0x05,   // 57
-    OP_NCMP = 0x06,  // 56
-    OP_LOAD = 0x07,  // 55
-    OP_STORE = 0x08, // 54
-    OP_CALL = 0x09,  // 53
+    OP_ADD = 0x00,   // 31
+    OP_SUB = 0x01,   // 30
+    OP_DIV = 0x02,   // 29
+    OP_MUL = 0x03,   // 28
+    OP_JMP = 0x04,   // 27
+    OP_CMP = 0x05,   // 26
+    OP_NCMP = 0x06,  // 25
+    OP_LOAD = 0x07,  // 24
+    OP_STORE = 0x08, // 23
+    OP_CALL = 0x09,  // 22
 } LunaScriptByteCode;
 
 typedef struct Function
@@ -26,9 +26,10 @@ typedef struct Function
 
 typedef struct ByteCodeOperation
 {
-    uint8_t op;
-    uint32_t reg_or_memory_src : 28;
-    uint32_t reg_or_memory_dest : 28;
+    uint64_t op: 5;
+    uint64_t reg : 3;
+    uint64_t is_reg: 1;
+    uint64_t reg_or_memory_dest : 55;
 } ByteCodeOperation;
 
 typedef struct Program

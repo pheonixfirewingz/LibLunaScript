@@ -22,7 +22,7 @@ typedef enum ASTExpressionType
 
 typedef enum ASTDataType
 {
-    NOT_DETERMINED_TYPE,
+    NOT_DETERMINED_DATA_TYPE,
     VOID_TYPE,
     INT8_TYPE,
     INT16_TYPE,
@@ -33,17 +33,23 @@ typedef enum ASTDataType
     UINT32_TYPE,
     UINT64_TYPE,
     FLOAT32_TYPE,
-    FLOAT64_TYPE
+    FLOAT64_TYPE,
+    FLOAT_ANY_TYPE,
+    UINT_ANY_TYPE,
+    INT_ANY_TYPE,
 } ASTDataType;
 
 typedef enum ASTOperatorType
 {
+    NOT_DETERMINED_OP_TYPE,
     ADD_TYPE,
     SUB_TYPE,
     DIV_TYPE,
     MUL_TYPE,
     AND_TYPE,
-    OR_TYPE
+    OR_TYPE,
+    XOR_TYPE,
+    MOD_TYPE,
 } ASTOperatorType;
 
 struct ASTNode
@@ -77,7 +83,7 @@ struct ASTFuncDef : public ASTNode
     const std::string name = "";
     const ASTExpression * args = nullptr;
     const ASTBlock *body = nullptr;
-    ASTDataType return_type = NOT_DETERMINED_TYPE;
+    ASTDataType return_type = NOT_DETERMINED_DATA_TYPE;
     ASTTypeID getTypeID() const noexcept override { return AST_FUNC_DEF;}
     explicit ASTFuncDef(const std::string name_in): name(name_in){}
 };
@@ -86,15 +92,16 @@ struct ASTFuncDef : public ASTNode
 
 struct ASTBinaryExpression : public ASTNode
 {
-    const ASTNode * right;
-    const ASTNode * left;
-    ASTOperatorType op;
+    uint16_t presidents = 0;
+    const ASTNode * right = nullptr;
+    const ASTNode * left = nullptr;
+    ASTOperatorType op = NOT_DETERMINED_OP_TYPE;
     ASTTypeID getTypeID() const noexcept override { return AST_BINARY;}
 };
 
 struct ASTLiteral : public ASTNode
 {
     std::string value = "";
-    ASTDataType data_type = NOT_DETERMINED_TYPE;
+    ASTDataType data_type = NOT_DETERMINED_DATA_TYPE;
     ASTTypeID getTypeID() const noexcept override { return AST_LITERAL;}
 };

@@ -18,6 +18,7 @@ configure_file(src/Cmake.h.in ../src/Cmake.h @ONLY)
 include_directories(${PROJECT_SOURCE_DIR}/src/share/rapidjson/include STATIC)
 #options
 Set(LIB_MODE OFF)
+Set(DEBUG_MODE ON)
 #options end 
 
 set(compiler_source 
@@ -48,10 +49,15 @@ endif()
 
 set_property(TARGET LunaScript PROPERTY CXX_STANDARD 20)
 target_include_directories(LunaScript PRIVATE ${PROJECT_SOURCE_DIR}/include STATIC)
-target_compile_options(LunaScript PRIVATE -Wall -Wextra -Werror -g3) #-O2
-if(!${DEBUG_MODE})
-    target_link_options(LunaScript PRIVATE -static-libstdc++ -g3)
+target_compile_options(LunaScript PRIVATE -Wall -Wextra -Werror)
+if(${DEBUG_MODE})
     if(${CMAKE_COMPILER_NUMBER} EQUAL 1)
-        target_compile_options(LunaScript PRIVATE -lgcc -static-libgcc)
+        target_compile_options(LunaScript PRIVATE -g3)
+        target_link_options(LunaScript PRIVATE -lgcc -static-libgcc -static-libstdc++ -g3)
+    endif()
+else()
+    if(${CMAKE_COMPILER_NUMBER} EQUAL 1)
+        target_compile_options(LunaScript PRIVATE -O3)
+        target_link_options(LunaScript PRIVATE -lgcc -static-libgcc -static-libstdc++ -O3)
     endif()
 endif()

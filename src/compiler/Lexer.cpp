@@ -17,8 +17,9 @@ static const internal_std::ReadOnlyLookupTable<size_t, LexTokenEnum> lookup = {
     {std::hash<std::string>{}("/"), T_DIV},           {std::hash<std::string>{}("*"), T_MUL},
     {std::hash<std::string>{}("="), T_EQUAL},         {std::hash<std::string>{}("and"), T_AND},
     {std::hash<std::string>{}("or"), T_OR},           {std::hash<std::string>{}(">"), T_L_ARROW},
-    {std::hash<std::string>{}("<"), T_R_ARROW},       {std::hash<std::string>{}("%"), T_MODULO},
+    {std::hash<std::string>{}("<"), T_R_ARROW},       {std::hash<std::string>{}("mod"), T_MODULO},
     {std::hash<std::string>{}("\""), T_QUOTE},        {std::hash<std::string>{}("\'"), T_SINGLE_LETTER_QUOTE},
+    {std::hash<std::string>{}("xor"), T_XOR},
 };
 
 static const inline std::regex regex(
