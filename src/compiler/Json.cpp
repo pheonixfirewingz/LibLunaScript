@@ -134,8 +134,8 @@ void writeBranch(T* writer,const ASTNode* node)
         }
         case AST_BINARY:{
             const ASTBinaryExpression* real_node = static_cast<const ASTBinaryExpression*>(node);
-            writer->Key("presidents");
-            writer->Uint(real_node->presidents);
+            writer->Key("precedence");
+            writer->Uint(real_node->precedence);
             writer->Key("op");
             writer->String(idToStringO(real_node->op));
             writer->Key("right");

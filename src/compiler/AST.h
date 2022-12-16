@@ -92,7 +92,7 @@ struct ASTFuncDef : public ASTNode
 
 struct ASTBinaryExpression : public ASTNode
 {
-    uint16_t presidents = 0;
+    uint16_t precedence = 0;
     const ASTNode * right = nullptr;
     const ASTNode * left = nullptr;
     ASTOperatorType op = NOT_DETERMINED_OP_TYPE;

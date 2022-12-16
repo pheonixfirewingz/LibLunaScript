@@ -201,7 +201,7 @@ ASTLiteral *parseLiteral(const std::vector<lexToken> &lexer, uint32_t *i) noexce
     return std::move(literal);
 }
 
-const ASTBinaryExpression *parseBinaryExpr(const uint8_t presidents_inflator,const std::vector<lexToken> &lexer, uint32_t *i) noexcept
+const ASTBinaryExpression *parseBinaryExpr(const uint8_t precedence_inflator,const std::vector<lexToken> &lexer, uint32_t *i) noexcept
 {
     eatWhitespace(lexer, i);
     ASTBinaryExpression *expr = new (std::nothrow) ASTBinaryExpression();
@@ -216,7 +216,7 @@ const ASTBinaryExpression *parseBinaryExpr(const uint8_t presidents_inflator,con
     eatWhitespace(lexer, i);
     const std::tuple<uint16_t, ASTOperatorType> type = parseOPType(lexer[(*i)++]);
     expr->op = std::get<1>(type);
-    expr->presidents = std::get<0>(type) + presidents_inflator;
+    expr->precedence = std::get<0>(type) + precedence_inflator;
     eatWhitespace(lexer, i);
     uint32_t fake_i = std::min<uint32_t>((*i) + 1, lexer.size());
     if (lexer[fake_i].token == T_DOT)
@@ -224,7 +224,7 @@ const ASTBinaryExpression *parseBinaryExpr(const uint8_t presidents_inflator,con
     eatWhitespace(lexer, &fake_i);
     if (isBinaryExpr(lexer[fake_i]))
     {
-        const ASTBinaryExpression *r_expr = parseBinaryExpr(1 + presidents_inflator,lexer, i);
+        const ASTBinaryExpression *r_expr = parseBinaryExpr(1 + precedence_inflator,lexer, i);
         [[unlikely]] if (!r_expr)
             r_expr = new (std::nothrow) ASTBinaryExpression();
         expr->right = std::move(r_expr);
@@ -266,6 +266,8 @@ const ASTExpression *parseVar(const std::vector<lexToken> &lexer, uint32_t *i) n
         if (lexer[(*i)].token != T_EQUAL)
         {
             eatWhitespace(lexer, i);
+            if(isInteger(lexer[(*i)]))
+                error(lexer[(*i)],"you missing the equls(=) to define value of the variable");
             ASTLiteral *literal = new (std::nothrow) ASTLiteral();
             literal->data_type = data_type;
             if (literal->data_type >= INT8_TYPE && literal->data_type <= UINT64_TYPE)
