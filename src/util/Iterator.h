@@ -1,5 +1,5 @@
 #pragma once
-#include <cstddef>
+#include <stddef.h>
 namespace internal_std
 {
 struct Iterator
@@ -52,4 +52,4 @@ template<typename T> struct ReverseIterator : public Iterator
     virtual ~ReverseIterator() noexcept override = default;
 };
 
-} // namespace lstd
+} // namespace internal_std

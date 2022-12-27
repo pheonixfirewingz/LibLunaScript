@@ -1,5 +1,5 @@
 #include "Lexer.h"
-#include "../util/LookUpTable.h"
+#include "../../util/LookUpTable.h"
 #include <regex>
 
 static const internal_std::ReadOnlyLookupTable<size_t, LexTokenEnum> lookup = {
@@ -22,7 +22,7 @@ static const internal_std::ReadOnlyLookupTable<size_t, LexTokenEnum> lookup = {
     {std::hash<std::string>{}("xor"), T_XOR},
 };
 
-static const inline std::regex regex(
+static const std::regex regex(
     "(([A-Za-z0-9-]+)|(\\s)|([\\\",\\\\',\\(,\\),\\[,\\],\\<,\\>,\\{,\\},\\,:,\\.])|([_,+,=,*,/]+))",
     std::regex_constants::icase);
 
@@ -75,7 +75,7 @@ const std::vector<lexToken> lexIt(const std::string &&source) noexcept
         }
         else
         {
-            auto k = lookup.find(std::hash<std::string>{}(split[i]));
+            auto k = lookup.find(std::hash<std::string>{}(word));
             if (k == NULL)
                 token.token = *t;
             else

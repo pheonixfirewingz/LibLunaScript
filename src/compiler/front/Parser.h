@@ -1,8 +1,7 @@
 #pragma once
-#include "Lexer.h"
-#include "AST.h"
+#include "../AST.h"
 
-const ASTRoot* parse(const std::vector<lexToken>&& tokens) noexcept;
+const ASTRoot* parse(const std::string&& source) noexcept;
 
 const std::string toJson(const ASTRoot* root,bool pretty_mode) noexcept;
 

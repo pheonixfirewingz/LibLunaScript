@@ -16,13 +16,12 @@ typedef enum LunaScriptByteCode : uint8_t
     OP_LOAD = 0x07,  // 24
     OP_STORE = 0x08, // 23
     OP_CALL = 0x09,  // 22
+    OP_RET = 0x10,  // 21
+    OP_FADD = 0x11,   // 20
+    OP_FSUB = 0x12,   // 19
+    OP_FDIV = 0x13,   // 18
+    OP_FMUL = 0x14,   // 17
 } LunaScriptByteCode;
-
-typedef struct Function
-{
-    uint64_t function_name_hash;
-    uint64_t bytecode_index_offset;
-} Function;
 
 typedef struct ByteCodeOperation
 {
@@ -31,16 +30,4 @@ typedef struct ByteCodeOperation
     uint64_t is_reg: 1;
     uint64_t reg_or_memory_dest : 55;
 } ByteCodeOperation;
-
-typedef struct Program
-{
-    // functions index length
-    uint64_t functions_index_length;
-    // functions ByteCode length
-    uint64_t functions_ByteCode_length;
-    // functions index;
-    Function *functions_index;
-    // byte code
-    ByteCodeOperation *byteCode_operations;
-} Program;
 }; // namespace LunaScript

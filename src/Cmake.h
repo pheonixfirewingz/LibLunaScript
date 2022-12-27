@@ -11,7 +11,7 @@
 #endif
 
 #ifndef CMAKE_CXX_COMPILER_ID
-#define CMAKE_CXX_COMPILER_ID = "GNU"
+#define CMAKE_CXX_COMPILER_ID = "Clang"
 #endif
 
 #ifndef CMAKE_LIB_MODE
@@ -19,5 +19,5 @@
 #endif
 
 #ifndef CMAKE_COMPILER_NUMBER
-#define CMAKE_COMPILER_NUMBER 1
+/* #undef CMAKE_COMPILER_NUMBER */
 #endif

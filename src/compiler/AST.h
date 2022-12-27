@@ -56,12 +56,19 @@ struct ASTNode
 {
     public:
     virtual ASTTypeID getTypeID() const noexcept = 0;
+    virtual ~ASTNode() = default;
 };
 
 struct ASTRoot : public ASTNode
 {
     std::vector<const ASTNode *> children;
     ASTTypeID getTypeID() const noexcept override { return AST_ROOT;}
+
+    virtual ~ASTRoot()
+    {
+        for (const auto &child : children)
+            delete child;
+    }
 };
 
 struct ASTExpression : public ASTNode
@@ -70,12 +77,23 @@ struct ASTExpression : public ASTNode
     ASTExpressionType type;
     std::string extra_data = "";
     ASTTypeID getTypeID() const noexcept override { return AST_EXPRESSION;}
+
+    virtual ~ASTExpression()
+    {
+        for (const auto &child : list)
+            delete child;
+    }
 };
 
 struct ASTBlock : public ASTNode
 {
     std::vector<const ASTNode *> list;
     ASTTypeID getTypeID() const noexcept override { return AST_BLOCK;}
+    virtual ~ASTBlock()
+    {
+        for (const auto &child : list)
+            delete child;
+    }
 };
 
 struct ASTFuncDef : public ASTNode
@@ -86,6 +104,11 @@ struct ASTFuncDef : public ASTNode
     ASTDataType return_type = NOT_DETERMINED_DATA_TYPE;
     ASTTypeID getTypeID() const noexcept override { return AST_FUNC_DEF;}
     explicit ASTFuncDef(const std::string name_in): name(name_in){}
+    virtual ~ASTFuncDef()
+    {
+        delete args;
+        delete body;
+    }
 };
 
 
@@ -97,6 +120,11 @@ struct ASTBinaryExpression : public ASTNode
     const ASTNode * left = nullptr;
     ASTOperatorType op = NOT_DETERMINED_OP_TYPE;
     ASTTypeID getTypeID() const noexcept override { return AST_BINARY;}
+    virtual ~ASTBinaryExpression()
+    {
+        delete left;
+        delete right;
+    }
 };
 
 struct ASTLiteral : public ASTNode

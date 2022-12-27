@@ -20,11 +20,15 @@
                 "base"
             ],
             "generator": "Ninja",
+            "environment": {
+                "CC": "clang",
+                "CXX": "clang++"
+            },
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "1",
                 "CMAKE_SYSTEM_NAME": "Linux",
                 "CMAKE_BUILD_TYPE": "Debug"
-              }
+            }
         },
         {
             "name": "debug-osx",

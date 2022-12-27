@@ -1,18 +1,16 @@
 #pragma once
-#include <assert.h>
 #include "Iterator.h"
 #include <initializer_list>
-#include <cstring>
+#include <memory>
+#include <new>
 namespace internal_std
 {
 template<typename Key, typename Value> struct TableEntry
 {
     Key key;
     Value value;
-    constexpr  TableEntry() noexcept 
+    constexpr TableEntry() noexcept
     {
-        memset(&key, 0, sizeof(Key));
-        memset(&value, 0, sizeof(Value));
     }
     constexpr TableEntry(const Key key, const Value value) noexcept
         : key(key)
@@ -20,7 +18,7 @@ template<typename Key, typename Value> struct TableEntry
     {
     }
 
-    constexpr TableEntry &operator=(const TableEntry & entry) noexcept
+    constexpr TableEntry &operator=(const TableEntry &entry) noexcept
     {
         this->key = entry.key;
         this->value = entry.value;
@@ -34,21 +32,26 @@ template<typename Key, typename Value> struct TableEntry
 };
 
 template<typename Key, typename Value>
-struct ReadOnlyLookupTable : public internal_std::ForwardIterator<TableEntry<Key,Value>>
+struct ReadOnlyLookupTable : public internal_std::ForwardIterator<TableEntry<Key, Value>>
 {
   private:
     TableEntry<Key, Value> *table;
     size_t size_of_table = 0;
+
   public:
     ReadOnlyLookupTable() noexcept = default;
-    ReadOnlyLookupTable(std::initializer_list<TableEntry<Key, Value>> entries) noexcept 
+    ReadOnlyLookupTable(std::initializer_list<TableEntry<Key, Value>> entries) noexcept
     {
-         table = new (std::nothrow) TableEntry<Key, Value>[(size_of_table = entries.size())];
-         size_t index = 0;
-         for(auto& entry : entries)
-           table[index++] = entry;
+        table = new (std::nothrow) TableEntry<Key, Value>[(size_of_table = entries.size())];
+        size_t index = 0;
+        for (auto &entry : entries)
+            table[index++] = entry;
     }
-    ~ReadOnlyLookupTable() noexcept = default;
+    ~ReadOnlyLookupTable() noexcept
+    {
+        if (table != nullptr)
+            delete[] table;
+    }
 
     virtual size_t i_size() const noexcept override final
     {
@@ -59,7 +62,7 @@ struct ReadOnlyLookupTable : public internal_std::ForwardIterator<TableEntry<Key
     {
         return size_of_table;
     }
-    
+
     virtual constexpr TableEntry<Key, Value> *begin() noexcept override final
     {
         return table;
@@ -67,21 +70,22 @@ struct ReadOnlyLookupTable : public internal_std::ForwardIterator<TableEntry<Key
 
     virtual constexpr const TableEntry<Key, Value> *begin() const noexcept override final
     {
-      return table;
+        return table;
     }
 
     virtual constexpr TableEntry<Key, Value> *cbegin() const noexcept override final
     {
-      return table;
+        return table;
     }
-    
-    constexpr Value* find(const Key & key) const noexcept
+
+    constexpr Value *find(const Key &key) const noexcept
     {
-      for(size_t i = 0; i < size_of_table; i++)
-      {
-        if(table[i] == key) return &table[i].value;
-      }
-      return nullptr;
+        for (size_t i = 0; i < size_of_table; i++)
+        {
+            if (table[i] == key)
+                return &table[i].value;
+        }
+        return nullptr;
     }
 };
-} // namespace lstd
+} // namespace internal_std

@@ -1,10 +1,11 @@
 #include "Parser.h"
+#include "Lexer.h"
+#include <new>
 #include <stack>
 #include <stdio.h>
+#include <string>
 #include <tuple>
 #include <vector>
-#include <string>
-#include <new>
 
 static std::stack<const char *> *gf_error_stack;
 
@@ -174,14 +175,14 @@ ASTLiteral *parseLiteral(const std::vector<lexToken> &lexer, uint32_t *i) noexce
     {
         if (lexer[(*i)].token != T_QUOTE)
         {
-            [[unlikely]] if (!isInteger(lexer[(*i)]))
-                error(lexer[(*i)], "this is not a valid numeric value");
+            [[unlikely]] if (!isInteger(lexer[(*i)]) && !isValidName(lexer[(*i)]))
+                error(lexer[(*i)], "this is not a valid numeric value or variable name");
             literal->value = std::move(lexer[(*i)++].str_token);
             if (lexer[(*i)].token == T_DOT)
             {
                 (*i)++;
-                if (!isInteger(lexer[(*i)]))
-                    error(lexer[(*i)], "this is not a valid numeric value");
+                [[unlikely]] if (!isInteger(lexer[(*i)]) && !isValidName(lexer[(*i)]))
+                    error(lexer[(*i)], "this is not a valid numeric value or variable name");
                 literal->value += '.';
                 literal->value += std::move(lexer[(*i)++].str_token);
             }
@@ -196,12 +197,13 @@ ASTLiteral *parseLiteral(const std::vector<lexToken> &lexer, uint32_t *i) noexce
     catch (std::exception &e)
     {
         error(lexer[(*i)], e.what());
-        return nullptr;
+        return literal;
     }
     return std::move(literal);
 }
 
-const ASTBinaryExpression *parseBinaryExpr(const uint8_t precedence_inflator,const std::vector<lexToken> &lexer, uint32_t *i) noexcept
+const ASTBinaryExpression *parseBinaryExpr(const uint8_t precedence_inflator, const std::vector<lexToken> &lexer,
+                                           uint32_t *i) noexcept
 {
     eatWhitespace(lexer, i);
     ASTBinaryExpression *expr = new (std::nothrow) ASTBinaryExpression();
@@ -224,7 +226,7 @@ const ASTBinaryExpression *parseBinaryExpr(const uint8_t precedence_inflator,con
     eatWhitespace(lexer, &fake_i);
     if (isBinaryExpr(lexer[fake_i]))
     {
-        const ASTBinaryExpression *r_expr = parseBinaryExpr(1 + precedence_inflator,lexer, i);
+        const ASTBinaryExpression *r_expr = parseBinaryExpr(1 + precedence_inflator, lexer, i);
         [[unlikely]] if (!r_expr)
             r_expr = new (std::nothrow) ASTBinaryExpression();
         expr->right = std::move(r_expr);
@@ -246,68 +248,60 @@ const ASTBinaryExpression *parseBinaryExpr(const uint8_t precedence_inflator,con
 const ASTExpression *parseVar(const std::vector<lexToken> &lexer, uint32_t *i) noexcept
 {
     ASTExpression *node = new (std::nothrow) ASTExpression();
-    try
+    node->type = ASTE_VAR_DEFINED;
+    ASTDataType data_type;
+    [[unlikely]] if (!isDataType(lexer[*i]))
     {
-        node->type = ASTE_VAR_DEFINED;
-        ASTDataType data_type;
-        [[unlikely]] if (!isDataType(lexer[*i]))
+        error(lexer[*i], "this is not a supported data type");
+        return node;
+    }
+
+    data_type = parseDataType(lexer[(*i)++]);
+    eatWhitespace(lexer, i);
+    [[unlikely]] if (!isValidName(lexer[*i]))
+        error(lexer[*i], "this is not a valid param name");
+
+    node->extra_data = std::move(lexer[(*i)++].str_token);
+    eatWhitespace(lexer, i);
+    if (lexer[(*i)].token != T_EQUAL)
+    {
+        eatWhitespace(lexer, i);
+        if (isInteger(lexer[(*i)]))
+            error(lexer[(*i)], "you missing the equals(=) to define value of the variable");
+        ASTLiteral *literal = new (std::nothrow) ASTLiteral();
+        literal->data_type = data_type;
+        if (literal->data_type >= INT8_TYPE && literal->data_type <= UINT64_TYPE)
+            literal->value = "0";
+        else if (literal->data_type >= FLOAT32_TYPE && literal->data_type <= FLOAT64_TYPE)
+            literal->value = "0.0";
+        else
+            literal->value = "";
+        node->list.emplace_back(std::move(literal));
+    }
+    else
+    {
+        (*i)++;
+        eatWhitespace(lexer, i);
+        uint32_t fake_i = *i;
+        fake_i++;
+        if (lexer[fake_i].token == T_DOT)
+            fake_i += 2;
+        eatWhitespace(lexer, &fake_i);
+        if (isBinaryExpr(lexer[fake_i]))
         {
-            error(lexer[*i], "this is not a supported data type");
-            return node;
+            const ASTBinaryExpression *expr = parseBinaryExpr(0, lexer, i);
+            [[unlikely]] if (!expr)
+                expr = new (std::nothrow) ASTBinaryExpression();
+            node->list.emplace_back(std::move(expr));
         }
         else
-            data_type = parseDataType(lexer[(*i)++]);
-        eatWhitespace(lexer, i);
-        [[unlikely]] if (!isValidName(lexer[*i]))
-            error(lexer[*i], "this is not a valid param name");
-
-        node->extra_data = std::move(lexer[(*i)++].str_token);
-        eatWhitespace(lexer, i);
-        if (lexer[(*i)].token != T_EQUAL)
         {
-            eatWhitespace(lexer, i);
-            if(isInteger(lexer[(*i)]))
-                error(lexer[(*i)],"you missing the equls(=) to define value of the variable");
-            ASTLiteral *literal = new (std::nothrow) ASTLiteral();
-            literal->data_type = data_type;
-            if (literal->data_type >= INT8_TYPE && literal->data_type <= UINT64_TYPE)
-                literal->value = "0";
-            else if (literal->data_type >= FLOAT32_TYPE && literal->data_type <= FLOAT64_TYPE)
-                literal->value = "0.0";
-            else
-                literal->value = "";
+            ASTLiteral *literal = parseLiteral(lexer, i);
+            [[unlikely]] if (!literal)
+                literal = new (std::nothrow) ASTLiteral();
+            literal->data_type = std::move(data_type);
             node->list.emplace_back(std::move(literal));
         }
-        else
-        {
-            (*i)++;
-            eatWhitespace(lexer, i);
-            uint32_t fake_i = *i;
-            fake_i++;
-            if (lexer[fake_i].token == T_DOT)
-                fake_i += 2;
-            eatWhitespace(lexer, &fake_i);
-            if (isBinaryExpr(lexer[fake_i]))
-            {
-                const ASTBinaryExpression *expr = parseBinaryExpr(0,lexer, i);
-                [[unlikely]] if (!expr)
-                    expr = new (std::nothrow) ASTBinaryExpression();
-                node->list.emplace_back(std::move(expr));
-            }
-            else
-            {
-                ASTLiteral *literal = parseLiteral(lexer, i);
-                [[unlikely]] if (!literal)
-                    literal = new (std::nothrow) ASTLiteral();
-                literal->data_type = std::move(data_type);
-                node->list.emplace_back(std::move(literal));
-            }
-        }
-    }
-    catch (std::exception &e)
-    {
-        error(lexer[(*i)], e.what());
-        return nullptr;
     }
     return std::move(node);
 }
@@ -377,10 +371,31 @@ const ASTBlock *parseBlock(const std::vector<lexToken> &lexer, uint32_t *i) noex
             ASTExpression *node = new (std::nothrow) ASTExpression();
             node->type = ASTE_RETURN;
             eatWhitespace(lexer, i);
-            [[likely]] if (isInteger(lexer[(*i)]))
-                node->list.emplace_back(parseLiteral(lexer, i));
+            uint32_t fake_i = *i;
+            fake_i++;
+            if (lexer[fake_i].token == T_DOT)
+                fake_i += 2;
+            eatWhitespace(lexer, &fake_i);
+            if (isBinaryExpr(lexer[fake_i]))
+            {
+                const ASTBinaryExpression *expr = parseBinaryExpr(0, lexer, i);
+                [[unlikely]] if (!expr)
+                    expr = new (std::nothrow) ASTBinaryExpression();
+                node->list.emplace_back(std::move(expr));
+            }
             else
-                error(lexer[(*i)], "unsupported return expression data");
+            {
+                ASTLiteral *literal = parseLiteral(lexer, i);
+                [[unlikely]] if (!literal)
+                    literal = new (std::nothrow) ASTLiteral();
+                if (lexer[(*i) - 2].token == T_DOT)
+                    literal->data_type = FLOAT_ANY_TYPE;
+                else if (lexer[(*i) - 1].token == T_IDENTIFIER && !isInteger(lexer[(*i) - 1]))
+                    literal->data_type = NOT_DETERMINED_DATA_TYPE;
+                else
+                    literal->data_type = UINT_ANY_TYPE;
+                node->list.emplace_back(std::move(literal));
+            }
             block->list.emplace_back(std::move(node));
         }
         else if (isDataType(lexer[(*i)]))
@@ -392,7 +407,7 @@ const ASTBlock *parseBlock(const std::vector<lexToken> &lexer, uint32_t *i) noex
     return std::move(block);
 }
 
-const ASTRoot *parse(const std::vector<lexToken> &&in) noexcept
+const ASTRoot *iParse(const std::vector<lexToken> &&in) noexcept
 {
     const std::vector<lexToken> lexer = in;
     ASTRoot *root = new (std::nothrow) ASTRoot();
@@ -425,8 +440,7 @@ const ASTRoot *parse(const std::vector<lexToken> &&in) noexcept
                 eatWhitespace(lexer, &i);
                 if (!isDataType(lexer[i]))
                     error(lexer[i++], "this is not a supported data type");
-                else
-                    node->return_type = parseDataType(lexer[i++]);
+                node->return_type = parseDataType(lexer[i++]);
             }
             eatWhitespace(lexer, &i);
             if (lexer[i].token != T_L_SQUIGGLY)
@@ -444,6 +458,11 @@ const ASTRoot *parse(const std::vector<lexToken> &&in) noexcept
         }
     }
     return root;
+}
+
+const ASTRoot *parse(const std::string&& source) noexcept
+{
+    return iParse(lexIt(std::move(source)));
 }
 
 void enableSoftErrors() noexcept
