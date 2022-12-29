@@ -34,12 +34,13 @@ std::vector<uint64_t> generateBlock(const ASTBlock *node, const std::vector<func
             const auto &expression = dynamic_cast<const ASTExpression *>(node);
             switch (expression->type)
             {
-                case ASTE_RETURN:
+                case AST_EXPR_RETURN:
                 {
                     //temp
                     block.push_back(LunaScript::OP_RET);
+                    break;
                 }
-                case ASTE_VAR_DEFINED:
+                case AST_EXPR_VAR_DEFINED:
             default:
                 break;
             }

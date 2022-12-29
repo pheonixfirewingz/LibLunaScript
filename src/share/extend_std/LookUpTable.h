@@ -3,7 +3,7 @@
 #include <initializer_list>
 #include <memory>
 #include <new>
-namespace internal_std
+namespace std
 {
 template<typename Key, typename Value> struct TableEntry
 {
@@ -32,7 +32,7 @@ template<typename Key, typename Value> struct TableEntry
 };
 
 template<typename Key, typename Value>
-struct ReadOnlyLookupTable : public internal_std::ForwardIterator<TableEntry<Key, Value>>
+struct ReadOnlyLookupTable : public ForwardIterator<TableEntry<Key, Value>>
 {
   private:
     TableEntry<Key, Value> *table;
@@ -40,9 +40,9 @@ struct ReadOnlyLookupTable : public internal_std::ForwardIterator<TableEntry<Key
 
   public:
     ReadOnlyLookupTable() noexcept = default;
-    ReadOnlyLookupTable(std::initializer_list<TableEntry<Key, Value>> entries) noexcept
+    ReadOnlyLookupTable(initializer_list<TableEntry<Key, Value>> entries) noexcept
     {
-        table = new (std::nothrow) TableEntry<Key, Value>[(size_of_table = entries.size())];
+        table = new (nothrow) TableEntry<Key, Value>[(size_of_table = entries.size())];
         size_t index = 0;
         for (auto &entry : entries)
             table[index++] = entry;
@@ -88,4 +88,4 @@ struct ReadOnlyLookupTable : public internal_std::ForwardIterator<TableEntry<Key
         return nullptr;
     }
 };
-} // namespace internal_std
+} // namespace std

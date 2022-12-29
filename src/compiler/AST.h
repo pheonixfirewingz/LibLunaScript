@@ -15,9 +15,9 @@ typedef enum ASTTypeID
 
 typedef enum ASTExpressionType
 {
-    ASTE_RETURN,
-    ASTE_VAR_DEFINED,
-    ASTE_PRAM_LIST,
+    AST_EXPR_RETURN,
+    AST_EXPR_VAR_DEFINED,
+    AST_EXPR_PRAM_LIST,
 } ASTExpressionType;
 
 typedef enum ASTDataType
@@ -61,8 +61,11 @@ struct ASTNode
 
 struct ASTRoot : public ASTNode
 {
+    std::string name;
     std::vector<const ASTNode *> children;
     ASTTypeID getTypeID() const noexcept override { return AST_ROOT;}
+
+    constexpr ASTRoot(const std::string &name) noexcept: name(name) {}
 
     virtual ~ASTRoot()
     {
@@ -87,7 +90,7 @@ struct ASTExpression : public ASTNode
 
 struct ASTBlock : public ASTNode
 {
-    std::vector<const ASTNode *> list;
+    std::vector<const ASTExpression *> list;
     ASTTypeID getTypeID() const noexcept override { return AST_BLOCK;}
     virtual ~ASTBlock()
     {
@@ -99,8 +102,8 @@ struct ASTBlock : public ASTNode
 struct ASTFuncDef : public ASTNode
 {
     const std::string name = "";
-    const ASTExpression * args = nullptr;
-    const ASTBlock *body = nullptr;
+    const ASTExpression * args;
+    const ASTBlock *body;
     ASTDataType return_type = NOT_DETERMINED_DATA_TYPE;
     ASTTypeID getTypeID() const noexcept override { return AST_FUNC_DEF;}
     explicit ASTFuncDef(const std::string name_in): name(name_in){}

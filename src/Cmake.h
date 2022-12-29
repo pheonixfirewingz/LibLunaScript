@@ -18,6 +18,14 @@
 #define CMAKE_LIB_MODE 0
 #endif
 
+#ifndef COMPILER_TESTING
+#define COMPILER_TESTING 0
+#endif
+
+#ifndef FUZZING
+#define FUZZING 0
+#endif
+
 #ifndef CMAKE_COMPILER_NUMBER
 /* #undef CMAKE_COMPILER_NUMBER */
 #endif

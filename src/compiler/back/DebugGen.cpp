@@ -1,4 +1,5 @@
 #include "ByteCodeGen.h"
+#include "IRCodeGen.h"
 #include <bitset>
 
 std::string makeHumanReadable(const std::vector<uint64_t> ops) noexcept
@@ -77,4 +78,13 @@ std::string makeHumanReadable(const std::vector<uint64_t> ops) noexcept
         ret += "\n";
     }
     return ret;
+}
+
+std::string makeHumanReadable(const Module* module) noexcept
+{
+    std::string Str;
+    raw_string_ostream OS(Str);
+    module->print(OS, nullptr);
+    OS.flush();
+    return Str;
 }

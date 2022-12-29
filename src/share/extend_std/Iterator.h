@@ -1,6 +1,6 @@
 #pragma once
 #include <stddef.h>
-namespace internal_std
+namespace std
 {
 struct Iterator
 {

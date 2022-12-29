@@ -1,7 +1,7 @@
 #pragma once
 #include "../AST.h"
 
-const ASTRoot* parse(const std::string&& source) noexcept;
+const ASTRoot* parse(const std::string&& source,const std::string&& file_name) noexcept;
 
 const std::string toJson(const ASTRoot* root,bool pretty_mode) noexcept;
 

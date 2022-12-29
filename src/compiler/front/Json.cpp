@@ -1,6 +1,7 @@
-#include "Parser.h"
+#include "../AST.h"
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/stringbuffer.h>
+using namespace rapidjson;
 
 const char * idToString(const ASTTypeID& id) noexcept
 {
@@ -44,9 +45,9 @@ const char * idToStringE(const ASTExpressionType& id) noexcept
 {
     switch (id)
     {
-    case ASTE_RETURN: return "ReturnType";
-    case ASTE_VAR_DEFINED : return "VariableDefinition";
-    case ASTE_PRAM_LIST: return "ParameterList";
+    case AST_EXPR_RETURN: return "ReturnType";
+    case AST_EXPR_VAR_DEFINED : return "VariableDefinition";
+    case AST_EXPR_PRAM_LIST: return "ParameterList";
     default: return "unknown";
     }
 }
@@ -159,16 +160,16 @@ void writeBranch(T* writer,const ASTNode* node)
 
 const std::string toJson(const ASTRoot* root,const bool pretty_mode) noexcept
 {
-    rapidjson::StringBuffer s;
+    StringBuffer s;
     if(pretty_mode)
     {
-        rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(s);
-        writeBranch<rapidjson::PrettyWriter<rapidjson::StringBuffer>>(&writer,root);
+        PrettyWriter<StringBuffer> writer(s);
+        writeBranch<PrettyWriter<StringBuffer>>(&writer,root);
     }
     else
     {
-        rapidjson::Writer<rapidjson::StringBuffer> writer(s);
-        writeBranch<rapidjson::Writer<rapidjson::StringBuffer>>(&writer,root);
+        Writer<StringBuffer> writer(s);
+        writeBranch<Writer<StringBuffer>>(&writer,root);
     }
     return s.GetString();
 }
