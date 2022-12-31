@@ -1,46 +1,63 @@
 #include "IRCodeGen.h"
-#include "InternalIRCodeGen.h"
+#include <llvm-15/llvm/ADT/Optional.h>
+#include <llvm-15/llvm/IR/IRBuilder.h>
+#include <llvm-15/llvm/IR/LegacyPassManager.h>
+#include <llvm-15/llvm/IR/Verifier.h>
+#include <llvm-15/llvm/MC/TargetRegistry.h>
+#include <llvm-15/llvm/Passes/PassBuilder.h>
+#include <llvm-15/llvm/Support/Host.h>
+#include <llvm-15/llvm/Support/TargetSelect.h>
+#include <llvm-15/llvm/Target/TargetMachine.h>
 
-IRType getIRType(std::string name, ASTDataType type)
+namespace CodeGen
+{
+
+LLVMCodeGen::ContextAwareBlock::ContextAwareBlock(const Function *func,
+                                                  const std::ReadOnlyVector<LLVMCodeGen::IRType> args,
+                                                  const LLVMCodeGen::IRType &type,
+                                                  const ASTBlock *const &block) noexcept
+    : args(args)
+    , named_vars(std::map<std::string, Value *>())
+    , return_type(type)
+    , parent(nullptr)
+    , block(block)
+{
+    for (auto &Arg : func->args())
+        named_vars[std::string(Arg.getName())] = (Value *)&Arg;
+}
+
+LLVMCodeGen::IRType LLVMCodeGen::getIRType(std::string name, ASTDataType type) const noexcept
 {
     switch (type)
     {
     case INT8_TYPE:
         return (IRType){name, INT8_TYPE, Type::getInt8Ty(*context), true};
-        break;
     case INT16_TYPE:
         return (IRType){name, INT16_TYPE, Type::getInt16Ty(*context), true};
-        break;
     case INT32_TYPE:
         return (IRType){name, INT32_TYPE, Type::getInt32Ty(*context), true};
-        break;
     case INT64_TYPE:
         return (IRType){name, INT64_TYPE, Type::getInt64Ty(*context), true};
-        break;
     case UINT8_TYPE:
         return (IRType){name, UINT8_TYPE, Type::getInt8Ty(*context), false};
-        break;
     case UINT16_TYPE:
         return (IRType){name, UINT16_TYPE, Type::getInt16Ty(*context), false};
-        break;
     case UINT32_TYPE:
         return (IRType){name, UINT32_TYPE, Type::getInt32Ty(*context), false};
-        break;
     case UINT64_TYPE:
         return (IRType){name, UINT64_TYPE, Type::getInt64Ty(*context), false};
-        break;
     case FLOAT32_TYPE:
         return (IRType){name, FLOAT32_TYPE, Type::getFloatTy(*context), false};
-        break;
     case FLOAT64_TYPE:
         return (IRType){name, FLOAT32_TYPE, Type::getDoubleTy(*context), false};
-        break;
+    case VOID_TYPE:
+        return (IRType){name, VOID_TYPE, Type::getVoidTy(*context), false};
     default:
         return (IRType){{}, NOT_DETERMINED_DATA_TYPE, NULL, false};
     }
 }
 
-std::vector<IRType> genArgs(const ASTExpression *args)
+std::vector<LLVMCodeGen::IRType> LLVMCodeGen::genArgs(const ASTExpression *args) noexcept
 {
     std::vector<IRType> ir_args;
     for (auto item : args->list)
@@ -51,8 +68,7 @@ std::vector<IRType> genArgs(const ASTExpression *args)
     return ir_args;
 }
 
-Value *genLiteral(std::shared_ptr<IRBuilder<>>, const ASTLiteral *lit, const ContextAwareBlock *block,
-                  bool used_return_type = false)
+Value *LLVMCodeGen::genLiteral(const ASTLiteral *lit, const ContextAwareBlock *block, bool used_return_type) noexcept
 {
     Value *ret;
     if (lit->data_type == NOT_DETERMINED_DATA_TYPE)
@@ -115,14 +131,14 @@ Value *genLiteral(std::shared_ptr<IRBuilder<>>, const ASTLiteral *lit, const Con
     return ret;
 }
 
-Value *genBinary(std::shared_ptr<IRBuilder<>> builder, const ASTBinaryExpression *op, const ContextAwareBlock *block)
+Value *LLVMCodeGen::genBinary(const ASTBinaryExpression *op, const ContextAwareBlock *block) noexcept
 {
-    Value *L = genLiteral(builder, (const ASTLiteral *)op->left, block);
+    Value *L = genLiteral((const ASTLiteral *)op->left, block);
     Value *R = nullptr;
     if (op->right->getTypeID() == AST_BINARY)
-        R = genBinary(builder, (const ASTBinaryExpression *)op->right, block);
+        R = genBinary( (const ASTBinaryExpression *)op->right, block);
     else
-        R = genLiteral(builder, (const ASTLiteral *)op->right, block);
+        R = genLiteral( (const ASTLiteral *)op->right, block);
     if (!L || !R)
         return nullptr;
 
@@ -170,7 +186,7 @@ Value *genBinary(std::shared_ptr<IRBuilder<>> builder, const ASTBinaryExpression
     return NULL;
 }
 
-bool genBlock(std::shared_ptr<IRBuilder<>> builder, const ContextAwareBlock *block)
+bool LLVMCodeGen::genBlock(const ContextAwareBlock*block) noexcept
 {
     for (auto &action : block->block->list)
     {
@@ -179,9 +195,9 @@ bool genBlock(std::shared_ptr<IRBuilder<>> builder, const ContextAwareBlock *blo
         case AST_EXPR_RETURN: {
             Value *ret;
             if (action->list[0]->getTypeID() == AST_BINARY)
-                ret = genBinary(builder, (const ASTBinaryExpression *)action->list[0], block);
+                ret = genBinary((const ASTBinaryExpression *)action->list[0], block);
             else
-                ret = genLiteral(builder, (const ASTLiteral *)action->list[0], block, true);
+                ret = genLiteral((const ASTLiteral *)action->list[0], block, true);
             builder->CreateRet(ret);
         }
         case AST_EXPR_VAR_DEFINED: {
@@ -193,9 +209,9 @@ bool genBlock(std::shared_ptr<IRBuilder<>> builder, const ContextAwareBlock *blo
     return false;
 }
 
-void genFunc(std::shared_ptr<IRBuilder<>> builder, Module **module, const ASTFuncDef *func)
+void LLVMCodeGen::genFunc(const ASTFuncDef *func) noexcept
 {
-    Function *ir_func = (*module)->getFunction(func->name);
+    Function *ir_func = _module_->getFunction(func->name);
     std::vector<IRType> args = genArgs(func->args);
     if (!ir_func)
     {
@@ -204,7 +220,13 @@ void genFunc(std::shared_ptr<IRBuilder<>> builder, Module **module, const ASTFun
             ir_args.push_back(arg.type);
         FunctionType *func_type = FunctionType::get(getIRType({}, func->return_type).type, ir_args, false);
 
-        ir_func = Function::Create(func_type, Function::InternalLinkage, func->name, *module);
+        GlobalValue::LinkageTypes link_type =
+            func->is_public ? Function::AvailableExternallyLinkage : Function::InternalLinkage;
+        ir_func = Function::Create(func_type, link_type, func->name, *_module_);
+        ir_func->setCallingConv(CallingConv::C);
+        AttributeList list;
+
+        ir_func->setAttributes(list);
         unsigned Idx = 0;
         for (auto &Arg : ir_func->args())
             Arg.setName(((const ASTLiteral *)func->args->list[Idx++])->value);
@@ -213,27 +235,61 @@ void genFunc(std::shared_ptr<IRBuilder<>> builder, Module **module, const ASTFun
     if (!ir_func)
         return;
 
-    BasicBlock *BB = BasicBlock::Create(*context, "entry", ir_func);
+    BasicBlock *BB = BasicBlock::Create(*context, "", ir_func);
     builder->SetInsertPoint(BB);
-    if (genBlock(builder, ContextAwareBlock::make(ir_func, std::ReadOnlyVector<IRType>::lock(args),
-                                                  getIRType({}, func->return_type), func->body)))
+    if (genBlock(LLVMCodeGen::ContextAwareBlock::make(ir_func, std::ReadOnlyVector<IRType>::lock(args),
+                                                               getIRType({}, func->return_type), func->body)))
         verifyFunction(*ir_func);
     else
         ir_func->eraseFromParent();
 }
 
-Module *generateIRCode(const ASTRoot *root) noexcept
+void LLVMCodeGen::genCode(const ASTRoot *root, bool optimize) noexcept
 {
-    if (!context)
-        context = std::make_shared<LLVMContext>();
-    std::shared_ptr<IRBuilder<>> builder = std::make_shared<IRBuilder<>>(*context);
-    Module *module = new (std::nothrow) Module(root->name, *context);
-
     for (auto child : root->children)
     {
         if (child->getTypeID() == AST_FUNC_DEF)
-            genFunc(builder, &module, (const ASTFuncDef *)child);
+            genFunc((const ASTFuncDef *)child);
     }
 
-    return module;
+    if (optimize)
+    {
+        LoopAnalysisManager loop_analysis;
+        CGSCCAnalysisManager global_analysis;
+        FunctionAnalysisManager func_analysis;
+        ModuleAnalysisManager module_analysis;
+        PassBuilder pass_builder;
+
+        pass_builder.registerModuleAnalyses(module_analysis);
+        pass_builder.registerFunctionAnalyses(func_analysis);
+        pass_builder.registerLoopAnalyses(loop_analysis);
+        pass_builder.crossRegisterProxies(loop_analysis, func_analysis, global_analysis, module_analysis);
+
+        ModulePassManager module_pass_manager = pass_builder.buildPerModuleDefaultPipeline(OptimizationLevel::O1);
+        module_pass_manager.run(*_module_, module_analysis);
+    }
 }
+
+LLVMCodeGen::LLVMCodeGen(const ASTRoot *root, bool optimize)
+{
+    context = std::make_shared<LLVMContext>();
+    builder = std::make_shared<IRBuilder<>>(*context);
+    _module_ = std::make_shared<Module>(root->name, *context);
+    InitializeAllTargetInfos();
+    InitializeAllTargets();
+    InitializeAllTargetMCs();
+    InitializeAllAsmParsers();
+    InitializeAllAsmPrinters();
+    genCode(root, optimize);
+}
+
+std::string LLVMCodeGen::getIR() noexcept
+{
+    std::string ret;
+    raw_string_ostream buffer(ret);
+    _module_->print(buffer, nullptr);
+    buffer.flush();
+    return ret;
+}
+
+} // namespace CodeGen
