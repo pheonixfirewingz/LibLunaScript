@@ -1,8 +1,6 @@
 cmake_minimum_required ( VERSION 3.16.3 )
 project ( libLunaScript CXX )
-set ( CMAKE_CXX_STANDARD 23 )
 set ( CMAKE_CXX_STANDARD_REQUIRED ON )
-set ( CMAKE_CXX_CXX_EXTENSIONS OFF )
 
 if ( CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
     set ( CMAKE_COMPILER_NUMBER 0 )
@@ -30,6 +28,7 @@ set ( compiler_source
     src/compiler/back/IRCodeGen.cpp
     src/compiler/back/ByteCodeGen.cpp
     src/compiler/back/DebugGen.cpp
+    src/compiler/IO.cpp
     src/compiler/Main.cpp
     src/compiler/Test.cpp
 )
@@ -55,7 +54,7 @@ else ()
     if ( CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" )
     else ()
         target_include_directories ( LunaScript PRIVATE /usr/lib/llvm-15/include STATIC )
-        target_compile_options ( LunaScript PRIVATE -fno-exceptions -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS )
+        target_compile_options ( LunaScript PRIVATE -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS )
         target_link_options ( LunaScript PRIVATE -L/usr/lib/llvm-15/lib -lLLVM-15 )
     endif ()
 

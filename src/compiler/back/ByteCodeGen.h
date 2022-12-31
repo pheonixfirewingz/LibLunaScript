@@ -1,4 +1,4 @@
-#include "../../share/LunaBytecode.h"
+#include "LunaBytecode.h"
 #include "../AST.h"
 #include <string>
 #include <stdint.h>

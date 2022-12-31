@@ -3,55 +3,9 @@
     "body": [
         {
             "type": "FunctionDef",
-            "id": "add",
-            "return_type": "int32",
-            "parameters": {
-                "type": "Expression",
-                "id": "ParameterList",
-                "declarations": [
-                    {
-                        "type": "Literal",
-                        "data_type": "int32",
-                        "value": "one"
-                    },
-                    {
-                        "type": "Literal",
-                        "data_type": "int32",
-                        "value": "two"
-                    }
-                ]
-            },
-            "body": {
-                "type": "ExecutionBlock",
-                "execution": [
-                    {
-                        "type": "Expression",
-                        "id": "ReturnType",
-                        "declarations": [
-                            {
-                                "type": "BinaryExpression",
-                                "precedence": 6,
-                                "op": "/",
-                                "right": {
-                                    "type": "Literal",
-                                    "data_type": "To Be Determined",
-                                    "value": "two"
-                                },
-                                "left": {
-                                    "type": "Literal",
-                                    "data_type": "To Be Determined",
-                                    "value": "one"
-                                }
-                            }
-                        ]
-                    }
-                ]
-            }
-        },
-        {
-            "type": "FunctionDef",
-            "id": "main",
-            "return_type": "int32",
+            "is_public": true,
+            "name": "main",
+            "return_type": "Void",
             "parameters": {
                 "type": "Expression",
                 "id": "ParameterList",
@@ -62,12 +16,24 @@
                 "execution": [
                     {
                         "type": "Expression",
-                        "id": "ReturnType",
+                        "id": "VariableDefinition",
+                        "name": "x",
                         "declarations": [
                             {
                                 "type": "Literal",
-                                "data_type": "any uint",
+                                "data_type": "uint32",
                                 "value": "0"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "Expression",
+                        "id": "ReturnType",
+                        "declarations": [
+                            {
+                                "type": "Expression",
+                                "id": "NoDataReturn",
+                                "declarations": []
                             }
                         ]
                     }
@@ -75,5 +41,5 @@
             }
         }
     ],
-    "SourceType": "module"
+    "module": "test"
 }

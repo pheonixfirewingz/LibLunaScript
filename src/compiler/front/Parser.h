@@ -7,5 +7,5 @@ const std::string toJson(const ASTRoot* root,bool pretty_mode) noexcept;
 
 void enableSoftErrors() noexcept;
 bool hasErrors() noexcept;
-const char* popSoftErrorOffStack() noexcept;
+const std::string popSoftErrorOffStack() noexcept;
 void disableSoftErrors() noexcept;

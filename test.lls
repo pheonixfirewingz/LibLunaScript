@@ -1,9 +1,4 @@
-func add(int32 one, int32 two) -> int32
+public main()
 {
-    ret one / two
-}
-
-func main() -> int32
-{
-    ret 0
+    uint32 x
 }

@@ -46,6 +46,7 @@ const char * idToStringE(const ASTExpressionType& id) noexcept
     switch (id)
     {
     case AST_EXPR_RETURN: return "ReturnType";
+    case AST_EXPR_NO_RETURN: return "NoDataReturn";
     case AST_EXPR_VAR_DEFINED : return "VariableDefinition";
     case AST_EXPR_PRAM_LIST: return "ParameterList";
     default: return "unknown";
@@ -88,13 +89,15 @@ void writeBranch(T* writer,const ASTNode* node)
             for(const ASTNode* child: real_node->children)
                 writeBranch(writer,child);
             writer->EndArray();
-            writer->Key("SourceType");
-            writer->String("module");
+            writer->Key("module");
+            writer->String(real_node->name.c_str());
             break;
         }
         case AST_FUNC_DEF: {
             const ASTFuncDef* real_node = static_cast<const ASTFuncDef*>(node);
-            writer->Key("id");
+            writer->Key("is_public");
+            writer->Bool(real_node->is_public);
+            writer->Key("name");
             writer->String(real_node->name.c_str());
             writer->Key("return_type");
             writer->String(idToStringT(real_node->return_type));

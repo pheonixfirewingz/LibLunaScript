@@ -79,12 +79,3 @@ std::string makeHumanReadable(const std::vector<uint64_t> ops) noexcept
     }
     return ret;
 }
-
-std::string makeHumanReadable(const Module* module) noexcept
-{
-    std::string Str;
-    raw_string_ostream OS(Str);
-    module->print(OS, nullptr);
-    OS.flush();
-    return Str;
-}
