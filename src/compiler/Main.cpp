@@ -1,47 +1,12 @@
 #include "../Cmake.h"
+#include "IO.h"
+#include "back/IRCodeGen.h"
 #include "front/Parser.h"
-#include <libos/FileIO.h>
-#include <string>
-#if COMPILER_TESTING == 0 && CMAKE_LIB_MODE == 0
-#    include "back/IRCodeGen.h"
-losResult fileRead(const char *path, const int path_size, char **buf, data_size_t *buf_size)
-{
-    losFileHandle handle;
-    losFileOpenInfo file;
-    file.fileBits = LOS_FILE_BIT_READ | LOS_FILE_BIT_CREATE;
-    file.path = path;
-    file.path_size = path_size;
-    losResult res;
-    if ((res = losOpenFile(&handle, file)) != LOS_SUCCESS)
-        return res;
-    if ((res = losReadFile(handle, (void **)buf, buf_size)) != LOS_SUCCESS)
-        return res;
-    if ((res = losCloseFile(handle)) != LOS_SUCCESS)
-        return res;
-    return LOS_SUCCESS;
-}
-
-losResult fileWrite(const char *path, const int path_size, const char *buf, data_size_t buf_size)
-{
-    losFileHandle handle;
-    losFileOpenInfo file;
-    file.fileBits = LOS_FILE_BIT_WRITE | LOS_FILE_BIT_CREATE;
-    file.path = path;
-    file.path_size = path_size;
-    losResult res;
-    if ((res = losOpenFile(&handle, file)) != LOS_SUCCESS)
-        return res;
-    if ((res = losWriteFile(handle, buf, buf_size)) != LOS_SUCCESS)
-        return res;
-    if ((res = losCloseFile(handle)) != LOS_SUCCESS)
-        return res;
-    return LOS_SUCCESS;
-}
-
+#include <argparse/argparse.hpp>
 int main(int, char **)
 {
     bool stop = false;
-    losSetAssetPath("home/digitech/Desktop/LibLunaScript");
+    setRoot("home/digitech/Desktop/LibLunaScript");
     losResult res;
     char *read_str;
     data_size_t read_str_size = 0;
@@ -53,7 +18,7 @@ int main(int, char **)
     {
         stop = true;
         while (hasErrors())
-            printf("COMPILER ERROR: %s\n", popSoftErrorOffStack());
+            puts(popSoftErrorOffStack().c_str());
     }
     disableSoftErrors();
     if (stop)
@@ -61,13 +26,44 @@ int main(int, char **)
     auto ast = toJson(root_ast, true);
     if ((res = fileWrite("$[asset_base]/test.lls.ast", 27, ast.c_str(), ast.size())) != LOS_SUCCESS)
         return res;
-    auto ir = generateIRCode(root_ast);
-    auto human_readable = makeHumanReadable(ir);
-    if ((res = fileWrite("$[asset_base]/test.ll", 23, human_readable.c_str(), human_readable.size())) != LOS_SUCCESS)
+    auto ir = CodeGen::LLVMCodeGen(root_ast).getIR();
+    if ((res = fileWrite("$[asset_base]/test.ll", 23, ir.c_str(), ir.size())) != LOS_SUCCESS)
         return res;
+    /*ir->setTargetTriple(target_triple);
+    std::string Error;
+    auto Target = TargetRegistry::lookupTarget(target_triple, Error);
+    if (!Target)
+    {
+        errs() << Error;
+        return 1;
+    }
+
+    auto CPU = "generic";
+    auto Features = "";
+
+    TargetOptions opt;
+    auto RM = Optional<Reloc::Model>();
+    auto TheTargetMachine = Target->createTargetMachine(target_triple, CPU, Features, opt, RM);
+
+    ir->setDataLayout(TheTargetMachine->createDataLayout());
+    legacy::PassManager pass;
+    std::string human_readable_2;
+    raw_string_ostream OS(human_readable_2);
+    if (TheTargetMachine->addPassesToEmitFile(pass, (raw_pwrite_stream &)OS, nullptr, CGFT_AssemblyFile))
+    {
+        errs() << "TargetMachine can't emit a file of this type";
+        return 1;
+    }
+
+    pass.run(*ir);
+    OS.flush();
+
+    if ((res = fileWrite("$[asset_base]/test.asm", 24, human_readable_2.c_str(), human_readable_2.size())) !=
+        LOS_SUCCESS)
+        return res;*/
     return 0;
 }
-#elif FUZZING == 1
+#if FUZZING == 1
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 {
     enableSoftErrors();
@@ -80,5 +76,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
     disableSoftErrors();
     return ret; // Values other than 0 and -1 are reserved for future use.
 }
-#elif CMAKE_LIB_MODE == 1
 #endif

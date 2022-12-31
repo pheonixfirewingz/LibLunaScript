@@ -16,6 +16,7 @@ typedef enum ASTTypeID
 typedef enum ASTExpressionType
 {
     AST_EXPR_RETURN,
+    AST_EXPR_NO_RETURN,
     AST_EXPR_VAR_DEFINED,
     AST_EXPR_PRAM_LIST,
 } ASTExpressionType;
@@ -102,11 +103,12 @@ struct ASTBlock : public ASTNode
 struct ASTFuncDef : public ASTNode
 {
     const std::string name = "";
+    const bool is_public;
     const ASTExpression * args;
-    const ASTBlock *body;
+    ASTBlock *body;
     ASTDataType return_type = NOT_DETERMINED_DATA_TYPE;
     ASTTypeID getTypeID() const noexcept override { return AST_FUNC_DEF;}
-    explicit ASTFuncDef(const std::string name_in): name(name_in){}
+    explicit ASTFuncDef(const std::string name_in, bool is_public): name(name_in),is_public(is_public){}
     virtual ~ASTFuncDef()
     {
         delete args;

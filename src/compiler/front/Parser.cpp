@@ -7,13 +7,14 @@
 #include <string>
 #include <tuple>
 #include <vector>
-static std::stack<const char *> *gf_error_stack;
+
+static std::stack<std::string> *gf_error_stack;
 
 typedef enum LexTokenEnum : uint8_t
 {
-    T_WHITESPACE,
     T_IDENTIFIER,
     T_FUNC,
+    T_PUBLIC_FUNC,
     T_RET,
     T_R_SQUIGGLY,
     T_L_SQUIGGLY,
@@ -36,6 +37,7 @@ typedef enum LexTokenEnum : uint8_t
     T_QUOTE,
     T_SINGLE_LETTER_QUOTE,
     // types
+    T_NO_RETURN,
     T_INT8,
     T_INT16,
     T_INT32,
@@ -73,52 +75,139 @@ typedef struct lexToken
     }
 } lexToken;
 
+static inline std::string getTokenName(LexTokenEnum tok) noexcept
+{
+    switch (tok)
+    {
+    case T_IDENTIFIER:
+        return "identifier";
+    case T_FUNC:
+        return "func";
+    case T_PUBLIC_FUNC:
+        return "public";
+    case T_RET:
+        return "return";
+    case T_R_SQUIGGLY:
+        return "{";
+    case T_L_SQUIGGLY:
+        return "}";
+    case T_R_CURLY:
+        return "(";
+    case T_L_CURLY:
+        return ")";
+    case T_COMMA:
+        return ",";
+    case T_DOT:
+        return ".";
+    case T_ADD:
+        return "+";
+    case T_SUB:
+        return "-";
+    case T_MUL:
+        return "*";
+    case T_DIV:
+        return "/";
+    case T_AND:
+        return "and";
+    case T_OR:
+        return "or";
+    case T_XOR:
+        return "xor";
+    case T_MODULO:
+        return "%";
+    case T_EQUAL:
+        return "=";
+    case T_R_ARROW:
+        return ">";
+    case T_L_ARROW:
+        return "<";
+    case T_S_ARROW:
+        return "->";
+    case T_QUOTE:
+        return "\"";
+    case T_SINGLE_LETTER_QUOTE:
+        return "\'";
+    case T_NO_RETURN:
+        return "void";
+    case T_INT8:
+        return "int8";
+    case T_INT16:
+        return "int16";
+    case T_INT32:
+        return "int32";
+    case T_INT64:
+        return "int64";
+    case T_UINT8:
+        return "uint8";
+    case T_UINT16:
+        return "uint16";
+    case T_UINT32:
+        return "uint32";
+    case T_UINT64:
+        return "uint64";
+    case T_STRING:
+        return "string";
+    case T_FLOAT32:
+        return "float32";
+    case T_FLOAT64:
+        return "float64";
+    default:
+        return "unknown";
+    }
+}
+
 static const std::ReadOnlyLookupTable<size_t, LexTokenEnum> lookup = {
-    {std::hash<std::string>{}("int8"), T_INT8},       {std::hash<std::string>{}("int16"), T_INT16},
-    {std::hash<std::string>{}("int32"), T_INT32},     {std::hash<std::string>{}("int64"), T_INT64},
-    {std::hash<std::string>{}("uint8"), T_UINT8},     {std::hash<std::string>{}("uint16"), T_UINT16},
-    {std::hash<std::string>{}("uint32"), T_UINT32},   {std::hash<std::string>{}("uint64"), T_UINT64},
-    {std::hash<std::string>{}("float32"), T_FLOAT32}, {std::hash<std::string>{}("float64"), T_FLOAT64},
-    {std::hash<std::string>{}(" "), T_WHITESPACE},    {std::hash<std::string>{}("\t"), T_WHITESPACE},
-    {std::hash<std::string>{}("func"), T_FUNC},       {std::hash<std::string>{}("ret"), T_RET},
-    {std::hash<std::string>{}("{"), T_L_SQUIGGLY},    {std::hash<std::string>{}("}"), T_R_SQUIGGLY},
-    {std::hash<std::string>{}("("), T_L_CURLY},       {std::hash<std::string>{}(")"), T_R_CURLY},
-    {std::hash<std::string>{}(","), T_COMMA},         {std::hash<std::string>{}("."), T_DOT},
-    {std::hash<std::string>{}("+"), T_ADD},           {std::hash<std::string>{}("-"), T_SUB},
-    {std::hash<std::string>{}("/"), T_DIV},           {std::hash<std::string>{}("*"), T_MUL},
-    {std::hash<std::string>{}("="), T_EQUAL},         {std::hash<std::string>{}("and"), T_AND},
-    {std::hash<std::string>{}("or"), T_OR},           {std::hash<std::string>{}(">"), T_L_ARROW},
-    {std::hash<std::string>{}("<"), T_R_ARROW},       {std::hash<std::string>{}("mod"), T_MODULO},
-    {std::hash<std::string>{}("\""), T_QUOTE},        {std::hash<std::string>{}("\'"), T_SINGLE_LETTER_QUOTE},
+    {std::hash<std::string>{}("void"), T_NO_RETURN},
+    {std::hash<std::string>{}("int8"), T_INT8},
+    {std::hash<std::string>{}("int16"), T_INT16},
+    {std::hash<std::string>{}("int32"), T_INT32},
+    {std::hash<std::string>{}("int64"), T_INT64},
+    {std::hash<std::string>{}("uint8"), T_UINT8},
+    {std::hash<std::string>{}("uint16"), T_UINT16},
+    {std::hash<std::string>{}("uint32"), T_UINT32},
+    {std::hash<std::string>{}("uint64"), T_UINT64},
+    {std::hash<std::string>{}("float32"), T_FLOAT32},
+    {std::hash<std::string>{}("float64"), T_FLOAT64},
+    {std::hash<std::string>{}("func"), T_FUNC},
+    {std::hash<std::string>{}("public"), T_PUBLIC_FUNC},
+    {std::hash<std::string>{}("ret"), T_RET},
+    {std::hash<std::string>{}("{"), T_L_SQUIGGLY},
+    {std::hash<std::string>{}("}"), T_R_SQUIGGLY},
+    {std::hash<std::string>{}("("), T_L_CURLY},
+    {std::hash<std::string>{}(")"), T_R_CURLY},
+    {std::hash<std::string>{}(","), T_COMMA},
+    {std::hash<std::string>{}("."), T_DOT},
+    {std::hash<std::string>{}("+"), T_ADD},
+    {std::hash<std::string>{}("-"), T_SUB},
+    {std::hash<std::string>{}("/"), T_DIV},
+    {std::hash<std::string>{}("*"), T_MUL},
+    {std::hash<std::string>{}("="), T_EQUAL},
+    {std::hash<std::string>{}("and"), T_AND},
+    {std::hash<std::string>{}("or"), T_OR},
+    {std::hash<std::string>{}(">"), T_L_ARROW},
+    {std::hash<std::string>{}("<"), T_R_ARROW},
+    {std::hash<std::string>{}("mod"), T_MODULO},
+    {std::hash<std::string>{}("\""), T_QUOTE},
+    {std::hash<std::string>{}("\'"), T_SINGLE_LETTER_QUOTE},
     {std::hash<std::string>{}("xor"), T_XOR},
 };
-static const std::ReadOnlyLookupTable<size_t, bool> reject = {{std::hash<std::string>{}("\n"), true},
-                                                                       {std::hash<std::string>{}("\r"), false}};
+static const std::ReadOnlyLookupTable<size_t, bool> reject = {
+    {std::hash<std::string>{}("\n"), true},
+    {std::hash<std::string>{}("\r"), false},
+    {std::hash<std::string>{}(" "), false},
+    {std::hash<std::string>{}("\t"), false},
+};
 static const std::regex regex(
     "(([A-Za-z0-9-]+)|(\\s)|([\\\",\\\\',\\(,\\),\\[,\\],\\<,\\>,\\{,\\},\\,:,\\.])|([_,+,=,*,/]+))",
     std::regex_constants::icase);
 
+void warn(const lexToken &token, const char *msg_text) noexcept;
+void error(const lexToken &token, const char *msg_text) noexcept;
 static inline bool isValidName(const lexToken &token) noexcept
 {
     if (token.token != T_IDENTIFIER)
         return false;
     return true;
-}
-
-static inline bool isWhiteSpace(const lexToken &token) noexcept
-{
-    if (token.token != T_WHITESPACE)
-        return false;
-    return true;
-}
-
-static inline void eatWhitespace(const std::vector<lexToken> &lexer, uint32_t *i) noexcept
-{
-    while (isWhiteSpace(lexer[std::min<uint32_t>(lexer.size(), *i)]) && *i != lexer.size())
-    {
-        const uint32_t n = ++(*i);
-        *i = std::min<uint32_t>(lexer.size(), n);
-    }
 }
 
 static inline bool isDataType(const lexToken &token) noexcept
@@ -241,22 +330,6 @@ static inline ASTDataType parseDataType(const lexToken &token) noexcept
     }
 }
 
-void warn(const lexToken &, const char *msg_text) noexcept
-{
-    puts(msg_text);
-}
-
-void error(const lexToken &, const char *msg_text) noexcept
-{
-    if (gf_error_stack)
-        gf_error_stack->push(msg_text);
-    else
-    {
-        puts(msg_text);
-        exit(1);
-    }
-}
-
 ASTLiteral *parseLiteral(const std::vector<lexToken> &lexer, uint32_t *i) noexcept
 {
     ASTLiteral *literal = new (std::nothrow) ASTLiteral();
@@ -286,7 +359,6 @@ ASTLiteral *parseLiteral(const std::vector<lexToken> &lexer, uint32_t *i) noexce
 const ASTBinaryExpression *parseBinaryExpr(const uint8_t precedence_inflator, const std::vector<lexToken> &lexer,
                                            uint32_t *i) noexcept
 {
-    eatWhitespace(lexer, i);
     ASTBinaryExpression *expr = new (std::nothrow) ASTBinaryExpression();
     ASTLiteral *lit_1 = parseLiteral(lexer, i);
     if (lexer[(*i) - 2].token == T_DOT)
@@ -296,15 +368,12 @@ const ASTBinaryExpression *parseBinaryExpr(const uint8_t precedence_inflator, co
     else
         lit_1->data_type = UINT_ANY_TYPE;
     expr->left = std::move(lit_1);
-    eatWhitespace(lexer, i);
     const std::tuple<uint16_t, ASTOperatorType> type = parseOPType(lexer[(*i)++]);
     expr->op = std::get<1>(type);
     expr->precedence = std::get<0>(type) + precedence_inflator;
-    eatWhitespace(lexer, i);
     uint32_t fake_i = std::min<uint32_t>((*i) + 1, lexer.size());
     if (lexer[fake_i].token == T_DOT)
         fake_i += 2;
-    eatWhitespace(lexer, &fake_i);
     if (isBinaryExpr(lexer[fake_i]))
     {
         const ASTBinaryExpression *r_expr = parseBinaryExpr(1 + precedence_inflator, lexer, i);
@@ -336,17 +405,12 @@ const ASTExpression *parseVar(const std::vector<lexToken> &lexer, uint32_t *i) n
         error(lexer[*i], "this is not a supported data type");
         return node;
     }
-
     data_type = parseDataType(lexer[(*i)++]);
-    eatWhitespace(lexer, i);
     [[unlikely]] if (!isValidName(lexer[*i]))
         error(lexer[*i], "this is not a valid param name");
-
     node->extra_data = std::move(lexer[(*i)++].str_token);
-    eatWhitespace(lexer, i);
     if (lexer[(*i)].token != T_EQUAL)
     {
-        eatWhitespace(lexer, i);
         if (isInteger(lexer[(*i)]))
             error(lexer[(*i)], "you missing the equals(=) to define value of the variable");
         ASTLiteral *literal = new (std::nothrow) ASTLiteral();
@@ -362,12 +426,10 @@ const ASTExpression *parseVar(const std::vector<lexToken> &lexer, uint32_t *i) n
     else
     {
         (*i)++;
-        eatWhitespace(lexer, i);
         uint32_t fake_i = *i;
         fake_i++;
         if (lexer[fake_i].token == T_DOT)
             fake_i += 2;
-        eatWhitespace(lexer, &fake_i);
         if (isBinaryExpr(lexer[fake_i]))
         {
             const ASTBinaryExpression *expr = parseBinaryExpr(0, lexer, i);
@@ -391,7 +453,6 @@ const ASTExpression *parseArgs(const std::vector<lexToken> &lexer, uint32_t *i) 
 {
     ASTExpression *expression = new (std::nothrow) ASTExpression();
     expression->type = AST_EXPR_PRAM_LIST;
-    eatWhitespace(lexer, i);
     if (lexer[*i].token == T_L_CURLY)
         (*i)++;
     if (lexer[*i].token != T_R_CURLY)
@@ -404,25 +465,18 @@ const ASTExpression *parseArgs(const std::vector<lexToken> &lexer, uint32_t *i) 
                 error(lexer[*i], "too many arguments or bad syntax");
                 break;
             }
-
             [[unlikely]] if (!isDataType(lexer[*i]))
                 error(lexer[*i], "this is not a supported data type");
-            eatWhitespace(lexer, i);
             ASTLiteral *literal = new (std::nothrow) ASTLiteral();
             literal->data_type = parseDataType(lexer[(*i)++]);
-            eatWhitespace(lexer, i);
-
             [[unlikely]] if (!isValidName(lexer[*i]))
                 error(lexer[*i], "this is not a valid param name");
-
             literal->value = std::move(lexer[(*i)++].str_token);
-            eatWhitespace(lexer, i);
             expression->list.emplace_back(std::move(literal));
-
             if (lexer[*i].token == T_COMMA)
             {
                 (*i)++;
-                eatWhitespace(lexer, i);
+
                 continue;
             }
             else
@@ -435,62 +489,70 @@ const ASTExpression *parseArgs(const std::vector<lexToken> &lexer, uint32_t *i) 
     return std::move(expression);
 }
 
-const ASTBlock *parseBlock(const std::vector<lexToken> &lexer, uint32_t *i) noexcept
+ASTBlock *parseBlock(const std::vector<lexToken> &lexer, uint32_t *i) noexcept
 {
     ASTBlock *block = new (std::nothrow) ASTBlock();
     (*i)++;
-    eatWhitespace(lexer, i);
-    do
+    if (lexer[(*i)].token != T_R_SQUIGGLY)
     {
-        if (lexer.size() <= (*i))
+        do
         {
-            error(lexer[lexer.size() - 1], "there was no was to know when a block ended");
-            break;
-        }
+            if (lexer.size() <= (*i))
+            {
+                error(lexer[lexer.size() - 1], "there was no was to know when a block ended");
+                break;
+            }
+            if (lexer[(*i)].token == T_RET)
+            {
+                (*i)++;
+                ASTExpression *node = new (std::nothrow) ASTExpression();
+                node->type = AST_EXPR_RETURN;
+                uint32_t fake_i = *i;
+                fake_i++;
+                if (lexer[fake_i].token == T_DOT)
+                    fake_i += 2;
 
-        if (lexer[(*i)].token == T_RET)
-        {
-            (*i)++;
-            ASTExpression *node = new (std::nothrow) ASTExpression();
-            node->type = AST_EXPR_RETURN;
-            eatWhitespace(lexer, i);
-            uint32_t fake_i = *i;
-            fake_i++;
-            if (lexer[fake_i].token == T_DOT)
-                fake_i += 2;
-            eatWhitespace(lexer, &fake_i);
-            if (isBinaryExpr(lexer[fake_i]))
-            {
-                const ASTBinaryExpression *expr = parseBinaryExpr(0, lexer, i);
-                [[unlikely]] if (!expr)
-                    expr = new (std::nothrow) ASTBinaryExpression();
-                node->list.emplace_back(std::move(expr));
-            }
-            else
-            {
-                ASTLiteral *literal = parseLiteral(lexer, i);
-                [[unlikely]] if (!literal)
-                    literal = new (std::nothrow) ASTLiteral();
-                if (lexer[(*i) - 2].token == T_DOT)
-                    literal->data_type = FLOAT_ANY_TYPE;
-                else if (lexer[(*i) - 1].token == T_IDENTIFIER && !isInteger(lexer[(*i) - 1]))
-                    literal->data_type = NOT_DETERMINED_DATA_TYPE;
+                if (isBinaryExpr(lexer[fake_i]))
+                {
+                    const ASTBinaryExpression *expr = parseBinaryExpr(0, lexer, i);
+                    [[unlikely]] if (!expr)
+                        expr = new (std::nothrow) ASTBinaryExpression();
+                    node->list.emplace_back(std::move(expr));
+                }
+                else if (!isInteger(lexer[(*i)]) && !isValidName(lexer[(*i)]))
+                {
+                    ASTExpression *expr = new (std::nothrow) ASTExpression();
+                    expr->type = AST_EXPR_NO_RETURN;
+                    node->list.emplace_back(std::move(expr));
+                }
                 else
-                    literal->data_type = UINT_ANY_TYPE;
-                node->list.emplace_back(std::move(literal));
+                {
+                    ASTLiteral *literal = parseLiteral(lexer, i);
+                    [[unlikely]] if (!literal)
+                        literal = new (std::nothrow) ASTLiteral();
+                    if (lexer[(*i) - 2].token == T_DOT)
+                        literal->data_type = FLOAT_ANY_TYPE;
+                    else if (lexer[(*i) - 1].token == T_IDENTIFIER && !isInteger(lexer[(*i) - 1]))
+                        literal->data_type = NOT_DETERMINED_DATA_TYPE;
+                    else
+                        literal->data_type = UINT_ANY_TYPE;
+                    node->list.emplace_back(std::move(literal));
+                }
+                block->list.emplace_back(std::move(node));
             }
-            block->list.emplace_back(std::move(node));
-        }
-        else if (isDataType(lexer[(*i)]))
-            block->list.emplace_back(parseVar(lexer, i));
-        else
-            error(lexer[(*i)++], "this is not a valid in this scope");
-        eatWhitespace(lexer, i);
-    } while (lexer[*i].token != T_R_SQUIGGLY);
+            else if (isDataType(lexer[(*i)]))
+                block->list.emplace_back(parseVar(lexer, i));
+            else
+                error(lexer[(*i)++], "this is not a valid in this scope");
+
+        } while (lexer[*i].token != T_R_SQUIGGLY);
+    }
+    else
+        (*i)++;
     return std::move(block);
 }
 
-const ASTRoot *parse(const std::string &&source,const std::string &&file_name) noexcept
+const ASTRoot *parse(const std::string &&source, const std::string &&file_name) noexcept
 {
     std::vector<lexToken> lexer;
     {
@@ -556,18 +618,16 @@ const ASTRoot *parse(const std::string &&source,const std::string &&file_name) n
     ASTRoot *root = new (std::nothrow) ASTRoot(file_name);
     for (uint32_t i = 0; i < lexer.size(); ++i)
     {
-        eatWhitespace(lexer, &i);
-        if (lexer[i].token == T_FUNC)
+        if (lexer[i].token == T_FUNC || lexer[i].token == T_PUBLIC_FUNC)
         {
+            bool public_ = lexer[i].token != T_FUNC;
             i++;
-            eatWhitespace(lexer, &i);
             [[unlikely]] if (!isValidName(lexer[i]))
                 error(lexer[i], "this is not a valid function name");
-            ASTFuncDef *node = new (std::nothrow) ASTFuncDef(std::move(lexer[i++].str_token));
+            ASTFuncDef *node = new (std::nothrow) ASTFuncDef(std::move(lexer[i++].str_token), public_);
             if (lexer[i].token != T_L_CURLY)
                 error(lexer[i++], "this is not a valid function args opener");
             node->args = parseArgs(lexer, &i);
-            eatWhitespace(lexer, &i);
             if (lexer[i].token != T_S_ARROW)
             {
                 if (isDataType(lexer[i]))
@@ -580,17 +640,26 @@ const ASTRoot *parse(const std::string &&source,const std::string &&file_name) n
             else
             {
                 i++;
-                eatWhitespace(lexer, &i);
                 if (!isDataType(lexer[i]))
                     error(lexer[i++], "this is not a supported data type");
                 node->return_type = parseDataType(lexer[i++]);
             }
-            eatWhitespace(lexer, &i);
             if (lexer[i].token != T_L_SQUIGGLY)
                 error(lexer[i], "this is not a valid function block opener");
             else
                 node->body = parseBlock(lexer, &i);
             root->children.emplace_back(std::move(node));
+
+            if (node->return_type == VOID_TYPE &&
+                (node->body->list.empty() || node->body->list.back()->type != AST_EXPR_RETURN))
+            {
+                ASTExpression *node_ = new (std::nothrow) ASTExpression();
+                node_->type = AST_EXPR_RETURN;
+                ASTExpression *expr = new (std::nothrow) ASTExpression();
+                expr->type = AST_EXPR_NO_RETURN;
+                node_->list.emplace_back(std::move(expr));
+                node->body->list.emplace_back(node_);
+            }
         }
         else if (isDataType(lexer[i]))
             root->children.emplace_back(parseVar(lexer, &i));
@@ -603,10 +672,52 @@ const ASTRoot *parse(const std::string &&source,const std::string &&file_name) n
     return root;
 }
 
+void warn(const lexToken &token, const char *msg_text) noexcept
+{
+    std::string name;
+    if (token.token != T_IDENTIFIER)
+        name = getTokenName(token.token);
+    else
+        name = std::string(token.str_token);
+    std::string out = msg_text;
+    out.resize(out.size() + name.size() + 29);
+    sprintf(out.data(), "%s:Line %u -> Warning Msg: %s", name.c_str(), token.line, msg_text);
+    puts(out.c_str());
+}
+
+void error(const lexToken &token, const char *msg_text) noexcept
+{
+    if (gf_error_stack)
+    {
+        std::string name;
+        if (token.token != T_IDENTIFIER)
+            name = getTokenName(token.token);
+        else
+            name = std::string(token.str_token);
+        std::string out = msg_text;
+        out.resize(out.size() + name.size() + 29);
+        sprintf(out.data(), "[%s]:Line %u -> Error Msg: %s", name.c_str(), token.line, msg_text);
+        gf_error_stack->push(out);
+    }
+    else
+    {
+        std::string name;
+        if (token.token != T_IDENTIFIER)
+            name = getTokenName(token.token);
+        else
+            name = std::string(token.str_token);
+        std::string out = msg_text;
+        out.resize(out.size() + name.size() + 29);
+        sprintf(out.data(), "[%s]:Line %u -> Error Msg: %s", name.c_str(), token.line, msg_text);
+        puts(out.c_str());
+        exit(1);
+    }
+}
+
 void enableSoftErrors() noexcept
 {
     if (!gf_error_stack)
-        gf_error_stack = new (std::nothrow) std::stack<const char *>();
+        gf_error_stack = new (std::nothrow) std::stack<std::string>();
 }
 
 bool hasErrors() noexcept
@@ -616,9 +727,9 @@ bool hasErrors() noexcept
     return false;
 }
 
-const char *popSoftErrorOffStack() noexcept
+const std::string popSoftErrorOffStack() noexcept
 {
-    const char *stack = gf_error_stack->top();
+    std::string stack = gf_error_stack->top();
     gf_error_stack->pop();
     return stack;
 }
