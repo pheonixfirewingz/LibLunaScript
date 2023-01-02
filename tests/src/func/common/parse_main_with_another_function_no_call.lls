@@ -1,0 +1,9 @@
+func add(int32 one,int32 two) -> int32
+{
+    ret 0
+}
+
+public main() -> int32
+{
+    ret 0
+}

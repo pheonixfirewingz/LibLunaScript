@@ -1,0 +1,71 @@
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "FunctionDef",
+            "is_public": false,
+            "name": "add",
+            "return_type": "int32",
+            "parameters": {
+                "type": "Expression",
+                "id": "ParameterList",
+                "declarations": [
+                    {
+                        "type": "Literal",
+                        "data_type": "int32",
+                        "value": "one"
+                    },
+                    {
+                        "type": "Literal",
+                        "data_type": "int32",
+                        "value": "two"
+                    }
+                ]
+            },
+            "body": {
+                "type": "ExecutionBlock",
+                "execution": [
+                    {
+                        "type": "Expression",
+                        "id": "ReturnType",
+                        "declarations": [
+                            {
+                                "type": "Literal",
+                                "data_type": "any uint",
+                                "value": "0"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "type": "FunctionDef",
+            "is_public": true,
+            "name": "main",
+            "return_type": "int32",
+            "parameters": {
+                "type": "Expression",
+                "id": "ParameterList",
+                "declarations": []
+            },
+            "body": {
+                "type": "ExecutionBlock",
+                "execution": [
+                    {
+                        "type": "Expression",
+                        "id": "ReturnType",
+                        "declarations": [
+                            {
+                                "type": "Literal",
+                                "data_type": "any uint",
+                                "value": "0"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ],
+    "module": "parse_main_with_another_function_no_call"
+}

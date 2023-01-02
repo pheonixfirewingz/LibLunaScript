@@ -1,0 +1,59 @@
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "Expression",
+            "id": "VariableDefinition",
+            "data_type": "float64",
+            "name": "x",
+            "declarations": [
+                {
+                    "type": "BinaryExpression",
+                    "precedence": 5,
+                    "op": "+",
+                    "right": {
+                        "type": "BinaryExpression",
+                        "precedence": 6,
+                        "op": "-",
+                        "right": {
+                            "type": "BinaryExpression",
+                            "precedence": 8,
+                            "op": "/",
+                            "right": {
+                                "type": "BinaryExpression",
+                                "precedence": 4,
+                                "op": "and",
+                                "right": {
+                                    "type": "Literal",
+                                    "data_type": "any float",
+                                    "value": "8.0"
+                                },
+                                "left": {
+                                    "type": "Literal",
+                                    "data_type": "any float",
+                                    "value": "6.0"
+                                }
+                            },
+                            "left": {
+                                "type": "Literal",
+                                "data_type": "any float",
+                                "value": "100.0"
+                            }
+                        },
+                        "left": {
+                            "type": "Literal",
+                            "data_type": "any float",
+                            "value": "35.0"
+                        }
+                    },
+                    "left": {
+                        "type": "Literal",
+                        "data_type": "any float",
+                        "value": "20.0"
+                    }
+                }
+            ]
+        }
+    ],
+    "module": "parse_var_binary_expr_17"
+}

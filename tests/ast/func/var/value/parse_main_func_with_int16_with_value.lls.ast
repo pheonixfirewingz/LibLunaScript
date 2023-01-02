@@ -1,0 +1,46 @@
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "FunctionDef",
+            "is_public": false,
+            "name": "main",
+            "return_type": "int32",
+            "parameters": {
+                "type": "Expression",
+                "id": "ParameterList",
+                "declarations": []
+            },
+            "body": {
+                "type": "ExecutionBlock",
+                "execution": [
+                    {
+                        "type": "Expression",
+                        "id": "VariableDefinition",
+                        "data_type": "int16",
+                        "name": "x",
+                        "declarations": [
+                            {
+                                "type": "Literal",
+                                "data_type": "int16",
+                                "value": "20"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "Expression",
+                        "id": "ReturnType",
+                        "declarations": [
+                            {
+                                "type": "Literal",
+                                "data_type": "any uint",
+                                "value": "0"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ],
+    "module": "parse_main_func_with_int16_with_value"
+}

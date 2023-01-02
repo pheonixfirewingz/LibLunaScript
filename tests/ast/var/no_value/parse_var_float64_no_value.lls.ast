@@ -1,0 +1,19 @@
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "Expression",
+            "id": "VariableDefinition",
+            "data_type": "float64",
+            "name": "x",
+            "declarations": [
+                {
+                    "type": "Literal",
+                    "data_type": "float64",
+                    "value": "0.0"
+                }
+            ]
+        }
+    ],
+    "module": "parse_var_float64_no_value"
+}

@@ -1,0 +1,33 @@
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "FunctionDef",
+            "is_public": true,
+            "name": "main",
+            "return_type": "Void",
+            "parameters": {
+                "type": "Expression",
+                "id": "ParameterList",
+                "declarations": []
+            },
+            "body": {
+                "type": "ExecutionBlock",
+                "execution": [
+                    {
+                        "type": "Expression",
+                        "id": "ReturnType",
+                        "declarations": [
+                            {
+                                "type": "Expression",
+                                "id": "NoDataReturn",
+                                "declarations": []
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ],
+    "module": "parse_main_with_no_return"
+}

@@ -26,6 +26,6 @@
 #define FUZZING 0
 #endif
 
-#ifndef CMAKE_COMPILER_NUMBER
-/* #undef CMAKE_COMPILER_NUMBER */
+#ifndef PROJECT_SOURCE_DIR
+#define PROJECT_SOURCE_DIR "/home/digitech/Desktop/LibLunaScript"
 #endif

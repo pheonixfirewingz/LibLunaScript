@@ -1,7 +1,7 @@
 #include "IO.h"
 #include <libos/FileIO.h>
 
-void setRoot(const char* root) noexcept
+void setRoot(const char *root) noexcept
 {
     losSetAssetPath(root);
 }
@@ -38,4 +38,18 @@ losResult fileWrite(const char *path, const int path_size, const char *buf, data
     if ((res = losCloseFile(handle)) != LOS_SUCCESS)
         return res;
     return LOS_SUCCESS;
+}
+
+void fileDelete(const char *path, const int path_size)
+{
+    losFileHandle handle;
+    losFileOpenInfo file;
+    file.fileBits = LOS_FILE_BIT_DELETE_AFTER_CLOSE;
+    file.path = path;
+    file.path_size = path_size;
+    losResult res;
+    if ((res = losOpenFile(&handle, file)) != LOS_SUCCESS)
+        return;
+    if ((res = losCloseFile(handle)) != LOS_SUCCESS)
+        return;
 }

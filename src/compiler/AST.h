@@ -79,6 +79,7 @@ struct ASTExpression : public ASTNode
 {
     std::vector<const ASTNode *> list;
     ASTExpressionType type;
+    ASTDataType data_type = NOT_DETERMINED_DATA_TYPE;
     std::string extra_data = "";
     ASTTypeID getTypeID() const noexcept override { return AST_EXPRESSION;}
 
@@ -137,4 +138,6 @@ struct ASTLiteral : public ASTNode
     std::string value = "";
     ASTDataType data_type = NOT_DETERMINED_DATA_TYPE;
     ASTTypeID getTypeID() const noexcept override { return AST_LITERAL;}
+
+    virtual ~ASTLiteral() = default;
 };

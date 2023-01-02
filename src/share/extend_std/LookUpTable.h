@@ -39,21 +39,21 @@ struct ReadOnlyLookupTable : public ForwardIterator<TableEntry<Key, Value>>
     size_t size_of_table = 0;
 
   public:
-    ReadOnlyLookupTable() noexcept = default;
-    ReadOnlyLookupTable(initializer_list<TableEntry<Key, Value>> entries) noexcept
+    constexpr ReadOnlyLookupTable() noexcept = default;
+    constexpr ReadOnlyLookupTable(initializer_list<TableEntry<Key, Value>> entries) noexcept
     {
         table = new (nothrow) TableEntry<Key, Value>[(size_of_table = entries.size())];
         size_t index = 0;
         for (auto &entry : entries)
             table[index++] = entry;
     }
-    ~ReadOnlyLookupTable() noexcept
+    constexpr ~ReadOnlyLookupTable() noexcept
     {
         if (table != nullptr)
             delete[] table;
     }
 
-    virtual size_t i_size() const noexcept override final
+    virtual constexpr size_t i_size() const noexcept override final
     {
         return size_of_table;
     }

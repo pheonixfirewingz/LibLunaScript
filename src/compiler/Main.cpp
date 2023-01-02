@@ -1,4 +1,5 @@
 #include "../Cmake.h"
+#if COMPILER_TESTING == 0
 #include "IO.h"
 #include "back/IRCodeGen.h"
 #include "front/Parser.h"
@@ -12,24 +13,23 @@ int main(int, char **)
     data_size_t read_str_size = 0;
     if ((res = fileRead("$[asset_base]/test.lls", 23, &read_str, &read_str_size)) != LOS_SUCCESS)
         return res;
-    enableSoftErrors();
-    const ASTRoot *root_ast = parse(std::move(std::string((char *)read_str, 0, read_str_size)), "test");
-    if (hasErrors())
+    LunaScript::compiler::front::Parser parser(std::move(std::string((char *)read_str, 0, read_str_size)), "test");
+    //const ASTRoot const*root_ast = parser.getAST();
+    if (parser.hasErrors())
     {
         stop = true;
-        while (hasErrors())
-            puts(popSoftErrorOffStack().c_str());
+        while (parser.hasErrors())
+            puts(parser.popErrorOffStack().c_str());
     }
-    disableSoftErrors();
     if (stop)
         return 0;
-    auto ast = toJson(root_ast, true);
+    auto ast = parser.asString(true);
     if ((res = fileWrite("$[asset_base]/test.lls.ast", 27, ast.c_str(), ast.size())) != LOS_SUCCESS)
         return res;
-    auto ir = CodeGen::LLVMCodeGen(root_ast).getIR();
+   /* auto ir = CodeGen::LLVMCodeGen(root_ast).getIR();
     if ((res = fileWrite("$[asset_base]/test.ll", 23, ir.c_str(), ir.size())) != LOS_SUCCESS)
         return res;
-    /*ir->setTargetTriple(target_triple);
+    ir->setTargetTriple(target_triple);
     std::string Error;
     auto Target = TargetRegistry::lookupTarget(target_triple, Error);
     if (!Target)
@@ -76,4 +76,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
     disableSoftErrors();
     return ret; // Values other than 0 and -1 are reserved for future use.
 }
+#endif
 #endif

@@ -1,0 +1,5 @@
+func main() -> int32
+{
+    int8 x = 20
+    ret 0
+}

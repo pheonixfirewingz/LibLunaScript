@@ -5,7 +5,7 @@ namespace std
 struct Iterator
 {
   protected:
-    virtual size_t i_size() const noexcept = 0;
+    virtual constexpr size_t i_size() const noexcept = 0;
   public:
     virtual ~Iterator() noexcept = default;
 };

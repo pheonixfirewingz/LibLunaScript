@@ -1,0 +1,19 @@
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "Expression",
+            "id": "VariableDefinition",
+            "data_type": "int8",
+            "name": "x",
+            "declarations": [
+                {
+                    "type": "Literal",
+                    "data_type": "int8",
+                    "value": "20"
+                }
+            ]
+        }
+    ],
+    "module": "parse_var_int8_with_value"
+}

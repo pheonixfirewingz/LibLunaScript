@@ -5,7 +5,7 @@
             "type": "FunctionDef",
             "is_public": true,
             "name": "main",
-            "return_type": "Void",
+            "return_type": "int32",
             "parameters": {
                 "type": "Expression",
                 "id": "ParameterList",
@@ -16,24 +16,12 @@
                 "execution": [
                     {
                         "type": "Expression",
-                        "id": "VariableDefinition",
-                        "name": "x",
-                        "declarations": [
-                            {
-                                "type": "Literal",
-                                "data_type": "uint32",
-                                "value": "0"
-                            }
-                        ]
-                    },
-                    {
-                        "type": "Expression",
                         "id": "ReturnType",
                         "declarations": [
                             {
-                                "type": "Expression",
-                                "id": "NoDataReturn",
-                                "declarations": []
+                                "type": "Literal",
+                                "data_type": "any uint",
+                                "value": "0"
                             }
                         ]
                     }
