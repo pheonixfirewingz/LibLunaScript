@@ -1,46 +1,49 @@
 #include "../Cmake.h"
 #include "IO.h"
-#include "front/Parser.h"
 #include <gtest/gtest.h>
+#include <liblunascript/Compiler.h>
 #include <libos/Defines.h>
 #include <string>
 
-#define COMPILER_TEST(group, extend, test_name)                                                                   \
-    TEST(group, test_name)                                                                                        \
-    {                                                                                                             \
-        libOSInit();                                                                                              \
-        setRoot(PROJECT_SOURCE_DIR);                                                                              \
-        char *read_str_src;                                                                                       \
-        data_size_t read_str_src_size = 0;                                                                        \
-        const auto path_1 =                                                                                       \
-            std::string(std::string("$[asset_base]/tests/src/") + std::string(extend) + #test_name) + ".lls";     \
-        EXPECT_TRUE(fileRead(path_1.c_str(), path_1.size(), &read_str_src, &read_str_src_size) == LOS_SUCCESS);   \
-        char *result_read;                                                                                        \
-        data_size_t result_read_size = 0;                                                                         \
-        const auto path_2 =                                                                                       \
-            std::string(std::string("$[asset_base]/tests/ast/") + std::string(extend) + #test_name) + ".lls.ast"; \
-        EXPECT_TRUE(fileRead(path_2.c_str(), path_2.size(), &result_read, &result_read_size) == LOS_SUCCESS);     \
-        std::string result(result_read, 0, result_read_size);                                                     \
-        LunaScript::compiler::front::Parser parser(std::move(std::string(read_str_src, 0, read_str_src_size)),    \
-                                                   #test_name);                                                   \
-        EXPECT_FALSE(parser.hasErrors());                                                                         \
-        EXPECT_STREQ(parser.asString(true).c_str(), result.c_str());                                              \
-        libOSCleanUp();                                                                                           \
-    }
-
-#define BAD_COMPILER_TEST(group, extend, test_name)                                                             \
+#define COMPILER_TEST(group, extend, test_name)                                                                 \
     TEST(group, test_name)                                                                                      \
     {                                                                                                           \
         libOSInit();                                                                                            \
+        Compiler compiler;                                                                                      \
         setRoot(PROJECT_SOURCE_DIR);                                                                            \
         char *read_str_src;                                                                                     \
         data_size_t read_str_src_size = 0;                                                                      \
         const auto path_1 =                                                                                     \
             std::string(std::string("$[asset_base]/tests/src/") + std::string(extend) + #test_name) + ".lls";   \
         EXPECT_TRUE(fileRead(path_1.c_str(), path_1.size(), &read_str_src, &read_str_src_size) == LOS_SUCCESS); \
-        LunaScript::compiler::front::Parser parser(std::move(std::string(read_str_src, 0, read_str_src_size)),  \
-                                                   #test_name);                                                 \
-        EXPECT_TRUE(parser.hasErrors());                                                                        \
+        char *result_read;                                                                                      \
+        data_size_t result_read_size = 0;                                                                       \
+        const auto path_2 =                                                                                     \
+            std::string(std::string("$[asset_base]/tests/ast/") + std::string(extend) + #test_name) +     \
+            ".lls.ast";                                                                                         \
+        EXPECT_TRUE(fileRead(path_2.c_str(), path_2.size(), &result_read, &result_read_size) == LOS_SUCCESS);   \
+        EXPECT_FALSE(compileAST(&compiler, read_str_src, read_str_src_size, #test_name, std::strlen(#test_name)) != \
+                     LOS_SUCCESS);           \
+        std::string result(result_read, 0, result_read_size);                                                   \
+        EXPECT_STREQ(astToString(compiler).c_str(), result.c_str());                                            \
+        freeCompiler(compiler);                                                                                 \
+        libOSCleanUp();                                                                                         \
+    }
+
+#define BAD_COMPILER_TEST(group, extend, test_name)                                                             \
+    TEST(group, test_name)                                                                                      \
+    {                                                                                                           \
+        libOSInit();                                                                                            \
+        Compiler compiler;                                                                                      \
+        setRoot(PROJECT_SOURCE_DIR);                                                                            \
+        char *read_str_src;                                                                                     \
+        data_size_t read_str_src_size = 0;                                                                      \
+        const auto path_1 =                                                                                     \
+            std::string(std::string("$[asset_base]/tests/src/") + std::string(extend) + #test_name) + ".lls";   \
+        EXPECT_TRUE(fileRead(path_1.c_str(), path_1.size(), &read_str_src, &read_str_src_size) == LOS_SUCCESS); \
+        EXPECT_TRUE(compileAST(&compiler, read_str_src, read_str_src_size, #test_name, std::strlen(#test_name)) != \
+                    LOS_SUCCESS);            \
+        freeCompiler(compiler);                                                                                 \
         libOSCleanUp();                                                                                         \
     }
 
@@ -107,8 +110,8 @@ COMPILER_TEST(AST, "func/common/", parse_main_func)
 COMPILER_TEST(AST, "func/common/", parse_main_with_no_return)
 COMPILER_TEST(AST, "func/common/", parse_main_with_no_return_used_return)
 COMPILER_TEST(AST, "func/common/", parse_main_with_another_function_no_call)
-//COMPILER_TEST(AST, "func/common/", parse_main_with_another_function_call)
-// function basics - variables with set value
+// COMPILER_TEST(AST, "func/common/", parse_main_with_another_function_call)
+//  function basics - variables with set value
 COMPILER_TEST(AST, "func/var/value/", parse_main_func_with_uint8_with_value)
 COMPILER_TEST(AST, "func/var/value/", parse_main_func_with_uint16_with_value)
 COMPILER_TEST(AST, "func/var/value/", parse_main_func_with_uint32_with_value)

@@ -10,7 +10,7 @@ losResult fileRead(const char *path, const int path_size, char **buf, data_size_
 {
     losFileHandle handle;
     losFileOpenInfo file;
-    file.fileBits = LOS_FILE_BIT_READ | LOS_FILE_BIT_CREATE;
+    file.fileBits = LOS_FILE_BIT_READ;
     file.path = path;
     file.path_size = path_size;
     losResult res;
@@ -23,11 +23,14 @@ losResult fileRead(const char *path, const int path_size, char **buf, data_size_
     return LOS_SUCCESS;
 }
 
-losResult fileWrite(const char *path, const int path_size, const char *buf, data_size_t buf_size) noexcept
+losResult fileWrite(const char *path, const int path_size, const char *buf, data_size_t buf_size, bool create) noexcept
 {
     losFileHandle handle;
     losFileOpenInfo file;
-    file.fileBits = LOS_FILE_BIT_WRITE | LOS_FILE_BIT_CREATE;
+    if (create)
+        file.fileBits = LOS_FILE_BIT_WRITE | LOS_FILE_BIT_CREATE;
+    else
+        file.fileBits = LOS_FILE_BIT_WRITE;
     file.path = path;
     file.path_size = path_size;
     losResult res;

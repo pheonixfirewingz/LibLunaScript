@@ -6,36 +6,29 @@ set ( CMAKE_CXX_STANDARD_REQUIRED ON )
 set ( LIB_MODE OFF )
 set ( DEBUG_MODE ON )
 set ( FUZZING OFF )
-set ( COMPILER_TESTING OFF )
-
+set ( COMPILER_TESTING ON )
 # options end
-if ( CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
-    set ( CMAKE_COMPILER_NUMBER 0 )
-elseif ( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" )
-    set ( CMAKE_COMPILER_NUMBER 1 )
-elseif ( CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" )
-    set ( CMAKE_COMPILER_NUMBER 2 )
-else ()
-    message ( FATAL_ERROR "compiler not supported" )
-endif ()
 
-configure_file ( src/Cmake.h.in ../src/Cmake.h @ONLY )
-include_directories ( ${PROJECT_SOURCE_DIR}/src/share/rapidjson/include STATIC )
-include_directories ( ${PROJECT_SOURCE_DIR}/src/share STATIC )
+configure_file ( src/Cmake.h.in src/Cmake.h @ONLY )
 
 set ( compiler_source
-    src/compiler/front/Parser.cpp
-    src/compiler/front/Json.cpp
-    src/compiler/back/IRCodeGen.cpp
-    src/compiler/back/ByteCodeGen.cpp
-    src/compiler/back/DebugGen.cpp
-    src/compiler/IO.cpp
-    src/compiler/Main.cpp
+     ${PROJECT_SOURCE_DIR}/src/lib/CompilerAPI.cpp
+     ${PROJECT_SOURCE_DIR}/src/lib/front/Parser.cpp
+     ${PROJECT_SOURCE_DIR}/src/lib/front/Json.cpp
+     ${PROJECT_SOURCE_DIR}/src/lib/back/ByteCodeGen.cpp
+     ${PROJECT_SOURCE_DIR}/src/lib/back/DebugGen.cpp
+     
+)
+
+set ( app_source 
+${PROJECT_SOURCE_DIR}/src/application/IO.cpp
+${PROJECT_SOURCE_DIR}/src/application/Main.cpp
 )
 
 if ( ${COMPILER_TESTING} )
-    set ( compiler_source ${compiler_source}
-        src/compiler/Test.cpp
+    set ( app_source 
+    ${PROJECT_SOURCE_DIR}/src/application/Test.cpp
+    ${PROJECT_SOURCE_DIR}/src/application/IO.cpp
     )
 
     include ( FetchContent )
@@ -50,52 +43,22 @@ if ( ${COMPILER_TESTING} )
 endif ()
 
 add_library ( libos SHARED IMPORTED )
-set_property ( TARGET libos PROPERTY IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/libs/binarys/liblibos.so )
 
-if ( ${LIB_MODE} )
-    add_library ( LunaScript SHARED ${compiler_source} )
-else ()
-    add_executable ( LunaScript ${compiler_source} )
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    message(INFO " - building for Linux....")
+    include(${PROJECT_SOURCE_DIR}/CMake_Build_Platforms/Linux.cmake)
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    message(INFO " - building for Windows....")
+    include(${PROJECT_SOURCE_DIR}/CMake_Build_Platforms/Windows.cmake)
+else()
+    message(FATAL_ERROR "system not supported")
+endif()
 
-    if ( CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" )
-    else ()
-        target_include_directories ( LunaScript PRIVATE /usr/lib/llvm-15/include STATIC )
-        target_compile_options ( LunaScript PRIVATE -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS )
-        target_link_options ( LunaScript PRIVATE -L/usr/lib/llvm-15/lib -lLLVM-15 )
-    endif ()
-
-    if ( ${COMPILER_TESTING} )
-        target_link_libraries ( LunaScript PRIVATE GTest::gtest_main libos )
-    else ()
-        target_link_libraries ( LunaScript PRIVATE libos )
-    endif ()
-endif ()
-
-set_property ( TARGET LunaScript PROPERTY CXX_STANDARD 20 )
-target_include_directories ( LunaScript PRIVATE ${PROJECT_SOURCE_DIR}/libs/include STATIC )
-target_compile_options ( LunaScript PRIVATE -Wall -Wextra -Werror )
-
-if ( ${DEBUG_MODE} )
-    if ( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" )
-        if ( ${COMPILER_TESTING} )
-            gtest_discover_tests ( LunaScript )
-            target_compile_options ( LunaScript PRIVATE -O2 -g3 -static-libgcc -static-libstdc++ )
-        else ()
-            target_compile_options ( LunaScript PRIVATE -static-libgcc -static-libstdc++ -g3 -O0 )
-        endif ()
-    else ()
-        if ( ${FUZZING} )
-            target_compile_options ( LunaScript PRIVATE -fsanitize=fuzzer,undefined )
-            target_link_options ( LunaScript PRIVATE -fsanitize=fuzzer,undefined )
-        else ()
-            if ( ${COMPILER_TESTING} )
-                gtest_discover_tests ( LunaScript )
-                target_compile_options ( LunaScript PRIVATE -O2 -g3 )
-            else ()
-                target_compile_options ( LunaScript PRIVATE -g3 -O0 )
-            endif ()
-        endif ()
-    endif ()
-else ()
-    target_compile_options ( LunaScript PRIVATE -O3 -g0 )
+add_executable ( LunaScript ${app_source} )
+target_link_libraries(LunaScript PRIVATE liblunascript libos)
+target_include_directories (LunaScript PRIVATE  ${PROJECT_SOURCE_DIR}/libs/include STATIC )
+target_include_directories (LunaScript PRIVATE  ${PROJECT_SOURCE_DIR}/src/share STATIC )
+if ( ${COMPILER_TESTING} )
+    gtest_discover_tests ( LunaScript )
+    target_link_libraries(LunaScript PRIVATE GTest::gtest_main liblunascript libos)
 endif ()

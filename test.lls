@@ -1,9 +1,4 @@
-func getOne() -> int8
-{
-    ret 1
-}
-
 public main() -> int32
 {
-    ret getOne()
+    ret 1
 }

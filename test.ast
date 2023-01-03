@@ -21,7 +21,7 @@
                             {
                                 "type": "Literal",
                                 "data_type": "any uint",
-                                "value": "0"
+                                "value": "1"
                             }
                         ]
                     }

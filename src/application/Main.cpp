@@ -1,31 +1,59 @@
 #include "../Cmake.h"
-#if COMPILER_TESTING == 0
 #include "IO.h"
-#include "back/IRCodeGen.h"
-#include "front/Parser.h"
+#include <liblunascript/Compiler.h>
 #include <argparse/argparse.hpp>
+#include <cstdio>
+
+//int main(int argc, char **argv)
 int main(int, char **)
 {
+    /* argparse::ArgumentParser program("LunaScript");
+
+    program.add_argument("input").required().help("the sorce file name");
+     program.add_argument("-o", "--output").required().help("specify the output file.");
+    program.add_argument("-O", "--optimize").required().help("optimization level").default_value(0);
+
+    try
+    {
+        program.parse_args(argc, argv);
+    }
+    catch (const std::runtime_error &err)
+    {
+        std::cerr << err.what() << std::endl;
+        std::cerr << program;
+        std::exit(1);
+    }*/
+
     bool stop = false;
-    setRoot("home/digitech/Desktop/LibLunaScript");
+    setRoot(PROJECT_SOURCE_DIR);
     losResult res;
+    Compiler compiler;
     char *read_str;
     data_size_t read_str_size = 0;
-    if ((res = fileRead("$[asset_base]/test.lls", 23, &read_str, &read_str_size)) != LOS_SUCCESS)
+    //std::string path_1("$[asset_base]/" + program.get("input"));
+    std::string path_1("$[asset_base]/test.lls");
+    if(!path_1.ends_with(".lls"))
+    {
+        printf("ERROR: %s is not the correct file format",path_1.c_str());
+        std::exit(1);
+    }
+    if ((res = fileRead(path_1.c_str(), path_1.size(), &read_str, &read_str_size)) != LOS_SUCCESS)
         return res;
-    LunaScript::compiler::front::Parser parser(std::move(std::string((char *)read_str, 0, read_str_size)), "test");
-    //const ASTRoot const*root_ast = parser.getAST();
-    if (parser.hasErrors())
+    if (compileAST(&compiler,read_str,read_str_size,"test",4) != LOS_SUCCESS)
     {
         stop = true;
-        while (parser.hasErrors())
-            puts(parser.popErrorOffStack().c_str());
+        while (hasErrorOnStack(compiler))
+            puts(getErrorOffStack(compiler).c_str());
     }
     if (stop)
         return 0;
-    auto ast = parser.asString(true);
-    if ((res = fileWrite("$[asset_base]/test.lls.ast", 27, ast.c_str(), ast.size())) != LOS_SUCCESS)
-        return res;
+    auto ast = astToString(compiler);
+    //std::string path_2("$[asset_base]/" + program.get("-o"));
+    std::string path_2("$[asset_base]/test.ast");
+    if ((res = fileWrite(path_2.c_str(), path_2.size(), ast.c_str(), ast.size())) != LOS_SUCCESS)
+        if ((res = fileWrite(path_2.c_str(), path_2.size(), ast.c_str(), ast.size(),false)) != LOS_SUCCESS)
+            return res;
+    freeCompiler(compiler);
    /* auto ir = CodeGen::LLVMCodeGen(root_ast).getIR();
     if ((res = fileWrite("$[asset_base]/test.ll", 23, ir.c_str(), ir.size())) != LOS_SUCCESS)
         return res;
@@ -76,5 +104,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
     disableSoftErrors();
     return ret; // Values other than 0 and -1 are reserved for future use.
 }
-#endif
 #endif
