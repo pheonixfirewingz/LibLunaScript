@@ -5,7 +5,7 @@ set(CMAKE_CXX_CXX_EXTENSIONS O)
 set_property ( TARGET libos PROPERTY IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/libs/binarys/liblibos.so )
 
 set( compiler_source ${compiler_source}
-${PROJECT_SOURCE_DIR}/src/lib/compiler/back/IRCodeGen.cpp)
+${PROJECT_SOURCE_DIR}/src/lib/back/IRCodeGen.cpp)
 
 
 add_library ( liblunascript SHARED ${compiler_source} )

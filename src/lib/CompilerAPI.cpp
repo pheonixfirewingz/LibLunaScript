@@ -1,5 +1,6 @@
-#include <liblunascript/Compiler.h>
 #include "front/Parser.h"
+#include <cstring>
+#include <liblunascript/Compiler.h>
 
 struct Compiler_T
 {
@@ -23,14 +24,18 @@ uint8_t hasErrorOnStack(Compiler compiler)
     return compiler->parser->hasErrors();
 }
 
-std::string getErrorOffStack(Compiler compiler)
+void getErrorOffStack(Compiler compiler, char **str, data_size_t *str_size)
 {
-    return compiler->parser->popErrorOffStack();
+    std::string err = compiler->parser->popErrorOffStack();
+    (*str) = new char[(*str_size = err.size())];
+    strcpy(*str, err.c_str());
 }
 
-std::string astToString(Compiler compiler)
+void astToString(Compiler compiler, char **str, data_size_t *str_size)
 {
-    return compiler->parser->asString(true);
+    std::string err = compiler->parser->asString(true);
+    (*str) = new char[(*str_size = err.size())];
+    strcpy(*str, err.c_str());
 }
 
 void freeCompiler(Compiler compiler)

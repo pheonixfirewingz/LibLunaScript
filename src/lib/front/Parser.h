@@ -86,12 +86,10 @@ class Parser
 
   private:
     uint32_t lexer_index = 0;
-    inline uint32_t getIndexGaurd(const std::vector<lexToken> &lexer, bool inc = false) noexcept
+    inline uint32_t getIndexGuard(const std::vector<lexToken> &lexer, bool inc = false) noexcept
     {
-        if (inc)
-            lexer_index++;
-        if (lexer_index < (lexer.size() - 1))
-            return (lexer.size() - 1);
+        if (inc && lexer_index < lexer.size())
+            return lexer_index++;
         return lexer_index;
     }
 
@@ -104,7 +102,7 @@ class Parser
 
     inline bool isValidFuncCall(const std::vector<lexToken> &lexer) noexcept
     {
-        if (lexer[getIndexGaurd(lexer)].token == T_IDENTIFIER && lexer[getIndexGaurd(lexer) + 1].token == T_L_CURLY)
+        if (lexer[getIndexGuard(lexer)].token == T_IDENTIFIER && lexer[getIndexGuard(lexer) + 1].token == T_L_CURLY)
             return true;
         return false;
     }
@@ -396,6 +394,7 @@ class Parser
     ~Parser()
     {
         delete gf_error_stack;
+        delete root;
     }
 };
 } // namespace LunaScript::compiler::front

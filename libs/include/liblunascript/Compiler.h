@@ -33,7 +33,7 @@ EXPORT_DLL losResult compileAST(Compiler *compiler, const char *src, const data_
                                 const data_size_t filename_size);
 
 EXPORT_DLL uint8_t hasErrorOnStack(Compiler compiler);
-EXPORT_DLL std::string getErrorOffStack(Compiler compiler);
-EXPORT_DLL std::string astToString(Compiler compiler);
+EXPORT_DLL void getErrorOffStack(Compiler compiler,char** str,data_size_t* str_size);
+EXPORT_DLL void astToString(Compiler compiler,char** str,data_size_t* str_size);
 
 EXPORT_DLL void freeCompiler(Compiler compiler);

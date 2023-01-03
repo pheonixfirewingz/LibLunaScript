@@ -50,17 +50,17 @@ static const std::regex regex(
 ASTLiteral *Parser::parseLiteral(const std::vector<lexToken> &lexer) noexcept
 {
     ASTLiteral *literal = new ASTLiteral();
-    if (lexer[getIndexGaurd(lexer)].token != T_QUOTE)
+    if (lexer[getIndexGuard(lexer)].token != T_QUOTE)
     {
-        [[unlikely]] if (!isInteger(lexer[getIndexGaurd(lexer)]) && !isValidName(lexer[getIndexGaurd(lexer)]))
-            error(lexer[getIndexGaurd(lexer)], "this is not a valid numeric value or variable name");
-        literal->value = std::move(lexer[getIndexGaurd(lexer,true)].str_token);
-        if (lexer[getIndexGaurd(lexer)].token == T_DOT)
+        [[unlikely]] if (!isInteger(lexer[getIndexGuard(lexer)]) && !isValidName(lexer[getIndexGuard(lexer)]))
+            error(lexer[getIndexGuard(lexer)], "this is not a valid numeric value or variable name");
+        literal->value = std::move(lexer[getIndexGuard(lexer,true)].str_token);
+        if (lexer[getIndexGuard(lexer)].token == T_DOT)
         {
-            [[unlikely]] if (!isInteger(lexer[getIndexGaurd(lexer,true)]) && !isValidName(lexer[getIndexGaurd(lexer)]))
-                error(lexer[getIndexGaurd(lexer)], "this is not a valid numeric value or variable name");
+            [[unlikely]] if (!isInteger(lexer[getIndexGuard(lexer,true)]) && !isValidName(lexer[getIndexGuard(lexer)]))
+                error(lexer[getIndexGuard(lexer)], "this is not a valid numeric value or variable name");
             literal->value += '.';
-            literal->value += std::move(lexer[getIndexGaurd(lexer,true)].str_token);
+            literal->value += std::move(lexer[getIndexGuard(lexer,true)].str_token);
         }
         else if (literal->data_type == FLOAT32_TYPE || literal->data_type == FLOAT64_TYPE)
         {
@@ -68,7 +68,7 @@ ASTLiteral *Parser::parseLiteral(const std::vector<lexToken> &lexer) noexcept
         }
     }
     else
-        error(lexer[getIndexGaurd(lexer)], "we don't have string support yet");
+        error(lexer[getIndexGuard(lexer)], "we don't have string support yet");
     return std::move(literal);
 }
 
@@ -76,17 +76,17 @@ const ASTBinaryExpression *Parser::parseBinaryExpr(const uint8_t precedence_infl
 {
     ASTBinaryExpression *expr = new ASTBinaryExpression();
     ASTLiteral *lit_1 = parseLiteral(lexer);
-    if (lexer[getIndexGaurd(lexer) - 2].token == T_DOT)
+    if (lexer[getIndexGuard(lexer) - 2].token == T_DOT)
         lit_1->data_type = FLOAT_ANY_TYPE;
-    else if (lexer[getIndexGaurd(lexer) - 1].token == T_IDENTIFIER && !isInteger(lexer[getIndexGaurd(lexer) - 1]))
+    else if (lexer[getIndexGuard(lexer) - 1].token == T_IDENTIFIER && !isInteger(lexer[getIndexGuard(lexer) - 1]))
         lit_1->data_type = NOT_DETERMINED_DATA_TYPE;
     else
         lit_1->data_type = UINT_ANY_TYPE;
     expr->left = std::move(lit_1);
-    const std::tuple<uint16_t, ASTOperatorType> type = parseOPType(lexer[getIndexGaurd(lexer,true)]);
+    const std::tuple<uint16_t, ASTOperatorType> type = parseOPType(lexer[getIndexGuard(lexer,true)]);
     expr->op = std::get<1>(type);
     expr->precedence = std::get<0>(type) + precedence_inflator;
-    uint32_t fake_i = std::min<uint32_t>(getIndexGaurd(lexer) + 1, lexer.size());
+    uint32_t fake_i = std::min<uint32_t>(getIndexGuard(lexer) + 1, lexer.size());
     if (lexer[fake_i].token == T_DOT)
         fake_i += 2;
     if (isBinaryExpr(lexer[fake_i]))
@@ -98,15 +98,15 @@ const ASTBinaryExpression *Parser::parseBinaryExpr(const uint8_t precedence_infl
     }
     else
     {
-        if (!isInteger(lexer[getIndexGaurd(lexer)]) && !isValidName(lexer[getIndexGaurd(lexer)]))
+        if (!isInteger(lexer[getIndexGuard(lexer)]) && !isValidName(lexer[getIndexGuard(lexer)]))
         {
-            error(lexer[getIndexGaurd(lexer)], "no good data or variable provided");
+            error(lexer[getIndexGuard(lexer)], "no good data or variable provided");
             return expr;
         }
         ASTLiteral *lit_2 = parseLiteral(lexer);
-        if (lexer[getIndexGaurd(lexer) - 2].token == T_DOT)
+        if (lexer[getIndexGuard(lexer) - 2].token == T_DOT)
             lit_2->data_type = FLOAT_ANY_TYPE;
-        else if (lexer[getIndexGaurd(lexer) - 1].token == T_IDENTIFIER && !isInteger(lexer[getIndexGaurd(lexer) - 1]))
+        else if (lexer[getIndexGuard(lexer) - 1].token == T_IDENTIFIER && !isInteger(lexer[getIndexGuard(lexer) - 1]))
             lit_2->data_type = NOT_DETERMINED_DATA_TYPE;
         else
             lit_2->data_type = UINT_ANY_TYPE;
@@ -120,20 +120,20 @@ const ASTExpression *Parser::parseVar(const std::vector<lexToken> &lexer,bool is
     ASTExpression *node = new ASTExpression();
     node->type = AST_EXPR_VAR_DEFINED;
     ASTDataType data_type;
-    [[unlikely]] if (!isDataType(lexer[getIndexGaurd(lexer)]))
+    [[unlikely]] if (!isDataType(lexer[getIndexGuard(lexer)]))
     {
-        error(lexer[getIndexGaurd(lexer)], "this is not a supported data type");
+        error(lexer[getIndexGuard(lexer)], "this is not a supported data type");
         return node;
     }
-    data_type = parseDataType(lexer[getIndexGaurd(lexer,true)]);
+    data_type = parseDataType(lexer[getIndexGuard(lexer,true)]);
     node->data_type = data_type;
-    [[unlikely]] if (!isValidName(lexer[getIndexGaurd(lexer)]))
-        error(lexer[getIndexGaurd(lexer)], "this is not a valid param name");
-    node->extra_data = std::move(lexer[getIndexGaurd(lexer,true)].str_token);
-    if (lexer[getIndexGaurd(lexer)].token != T_EQUAL)
+    [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
+        error(lexer[getIndexGuard(lexer)], "this is not a valid param name");
+    node->extra_data = std::move(lexer[getIndexGuard(lexer,true)].str_token);
+    if (lexer[getIndexGuard(lexer)].token != T_EQUAL)
     {
-        if (isInteger(lexer[getIndexGaurd(lexer)]))
-            error(lexer[getIndexGaurd(lexer)], "you missing the equals(=) to define value of the variable");
+        if (isInteger(lexer[getIndexGuard(lexer)]))
+            error(lexer[getIndexGuard(lexer)], "you missing the equals(=) to define value of the variable");
         ASTLiteral *literal = new ASTLiteral();
         literal->data_type = data_type;
         if (literal->data_type >= INT8_TYPE && literal->data_type <= UINT64_TYPE)
@@ -146,19 +146,19 @@ const ASTExpression *Parser::parseVar(const std::vector<lexToken> &lexer,bool is
     }
     else
     {
-        (void)getIndexGaurd(lexer,true);
+        (void)getIndexGuard(lexer,true);
 
         if (isValidFuncCall(lexer) && !is_global)
         {
             puts("var def: function call hit");
             std::exit(0);
         }
-        if (!isInteger(lexer[getIndexGaurd(lexer)]) && !isValidName(lexer[getIndexGaurd(lexer)]))
+        if (!isInteger(lexer[getIndexGuard(lexer)]) && !isValidName(lexer[getIndexGuard(lexer)]))
         {
-            error(lexer[getIndexGaurd(lexer)], "no good stating data for variable provided");
+            error(lexer[getIndexGuard(lexer)], "no good stating data for variable provided");
             return node;
         }
-        uint32_t fake_i = getIndexGaurd(lexer);
+        uint32_t fake_i = getIndexGuard(lexer);
         fake_i++;
         if (lexer[fake_i].token == T_DOT)
             fake_i += 2;
@@ -185,60 +185,60 @@ const ASTExpression *Parser::parseArgs(const std::vector<lexToken> &lexer) noexc
 {
     ASTExpression *expression = new ASTExpression();
     expression->type = AST_EXPR_PRAM_LIST;
-    if (lexer[getIndexGaurd(lexer)].token == T_L_CURLY)
-        (void)getIndexGaurd(lexer,true);
-    if (lexer[getIndexGaurd(lexer)].token != T_R_CURLY)
+    if (lexer[getIndexGuard(lexer)].token == T_L_CURLY)
+        (void)getIndexGuard(lexer,true);
+    if (lexer[getIndexGuard(lexer)].token != T_R_CURLY)
     {
         uint32_t n = 0;
         do
         {
             [[unlikely]] if (n >= 100)
             {
-                error(lexer[getIndexGaurd(lexer)], "too many arguments or bad syntax");
+                error(lexer[getIndexGuard(lexer)], "too many arguments or bad syntax");
                 break;
             }
-            [[unlikely]] if (!isDataType(lexer[getIndexGaurd(lexer)]))
-                error(lexer[getIndexGaurd(lexer)], "this is not a supported data type");
+            [[unlikely]] if (!isDataType(lexer[getIndexGuard(lexer)]))
+                error(lexer[getIndexGuard(lexer)], "this is not a supported data type");
             ASTLiteral *literal = new ASTLiteral();
-            literal->data_type = parseDataType(lexer[getIndexGaurd(lexer,true)]);
-            [[unlikely]] if (!isValidName(lexer[getIndexGaurd(lexer)]))
-                error(lexer[getIndexGaurd(lexer)], "this is not a valid param name");
-            literal->value = std::move(lexer[getIndexGaurd(lexer,true)].str_token);
+            literal->data_type = parseDataType(lexer[getIndexGuard(lexer,true)]);
+            [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
+                error(lexer[getIndexGuard(lexer)], "this is not a valid param name");
+            literal->value = std::move(lexer[getIndexGuard(lexer,true)].str_token);
             expression->list.emplace_back(std::move(literal));
-            if (lexer[getIndexGaurd(lexer)].token == T_COMMA)
+            if (lexer[getIndexGuard(lexer)].token == T_COMMA)
             {
-                (void)getIndexGaurd(lexer,true);
+                (void)getIndexGuard(lexer,true);
 
                 continue;
             }
             else
                 break;
         } while (true);
-        (void)getIndexGaurd(lexer,true);
+        (void)getIndexGuard(lexer,true);
     }
     else
-        (void)getIndexGaurd(lexer,true);
+        (void)getIndexGuard(lexer,true);
     return std::move(expression);
 }
 
 ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer) noexcept
 {
     ASTBlock *block = new ASTBlock();
-    if (lexer[getIndexGaurd(lexer,true)].token != T_R_SQUIGGLY)
+    if (lexer[getIndexGuard(lexer,true)].token != T_R_SQUIGGLY)
     {
         do
         {
-            if (lexer.size() <= getIndexGaurd(lexer))
+            if (lexer.size() <= getIndexGuard(lexer))
             {
                 error(lexer[lexer.size() - 1], "there was no was to know when a block ended");
                 break;
             }
-            if (lexer[getIndexGaurd(lexer)].token == T_RET)
+            if (lexer[getIndexGuard(lexer)].token == T_RET)
             {
-                (void)getIndexGaurd(lexer, true);
+                (void)getIndexGuard(lexer, true);
                 ASTExpression *node = new ASTExpression();
                 node->type = AST_EXPR_RETURN;
-                uint32_t fake_i = getIndexGaurd(lexer);
+                uint32_t fake_i = getIndexGuard(lexer);
                 fake_i++;
                 if (lexer[fake_i].token == T_DOT)
                     fake_i += 2;
@@ -250,7 +250,7 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer) noexcept
                         expr = new ASTBinaryExpression();
                     node->list.emplace_back(std::move(expr));
                 }
-                else if (!isInteger(lexer[getIndexGaurd(lexer)]) && !isValidName(lexer[getIndexGaurd(lexer)]))
+                else if (!isInteger(lexer[getIndexGuard(lexer)]) && !isValidName(lexer[getIndexGuard(lexer)]))
                 {
                     ASTExpression *expr = new ASTExpression();
                     expr->type = AST_EXPR_NO_RETURN;
@@ -266,9 +266,9 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer) noexcept
                     ASTLiteral *literal = parseLiteral(lexer);
                     [[unlikely]] if (!literal)
                         literal = new ASTLiteral();
-                    if (lexer[getIndexGaurd(lexer) - 2].token == T_DOT)
+                    if (lexer[getIndexGuard(lexer) - 2].token == T_DOT)
                         literal->data_type = FLOAT_ANY_TYPE;
-                    else if (lexer[getIndexGaurd(lexer) - 1].token == T_IDENTIFIER && !isInteger(lexer[getIndexGaurd(lexer) - 1]))
+                    else if (lexer[getIndexGuard(lexer) - 1].token == T_IDENTIFIER && !isInteger(lexer[getIndexGuard(lexer) - 1]))
                         literal->data_type = NOT_DETERMINED_DATA_TYPE;
                     else
                         literal->data_type = UINT_ANY_TYPE;
@@ -281,15 +281,15 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer) noexcept
                 puts("func global: function call hit");
                 std::exit(0);
             }
-            else if (isDataType(lexer[getIndexGaurd(lexer)]))
+            else if (isDataType(lexer[getIndexGuard(lexer)]))
                 block->list.emplace_back(parseVar(lexer));
             else
-                error(lexer[getIndexGaurd(lexer,true)], "this is not a valid in this scope");
+                error(lexer[getIndexGuard(lexer,true)], "this is not a valid in this scope");
 
-        } while (lexer[getIndexGaurd(lexer)].token != T_R_SQUIGGLY);
+        } while (lexer[getIndexGuard(lexer)].token != T_R_SQUIGGLY);
     }
     else
-        (void)getIndexGaurd(lexer,true);
+        (void)getIndexGuard(lexer,true);
     return block;
 }
 
@@ -362,35 +362,35 @@ void Parser::parse(const std::string &&source) noexcept
     // end lexer here
     //------------------------------------------------------------------------------------
     // now we parse
-    for (; lexer_index < lexer.size(); ++lexer_index)
+    for (; lexer_index < lexer.size(); lexer_index++)
     {
-        if (lexer[getIndexGaurd(lexer)].token == T_FUNC || lexer[getIndexGaurd(lexer)].token == T_PUBLIC_FUNC)
+        if (lexer[getIndexGuard(lexer)].token == T_FUNC || lexer[getIndexGuard(lexer)].token == T_PUBLIC_FUNC)
         {
-            bool public_ = lexer[getIndexGaurd(lexer,true)].token != T_FUNC;
-            [[unlikely]] if (!isValidName(lexer[getIndexGaurd(lexer)]))
-                error(lexer[getIndexGaurd(lexer)], "this is not a valid function name");
-            ASTFuncDef *node = new ASTFuncDef(std::move(lexer[getIndexGaurd(lexer,true)].str_token), public_);
-            if (lexer[getIndexGaurd(lexer)].token != T_L_CURLY)
-                error(lexer[getIndexGaurd(lexer,true)], "this is not a valid function args opener");
+            bool public_ = lexer[getIndexGuard(lexer,true)].token != T_FUNC;
+            [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
+                error(lexer[getIndexGuard(lexer)], "this is not a valid function name");
+            ASTFuncDef *node = new ASTFuncDef(std::move(lexer[getIndexGuard(lexer,true)].str_token), public_);
+            if (lexer[getIndexGuard(lexer)].token != T_L_CURLY)
+                error(lexer[getIndexGuard(lexer,true)], "this is not a valid function args opener");
             node->args = parseArgs(lexer);
-            if (lexer[getIndexGaurd(lexer)].token != T_S_ARROW)
+            if (lexer[getIndexGuard(lexer)].token != T_S_ARROW)
             {
-                if (isDataType(lexer[getIndexGaurd(lexer)]))
-                    error(lexer[getIndexGaurd(lexer,true)],
+                if (isDataType(lexer[getIndexGuard(lexer)]))
+                    error(lexer[getIndexGuard(lexer,true)],
                           "you forgot to declare the return type -> to tell me what you are returning");
-                else if (lexer[getIndexGaurd(lexer,true)].token != T_L_SQUIGGLY)
-                    error(lexer[getIndexGaurd(lexer,true)], "syntax error garbage return type");
+                else if (lexer[getIndexGuard(lexer,true)].token != T_L_SQUIGGLY)
+                    error(lexer[getIndexGuard(lexer,true)], "syntax error garbage return type");
                 else
                     node->return_type = VOID_TYPE;
             }
             else
             {
-                if (!isDataType(lexer[getIndexGaurd(lexer, true)]))
-                    error(lexer[getIndexGaurd(lexer,true)], "this is not a supported data type");
-                node->return_type = parseDataType(lexer[getIndexGaurd(lexer,true)]);
+                if (!isDataType(lexer[getIndexGuard(lexer, true)]))
+                    error(lexer[getIndexGuard(lexer,true)], "this is not a supported data type");
+                node->return_type = parseDataType(lexer[getIndexGuard(lexer,true)]);
             }
-            if (lexer[getIndexGaurd(lexer)].token != T_L_SQUIGGLY)
-                error(lexer[getIndexGaurd(lexer)], "this is not a valid function block opener");
+            if (lexer[getIndexGuard(lexer)].token != T_L_SQUIGGLY)
+                error(lexer[getIndexGuard(lexer)], "this is not a valid function block opener");
             else
                 node->body = parseBlock(lexer);
             root->children.emplace_back(std::move(node));
@@ -406,11 +406,11 @@ void Parser::parse(const std::string &&source) noexcept
                 node->body->list.emplace_back(node_);
             }
         }
-        else if (isDataType(lexer[getIndexGaurd(lexer)]))
+        else if (isDataType(lexer[getIndexGuard(lexer)]))
             root->children.emplace_back(parseVar(lexer,true));
         else
         {
-            error(lexer[getIndexGaurd(lexer)], "this is not a valid in global scope");
+            error(lexer[getIndexGuard(lexer)], "this is not a valid in global scope");
         }
     }
 }

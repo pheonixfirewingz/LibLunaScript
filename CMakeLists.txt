@@ -9,7 +9,7 @@ set ( FUZZING OFF )
 set ( COMPILER_TESTING ON )
 # options end
 
-configure_file ( src/Cmake.h.in src/Cmake.h @ONLY )
+configure_file ( ${PROJECT_SOURCE_DIR}/src/application/Cmake.h.in ${PROJECT_SOURCE_DIR}/src/application/Cmake.h @ONLY )
 
 set ( compiler_source
      ${PROJECT_SOURCE_DIR}/src/lib/CompilerAPI.cpp
