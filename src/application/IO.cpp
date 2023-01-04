@@ -6,13 +6,13 @@ void setRoot(const char *root) noexcept
     losSetAssetPath(root);
 }
 
-losResult fileRead(const char *path, const int path_size, char **buf, data_size_t *buf_size) noexcept
+losResult fileRead(const std::string path, char **buf, data_size_t *buf_size) noexcept
 {
     losFileHandle handle;
     losFileOpenInfo file;
     file.fileBits = LOS_FILE_BIT_READ;
-    file.path = path;
-    file.path_size = path_size;
+    file.path = path.c_str();
+    file.path_size = path.size();
     losResult res;
     if ((res = losOpenFile(&handle, file)) != LOS_SUCCESS)
         return res;
@@ -23,7 +23,7 @@ losResult fileRead(const char *path, const int path_size, char **buf, data_size_
     return LOS_SUCCESS;
 }
 
-losResult fileWrite(const char *path, const int path_size, const char *buf, data_size_t buf_size, bool create) noexcept
+losResult fileWrite(const std::string path, const char *buf,const data_size_t buf_size, bool create) noexcept
 {
     losFileHandle handle;
     losFileOpenInfo file;
@@ -31,8 +31,8 @@ losResult fileWrite(const char *path, const int path_size, const char *buf, data
         file.fileBits = LOS_FILE_BIT_WRITE | LOS_FILE_BIT_CREATE;
     else
         file.fileBits = LOS_FILE_BIT_WRITE;
-    file.path = path;
-    file.path_size = path_size;
+    file.path = path.c_str();
+    file.path_size = path.size();
     losResult res;
     if ((res = losOpenFile(&handle, file)) != LOS_SUCCESS)
         return res;

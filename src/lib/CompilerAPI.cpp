@@ -7,12 +7,12 @@ struct Compiler_T
     LunaScript::compiler::front::Parser *parser;
 };
 
-losResult compileAST(Compiler *compiler, const char *src, const data_size_t, const char *filename, const data_size_t)
+losResult compileAST(Compiler *compiler, const char *src, const data_size_t src_size, const char *filename, const data_size_t filename_size)
 {
     if ((*compiler))
     {
         *compiler = new Compiler_T();
-        (*compiler)->parser = new LunaScript::compiler::front::Parser(src, filename);
+        (*compiler)->parser = new LunaScript::compiler::front::Parser(std::string(src,0,src_size), std::string(filename,0,filename_size));
         if ((*compiler)->parser->hasErrors())
             return LOS_ERROR_MALFORMED_DATA;
     }
@@ -28,14 +28,14 @@ void getErrorOffStack(Compiler compiler, char **str, data_size_t *str_size)
 {
     std::string err = compiler->parser->popErrorOffStack();
     (*str) = new char[(*str_size = err.size())];
-    strcpy(*str, err.c_str());
+    memmove(*str,err.data(),*str_size);
 }
 
 void astToString(Compiler compiler, char **str, data_size_t *str_size)
 {
     std::string err = compiler->parser->asString(true);
     (*str) = new char[(*str_size = err.size())];
-    strcpy(*str, err.c_str());
+    memmove(*str,err.data(),*str_size);
 }
 
 void freeCompiler(Compiler compiler)
