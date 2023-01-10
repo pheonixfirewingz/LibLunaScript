@@ -21,7 +21,7 @@
 //
 // GNU Lesser General Public License Version 3.0
 //
-// Copyright Luke Shore (c) 2020, 2022
+// Copyright Luke Shore (c) 2020, 2023
 //
 // File Created by Luke Shore 05.12.2022 uk standard
 /*! Importation of libraries*/
