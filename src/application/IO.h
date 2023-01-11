@@ -10,7 +10,6 @@ const inline std::string createP(const std::string extend,const char* file_name)
 {
     std::string ret("$[asset_base]/tests/");
     ret += extend;
-    ret += "/";
     ret += file_name;
     ret += ".lls";
     return ret;

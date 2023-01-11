@@ -1,6 +1,6 @@
 #pragma once
-#include <vector>
 #include <string>
+#include <vector>
 
 typedef enum ASTTypeID
 {
@@ -55,7 +55,7 @@ typedef enum ASTOperatorType
 
 struct ASTNode
 {
-    public:
+  public:
     virtual ASTTypeID getTypeID() const noexcept = 0;
     virtual ~ASTNode() = default;
 };
@@ -64,14 +64,19 @@ struct ASTRoot : public ASTNode
 {
     std::string name;
     std::vector<const ASTNode *> children;
-    ASTTypeID getTypeID() const noexcept override { return AST_ROOT;}
+    ASTTypeID getTypeID() const noexcept override
+    {
+        return AST_ROOT;
+    }
 
-    constexpr ASTRoot(const std::string &name) noexcept: name(name) {}
+    constexpr ASTRoot(const std::string &name) noexcept
+        : name(name)
+    {
+    }
 
     virtual ~ASTRoot()
     {
-        for (const auto &child : children)
-            delete child;
+        children.clear();
     }
 };
 
@@ -81,23 +86,27 @@ struct ASTExpression : public ASTNode
     ASTExpressionType type;
     ASTDataType data_type = NOT_DETERMINED_DATA_TYPE;
     std::string extra_data = "";
-    ASTTypeID getTypeID() const noexcept override { return AST_EXPRESSION;}
+    ASTTypeID getTypeID() const noexcept override
+    {
+        return AST_EXPRESSION;
+    }
 
     virtual ~ASTExpression()
     {
-        for (const auto &child : list)
-            delete child;
+        list.clear();
     }
 };
 
 struct ASTBlock : public ASTNode
 {
     std::vector<const ASTExpression *> list;
-    ASTTypeID getTypeID() const noexcept override { return AST_BLOCK;}
+    ASTTypeID getTypeID() const noexcept override
+    {
+        return AST_BLOCK;
+    }
     virtual ~ASTBlock()
     {
-        for (const auto &child : list)
-            delete child;
+        list.clear();
     }
 };
 
@@ -105,31 +114,43 @@ struct ASTFuncDef : public ASTNode
 {
     const std::string name = "";
     const bool is_public;
-    const ASTExpression * args;
+    const ASTExpression *args;
     ASTBlock *body;
     ASTDataType return_type = NOT_DETERMINED_DATA_TYPE;
-    ASTTypeID getTypeID() const noexcept override { return AST_FUNC_DEF;}
-    explicit ASTFuncDef(const std::string name_in, bool is_public): name(name_in),is_public(is_public){}
+    ASTTypeID getTypeID() const noexcept override
+    {
+        return AST_FUNC_DEF;
+    }
+    explicit ASTFuncDef(const std::string name_in, bool is_public)
+        : name(name_in)
+        , is_public(is_public)
+    {
+    }
     virtual ~ASTFuncDef()
     {
-        delete args;
-        delete body;
+        if (args)
+            delete args;
+        if (body)
+            delete body;
     }
 };
-
-
 
 struct ASTBinaryExpression : public ASTNode
 {
     uint16_t precedence = 0;
-    const ASTNode * right = nullptr;
-    const ASTNode * left = nullptr;
+    const ASTNode *right = nullptr;
+    const ASTNode *left = nullptr;
     ASTOperatorType op = NOT_DETERMINED_OP_TYPE;
-    ASTTypeID getTypeID() const noexcept override { return AST_BINARY;}
+    ASTTypeID getTypeID() const noexcept override
+    {
+        return AST_BINARY;
+    }
     virtual ~ASTBinaryExpression()
     {
-        delete left;
-        delete right;
+        if (left)
+            delete left;
+        if (right)
+            delete right;
     }
 };
 
@@ -137,7 +158,10 @@ struct ASTLiteral : public ASTNode
 {
     std::string value = "";
     ASTDataType data_type = NOT_DETERMINED_DATA_TYPE;
-    ASTTypeID getTypeID() const noexcept override { return AST_LITERAL;}
+    ASTTypeID getTypeID() const noexcept override
+    {
+        return AST_LITERAL;
+    }
 
     virtual ~ASTLiteral() = default;
 };

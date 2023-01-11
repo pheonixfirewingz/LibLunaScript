@@ -230,7 +230,7 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer) noexcept
         {
             if (lexer.size() <= getIndexGuard(lexer))
             {
-                error(lexer[lexer.size() - 1], "there was no was to know when a block ended");
+                error(lexer[getIndexGuard(lexer)], "there was no was to know when a block ended");
                 break;
             }
             if (lexer[getIndexGuard(lexer)].token == T_RET)
@@ -385,7 +385,8 @@ void Parser::parse(const std::string &&source) noexcept
             }
             else
             {
-                if (!isDataType(lexer[getIndexGuard(lexer, true)]))
+                (void)getIndexGuard(lexer, true);
+                if (!isDataType(lexer[getIndexGuard(lexer)]))
                     error(lexer[getIndexGuard(lexer,true)], "this is not a supported data type");
                 node->return_type = parseDataType(lexer[getIndexGuard(lexer,true)]);
             }
