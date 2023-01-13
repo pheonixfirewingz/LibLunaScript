@@ -27,9 +27,9 @@ typedef struct Compiler_T * Compiler;
  * \param[in] filename
  * \param[in] filename_size
  * \return losResult
- * \brief compile as it say creates and compiles ast
+ * \brief compile as it say creates and compiles source
  */
-EXPORT_DLL losResult compileAST(Compiler *compiler, const char *src, const data_size_t src_size, const char *filename,
+EXPORT_DLL losResult compile(Compiler *compiler, const char *src, const data_size_t src_size, const char *filename,
                                 const data_size_t filename_size);
 
 EXPORT_DLL uint8_t hasErrorOnStack(Compiler compiler);

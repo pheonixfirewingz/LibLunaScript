@@ -3,32 +3,30 @@ project ( libLunaScript CXX )
 set ( CMAKE_CXX_STANDARD_REQUIRED ON )
 
 # options
-set ( LIB_MODE OFF )
 set ( DEBUG_MODE ON )
 set ( FUZZING OFF )
-set ( COMPILER_TESTING ON )
+set ( COMPILER_TESTING OFF )
 # options end
 
 configure_file ( ${PROJECT_SOURCE_DIR}/src/application/Cmake.h.in ${PROJECT_SOURCE_DIR}/src/application/Cmake.h @ONLY )
 
 set ( compiler_source
-     ${PROJECT_SOURCE_DIR}/src/lib/CompilerAPI.cpp
-     ${PROJECT_SOURCE_DIR}/src/lib/front/Parser.cpp
-     ${PROJECT_SOURCE_DIR}/src/lib/front/Json.cpp
-     ${PROJECT_SOURCE_DIR}/src/lib/back/ByteCodeGen.cpp
-     ${PROJECT_SOURCE_DIR}/src/lib/back/DebugGen.cpp
+     ${PROJECT_SOURCE_DIR}/src/compiler/CompilerAPI.cpp
+     ${PROJECT_SOURCE_DIR}/src/compiler/front/Parser.cpp
+     ${PROJECT_SOURCE_DIR}/src/compiler/front/Json.cpp
+
+     ${PROJECT_SOURCE_DIR}/src/assembler/AssemblerAPI.cpp
+     ${PROJECT_SOURCE_DIR}/src/assembler/Lexer.cpp
      
 )
 
 set ( app_source 
-${PROJECT_SOURCE_DIR}/src/application/IO.cpp
 ${PROJECT_SOURCE_DIR}/src/application/Main.cpp
 )
 
 if ( ${COMPILER_TESTING} )
     set ( app_source 
     ${PROJECT_SOURCE_DIR}/src/application/Test.cpp
-    ${PROJECT_SOURCE_DIR}/src/application/IO.cpp
     )
 
     include ( FetchContent )

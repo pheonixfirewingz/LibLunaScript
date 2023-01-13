@@ -1,5 +1,6 @@
 #pragma once
 #include "Iterator.h"
+#include <cstring>
 #include <initializer_list>
 #include <memory>
 #include <new>
@@ -9,52 +10,88 @@ namespace std
 template<typename T> struct ReadOnlyVector : public ForwardIterator<T>
 {
   private:
-    T *data;
-    const size_t size_;
+    T *ptr_;
+    data_size_t size_;
 
   public:
-    constexpr ReadOnlyVector(T *data, size_t size) noexcept
-        : data(data)
-        , size_(size)
+    constexpr ReadOnlyVector(T *data_in, data_size_t size) noexcept
+        : size_(size)
     {
+        ptr_ = new T[size_];
+        for (size_t i = 0; i < size; ++i)
+            ptr_[i] = data_in[i];
     }
     constexpr ReadOnlyVector(initializer_list<T> entries) noexcept
         : size_(entries.size())
     {
-        data = new (std::nothrow) T[entries.size()];
+        ptr_ = new T[entries.size()];
         size_t index = 0;
         for (auto &entry : entries)
-            data[index++] = entry;
+            ptr_[index++] = entry;
     }
 
-    constexpr const T &operator[](size_t i)
+    constexpr ~ReadOnlyVector() noexcept
     {
-        return data[i];
+        if (ptr_ && !is_trivially_destructible<T>())
+            delete[] ptr_;
     }
 
-    virtual size_t i_size() const noexcept override final
+    constexpr T* data() const noexcept
+    {
+        return ptr_;
+    }
+
+    constexpr T operator[](data_size_t i) const
+    {
+        return *(begin() + i);
+    }
+
+    constexpr T &operator[](data_size_t i)
+    {
+        return begin() + i;
+    }
+
+    virtual data_size_t i_size() const noexcept override final
     {
         return size_;
     }
 
-    constexpr size_t size() const noexcept
+    constexpr data_size_t size() const noexcept
     {
         return size_;
     }
 
     virtual constexpr T *begin() noexcept override final
     {
-        return data;
+        return ptr_;
     }
 
     virtual constexpr const T *begin() const noexcept override final
     {
-        return data;
+        return ptr_;
     }
 
-    virtual constexpr T *cbegin() const noexcept override final
+    virtual constexpr const T *cbegin() const noexcept override final
     {
-        return data;
+        return ptr_;
+    }
+
+    constexpr bool empty() const noexcept
+    {
+        return size_ == 0;
+    }
+
+    constexpr T *release() const noexcept
+    {
+        return std::move(ptr_);
+    }
+
+    constexpr void copy(const std::ReadOnlyVector<T> data_in)
+    {
+        size_ = data_in.size();
+        ptr_ = new T[size_];
+        for (size_t i = 0; i < size_; ++i)
+            ptr_[i] = data_in[i];
     }
 
     static ReadOnlyVector<T> lock(vector<T> data)
@@ -62,4 +99,4 @@ template<typename T> struct ReadOnlyVector : public ForwardIterator<T>
         return *new ReadOnlyVector(data.data(), data.size());
     }
 };
-} // namespace internal_std
+} // namespace std

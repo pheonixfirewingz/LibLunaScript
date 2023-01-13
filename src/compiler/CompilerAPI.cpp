@@ -7,7 +7,7 @@ struct Compiler_T
     LunaScript::compiler::front::Parser *parser;
 };
 
-losResult compileAST(Compiler *compiler, const char *src, const data_size_t src_size, const char *filename, const data_size_t filename_size)
+losResult compile(Compiler *compiler, const char *src, const data_size_t src_size, const char *filename, const data_size_t filename_size)
 {
     if ((*compiler))
     {

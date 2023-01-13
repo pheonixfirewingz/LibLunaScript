@@ -7,104 +7,104 @@ namespace LunaScript::compiler::front
 {
 using namespace rapidjson;
 
-const char *idToString(const ASTTypeID &id) noexcept
+const char *idToString(const NodeType &id) noexcept
 {
     switch (id)
     {
-    case AST_ROOT:
+    case NodeType::ROOT:
         return "Program";
-    case AST_FUNC_DEF:
+    case NodeType::FUNC_DEF:
         return "FunctionDef";
-    case AST_FUNC_CALL:
+    case NodeType::FUNC_CALL:
         return "FunctionCall";
-    case AST_EXPRESSION:
+    case NodeType::EXPRESSION:
         return "Expression";
-    case AST_BINARY:
+    case NodeType::BINARY:
         return "BinaryExpression";
-    case AST_LITERAL:
+    case NodeType::LITERAL:
         return "Literal";
-    case AST_BLOCK:
+    case NodeType::BLOCK:
         return "ExecutionBlock";
     default:
         return "unknown";
     }
 }
 
-const char *idToStringT(const ASTDataType &id) noexcept
+const char *idToStringT(const DataType &id) noexcept
 {
     switch (id)
     {
-    case NOT_DETERMINED_DATA_TYPE:
+    case DataType::NOT_DETERMINED:
         return "To Be Determined";
-    case VOID_TYPE:
+    case DataType::VOID:
         return "Void";
-    case INT8_TYPE:
+    case DataType::INT8:
         return "int8";
-    case INT16_TYPE:
+    case DataType::INT16:
         return "int16";
-    case INT32_TYPE:
+    case DataType::INT32:
         return "int32";
-    case INT64_TYPE:
+    case DataType::INT64:
         return "int64";
-    case UINT8_TYPE:
+    case DataType::UINT8:
         return "uint8";
-    case UINT16_TYPE:
+    case DataType::UINT16:
         return "uint16";
-    case UINT32_TYPE:
+    case DataType::UINT32:
         return "uint32";
-    case UINT64_TYPE:
+    case DataType::UINT64:
         return "uint64";
-    case FLOAT32_TYPE:
+    case DataType::FLOAT32:
         return "float32";
-    case FLOAT64_TYPE:
+    case DataType::FLOAT64:
         return "float64";
-    case FLOAT_ANY_TYPE:
+    case DataType::ANY_FLOAT:
         return "any float";
-    case UINT_ANY_TYPE:
+    case DataType::ANY_UINT:
         return "any uint";
-    case INT_ANY_TYPE:
+    case DataType::ANY_INT:
         return "any int";
     default:
         return "unknown";
     }
 }
 
-const char *idToStringE(const ASTExpressionType &id) noexcept
+const char *idToStringE(const ExpressionType &id) noexcept
 {
     switch (id)
     {
-    case AST_EXPR_RETURN:
+    case ExpressionType::RETURN:
         return "ReturnType";
-    case AST_EXPR_NO_RETURN:
+    case ExpressionType::NO_RETURN:
         return "NoDataReturn";
-    case AST_EXPR_VAR_DEFINED:
+    case ExpressionType::VAR_DEFINED:
         return "VariableDefinition";
-    case AST_EXPR_PRAM_LIST:
+    case ExpressionType::PRAM_LIST:
         return "ParameterList";
     default:
         return "unknown";
     }
 }
 
-const char *idToStringO(const ASTOperatorType &id) noexcept
+const char *idToStringO(const OperatorType &id) noexcept
 {
     switch (id)
     {
-    case ADD_TYPE:
+    case OperatorType::ADD:
         return "+";
-    case SUB_TYPE:
+    case OperatorType::SUB:
         return "-";
-    case DIV_TYPE:
+    case OperatorType::DIV:
         return "/";
-    case MUL_TYPE:
+    case OperatorType::MUL:
         return "*";
-    case AND_TYPE:
+    case OperatorType::AND:
         return "and";
-    case OR_TYPE:
+    case OperatorType::OR:
         return "or";
-    case XOR_TYPE:
+    case OperatorType::XOR:
         return "xor";
-    case MOD_TYPE:
+    case OperatorType::MOD:
         return "modulo";
     default:
         return "unknown";
@@ -120,10 +120,10 @@ template<typename T> void writeBranch(T *writer, const ASTNode *node)
     }
     writer->StartObject();
     writer->Key("type");
-    writer->String(idToString(node->getTypeID()));
-    switch (node->getTypeID())
+    writer->String(idToString(node->getType()));
+    switch (node->getType())
     {
-    case AST_ROOT: {
+    case NodeType::ROOT: {
         const ASTRoot *real_node = static_cast<const ASTRoot *>(node);
         writer->Key("body");
         writer->StartArray();
@@ -134,7 +134,7 @@ template<typename T> void writeBranch(T *writer, const ASTNode *node)
         writer->String(real_node->name.c_str());
         break;
     }
-    case AST_FUNC_DEF: {
+    case NodeType::FUNC_DEF: {
         const ASTFuncDef *real_node = static_cast<const ASTFuncDef *>(node);
         writer->Key("is_public");
         writer->Bool(real_node->is_public);
@@ -148,13 +148,13 @@ template<typename T> void writeBranch(T *writer, const ASTNode *node)
         writeBranch(writer, real_node->body);
         break;
     }
-    case AST_FUNC_CALL: {
+    case NodeType::FUNC_CALL: {
     }
-    case AST_EXPRESSION: {
+    case NodeType::EXPRESSION: {
         const ASTExpression *real_node = static_cast<const ASTExpression *>(node);
         writer->Key("id");
         writer->String(idToStringE(real_node->type));
-        if (real_node->data_type != NOT_DETERMINED_DATA_TYPE)
+        if (real_node->data_type != DataType::NOT_DETERMINED)
         {
             writer->Key("data_type");
             writer->String(idToStringT(real_node->data_type));
@@ -171,7 +171,7 @@ template<typename T> void writeBranch(T *writer, const ASTNode *node)
         writer->EndArray();
         break;
     }
-    case AST_LITERAL: {
+    case NodeType::LITERAL: {
         const ASTLiteral *real_node = static_cast<const ASTLiteral *>(node);
         writer->Key("data_type");
         writer->String(idToStringT(real_node->data_type));
@@ -179,7 +179,7 @@ template<typename T> void writeBranch(T *writer, const ASTNode *node)
         writer->String(real_node->value.c_str());
         break;
     }
-    case AST_BINARY: {
+    case NodeType::BINARY: {
         const ASTBinaryExpression *real_node = static_cast<const ASTBinaryExpression *>(node);
         writer->Key("precedence");
         writer->Uint(real_node->precedence);
@@ -191,7 +191,7 @@ template<typename T> void writeBranch(T *writer, const ASTNode *node)
         writeBranch(writer, real_node->left);
         break;
     }
-    case AST_BLOCK: {
+    case NodeType::BLOCK: {
         const ASTBlock *real_node = static_cast<const ASTBlock *>(node);
         writer->Key("execution");
         writer->StartArray();

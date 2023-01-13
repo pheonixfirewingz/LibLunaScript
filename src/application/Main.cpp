@@ -1,16 +1,67 @@
-#include "../Cmake.h"
-#include "IO.h"
-#include <liblunascript/Compiler.h>
+#include "Cmake.h"
+#include "IO.hpp"
 #include <argparse/argparse.hpp>
 #include <cstdio>
+#include <liblunascript/Assembler.h>
+#include <liblunascript/Compiler.h>
+#include <string>
 
-//int main(int argc, char **argv)
+struct ByteCode
+{
+    uint64_t op : 5;
+    uint64_t reg : 3;
+    uint64_t is_reg : 1;
+    uint64_t reg_or_memory_dest : 54;
+    uint64_t reserved_0 : 1;
+};
+
+union DataU {
+    uint64_t value;
+    ByteCode op;
+};
+
+losResult compile(const std::string &filename, const std::string &src, char **output, data_size_t *output_size) noexcept
+{
+    losResult res;
+    Compiler compiler;
+    if ((res = compile(&compiler, src.c_str(), src.size(), filename.c_str(), filename.size())) != LOS_SUCCESS)
+    {
+        while (hasErrorOnStack(compiler))
+        {
+            char *read_str;
+            data_size_t read_str_size = 0;
+            getErrorOffStack(compiler, &read_str, &read_str_size);
+            puts(std::string(read_str, 0, read_str_size).c_str());
+            free(read_str);
+        }
+        return res;
+    }
+    astToString(compiler, output, output_size);
+    freeCompiler(compiler);
+    return LOS_SUCCESS;
+}
+
+losResult assemble(const std::string &src, std::ReadOnlyVector<uint64_t> *ops) noexcept
+{
+    ops->copy(assemble(src.c_str(), src.size()));
+    if (ops->empty())
+        return LOS_ERROR_MALFORMED_DATA;
+    return LOS_SUCCESS;
+}
+
+// int main(int argc, char **argv)
 int main(int, char **)
 {
-    /* argparse::ArgumentParser program("LunaScript");
+    libOSInit();
+    losResult res;
+    setRoot(PROJECT_SOURCE_DIR);
+    /*
+    argparse::ArgumentParser program("LunaScript");
 
     program.add_argument("input").required().help("the sorce file name");
-     program.add_argument("-o", "--output").required().help("specify the output file.");
+    program.add_argument("-asm", "--assembler").default_value(false).help("compile bytecode mode");
+    program.add_argument(" -r ", " --running ").help(" set compiler to run mode ");
+    program.add_argument(" -o ", "--output").required().help("specify the output file.");
     program.add_argument("-O", "--optimize").required().help("optimization level").default_value(0);
 
     try
@@ -23,72 +74,43 @@ int main(int, char **)
         std::cerr << program;
         std::exit(1);
     }*/
-
-    bool stop = false;
-    setRoot(PROJECT_SOURCE_DIR);
-    losResult res;
-    Compiler compiler;
-    char *read_str;
-    data_size_t read_str_size = 0;
-    //std::string path_1("$[asset_base]/" + program.get("input"));
-    std::string path_1("$[asset_base]/test.lls");
-    if(!path_1.ends_with(".lls"))
+    bool assembler_mode = true;
+    if (!assembler_mode)
     {
-        printf("ERROR: %s is not the correct file format",path_1.c_str());
-        std::exit(1);
-    }
-    if ((res = fileRead(path_1.c_str(), path_1.size(), &read_str, &read_str_size)) != LOS_SUCCESS)
-        return res;
-    if (compileAST(&compiler,read_str,read_str_size,"test",4) != LOS_SUCCESS)
-    {
-        stop = true;
-        while (hasErrorOnStack(compiler))
-            puts(getErrorOffStack(compiler).c_str());
-    }
-    if (stop)
-        return 0;
-    auto ast = astToString(compiler);
-    //std::string path_2("$[asset_base]/" + program.get("-o"));
-    std::string path_2("$[asset_base]/test.ast");
-    if ((res = fileWrite(path_2.c_str(), path_2.size(), ast.c_str(), ast.size())) != LOS_SUCCESS)
-        if ((res = fileWrite(path_2.c_str(), path_2.size(), ast.c_str(), ast.size(),false)) != LOS_SUCCESS)
+        char *read_str;
+        data_size_t read_str_size = 0;
+        if ((res = fileRead(createP("", "test"), &read_str, &read_str_size)) != LOS_SUCCESS)
             return res;
-    freeCompiler(compiler);
-   /* auto ir = CodeGen::LLVMCodeGen(root_ast).getIR();
-    if ((res = fileWrite("$[asset_base]/test.ll", 23, ir.c_str(), ir.size())) != LOS_SUCCESS)
-        return res;
-    ir->setTargetTriple(target_triple);
-    std::string Error;
-    auto Target = TargetRegistry::lookupTarget(target_triple, Error);
-    if (!Target)
+        char *ast_str;
+        data_size_t ast_str_size = 0;
+        if ((res = compile("test", std::string(read_str, 0, read_str_size), &ast_str, &ast_str_size)) != LOS_SUCCESS)
+            return res;
+        if ((res = fileWrite<char>(createP("", "test", ".ast.json"), ast_str, ast_str_size)) != LOS_SUCCESS)
+            return res;
+        free(ast_str);
+    }
+    else
     {
-        errs() << Error;
-        return 1;
+        char *read_str;
+        data_size_t read_str_size = 0;
+        if ((res = fileRead(createP("", "test", ".llsb"), &read_str, &read_str_size)) != LOS_SUCCESS)
+            return res;
+        std::ReadOnlyVector<uint64_t> ops = {};
+        if ((res = assemble(std::string(read_str, 0, read_str_size), &ops)) != LOS_SUCCESS)
+            return res;
+        for (auto &op_ : ops)
+        {
+            DataU temp;
+
+            temp.value = op_;
+            printf("OP:%u,REG:%u, IS_REG:%u, LOC:%u, IS_START_OP: %u\n", temp.op.op, temp.op.reg, temp.op.is_reg,
+                   temp.op.reg_or_memory_dest, temp.op.reserved_0);
+        }
+        if ((res = fileWrite<uint64_t>(createP("", "test", ".lsobj"), ops.data(), ops.size())) != LOS_SUCCESS)
+            return res;
     }
 
-    auto CPU = "generic";
-    auto Features = "";
-
-    TargetOptions opt;
-    auto RM = Optional<Reloc::Model>();
-    auto TheTargetMachine = Target->createTargetMachine(target_triple, CPU, Features, opt, RM);
-
-    ir->setDataLayout(TheTargetMachine->createDataLayout());
-    legacy::PassManager pass;
-    std::string human_readable_2;
-    raw_string_ostream OS(human_readable_2);
-    if (TheTargetMachine->addPassesToEmitFile(pass, (raw_pwrite_stream &)OS, nullptr, CGFT_AssemblyFile))
-    {
-        errs() << "TargetMachine can't emit a file of this type";
-        return 1;
-    }
-
-    pass.run(*ir);
-    OS.flush();
-
-    if ((res = fileWrite("$[asset_base]/test.asm", 24, human_readable_2.c_str(), human_readable_2.size())) !=
-        LOS_SUCCESS)
-        return res;*/
+    libOSCleanUp();
     return 0;
 }
 #if FUZZING == 1

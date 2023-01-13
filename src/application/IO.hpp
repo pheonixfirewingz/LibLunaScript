@@ -1,7 +1,8 @@
-#include "IO.h"
+#pragma once
+#include <libos/Defines.h>
 #include <libos/FileIO.h>
 
-void setRoot(const char *root) noexcept
+void setRoot(const char* root) noexcept
 {
     losSetAssetPath(root);
 }
@@ -23,7 +24,8 @@ losResult fileRead(const std::string path, char **buf, data_size_t *buf_size) no
     return LOS_SUCCESS;
 }
 
-losResult fileWrite(const std::string path, const char *buf,const data_size_t buf_size, bool create) noexcept
+template <typename T>
+losResult fileWrite(const std::string path, const T *buf,const data_size_t buf_size,bool create = true) noexcept
 {
     losFileHandle handle;
     losFileOpenInfo file;
@@ -43,7 +45,7 @@ losResult fileWrite(const std::string path, const char *buf,const data_size_t bu
     return LOS_SUCCESS;
 }
 
-void fileDelete(const char *path, const int path_size)
+void fileDelete(const char* path,const int path_size)
 {
     losFileHandle handle;
     losFileOpenInfo file;
@@ -55,4 +57,13 @@ void fileDelete(const char *path, const int path_size)
         return;
     if ((res = losCloseFile(handle)) != LOS_SUCCESS)
         return;
+}
+
+const inline std::string createP(const std::string extend,const char* file_name,const char * file_ext = ".lls") noexcept
+{
+    std::string ret("$[asset_base]/");
+    ret += extend;
+    ret += file_name;
+    ret += file_ext;
+    return ret;
 }
