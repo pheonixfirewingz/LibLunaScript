@@ -36,7 +36,7 @@ template<typename T> struct ReadOnlyVector : public ForwardIterator<T>
             delete[] ptr_;
     }
 
-    constexpr T* data() const noexcept
+    constexpr T *data() const noexcept
     {
         return ptr_;
     }
@@ -76,6 +76,16 @@ template<typename T> struct ReadOnlyVector : public ForwardIterator<T>
         return ptr_;
     }
 
+    constexpr uint64_t findIndex(T index) const noexcept
+    {
+        for (uint64_t i = 0; i < size_; i++)
+        {
+            if (this[i] == index)
+                return i;
+        }
+        return size_;
+    }
+
     constexpr bool empty() const noexcept
     {
         return size_ == 0;
@@ -88,6 +98,8 @@ template<typename T> struct ReadOnlyVector : public ForwardIterator<T>
 
     constexpr void copy(const std::ReadOnlyVector<T> data_in)
     {
+        if (data_in.empty())
+            return;
         size_ = data_in.size();
         ptr_ = new T[size_];
         for (size_t i = 0; i < size_; ++i)

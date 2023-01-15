@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <liblunascript/Assembler.h>
 #include <liblunascript/Compiler.h>
+#include <liblunascript/Lsvm.h>
 #include <string>
 
 struct ByteCode
@@ -11,11 +12,12 @@ struct ByteCode
     uint64_t op : 5;
     uint64_t reg : 3;
     uint64_t is_reg : 1;
-    uint64_t reg_or_memory_dest : 54;
+    uint64_t is_constant : 1;
+    uint64_t reg_or_memory_dest : 53;
     uint64_t reserved_0 : 1;
 };
 
-union DataU {
+union Data {
     uint64_t value;
     ByteCode op;
 };
@@ -75,6 +77,7 @@ int main(int, char **)
         std::exit(1);
     }*/
     bool assembler_mode = true;
+    bool running_mode = true;
     if (!assembler_mode)
     {
         char *read_str;
@@ -98,18 +101,16 @@ int main(int, char **)
         std::ReadOnlyVector<uint64_t> ops = {};
         if ((res = assemble(std::string(read_str, 0, read_str_size), &ops)) != LOS_SUCCESS)
             return res;
-        for (auto &op_ : ops)
-        {
-            DataU temp;
-
-            temp.value = op_;
-            printf("OP:%u,REG:%u, IS_REG:%u, LOC:%u, IS_START_OP: %u\n", temp.op.op, temp.op.reg, temp.op.is_reg,
-                   temp.op.reg_or_memory_dest, temp.op.reserved_0);
-        }
         if ((res = fileWrite<uint64_t>(createP("", "test", ".lsobj"), ops.data(), ops.size())) != LOS_SUCCESS)
             return res;
+        if (running_mode)
+        {
+            VMData data{.vmPrintRegCallback = [](uint64_t reg) { printf("LunaScript - Reg: %lu\n", reg); },
+                        .vmErrorCallback = [](const char* msg) { printf("LunaScript - ERROR: %s\n", msg); },
+                        .vmExitCallback = [](uint64_t reg) { printf("LunaScript - EndCode: %lu\n", reg); }};
+            run(&data, ops);
+        }
     }
-
     libOSCleanUp();
     return 0;
 }

@@ -11,7 +11,7 @@
 #endif
 
 #ifndef CMAKE_CXX_COMPILER_ID
-#define CMAKE_CXX_COMPILER_ID = "GNU"
+#define CMAKE_CXX_COMPILER_ID = "Clang"
 #endif
 
 #ifndef CMAKE_LIB_MODE
@@ -27,5 +27,5 @@
 #endif
 
 #ifndef PROJECT_SOURCE_DIR
-#define PROJECT_SOURCE_DIR "/home/luke/Desktop/LibLunaScript"
+#define PROJECT_SOURCE_DIR "/home/digitech/Desktop/LibLunaScript"
 #endif

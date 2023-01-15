@@ -36,6 +36,7 @@ enum class LexerToken
     FDIV,
     FMUL,
     NEW_LINE,
+    CONST,
 };
 
 struct LexToken

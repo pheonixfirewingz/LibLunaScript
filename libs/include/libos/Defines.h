@@ -10,12 +10,14 @@
  * platforms we check */
 #if _WIN64
 #    define EXPORT_DLL extern "C" __declspec(dllexport)
+#    define EXPORT_CPP_DLL __declspec(dllexport)
 #else
 #    if __cplusplus
 #        define EXPORT_DLL extern "C"
 #    else
 #        define EXPORT_DLL
 #    endif
+#        define EXPORT_CPP_DLL
 #endif
 // LIBOS LICENCE
 //

@@ -3,7 +3,6 @@
 
 namespace LunaScript::bytecode
 {
-uint64_t MEMORY_MAX = 0x1FFFFFFFFFFFFF;
 // max instructions 31. or 0-31
 enum class OpCode : uint8_t
 {
@@ -47,12 +46,13 @@ struct ByteCode
     uint64_t op : 5;
     uint64_t reg : 3;
     uint64_t is_reg : 1;
-    uint64_t reg_or_memory_dest : 54;
+    uint64_t is_constant : 1;
+    uint64_t reg_or_memory_dest : 53;
     uint64_t reserved_0 : 1 = 0;
 
     uint64_t get() noexcept
     {
-        return op | reg << 5 | is_reg << 8 | reg_or_memory_dest << 9 | (uint64_t)reserved_0 << 63;
+        return op | reg << 5 | is_reg << 8 | is_constant << 9 | reg_or_memory_dest << 10 | (uint64_t)reserved_0 << 63;
     }
 
     void clear() noexcept
@@ -60,6 +60,7 @@ struct ByteCode
         op = (uint64_t)OpCode::NOP;
         reg = (uint64_t)Register::NONE;
         is_reg = false;
+        is_constant = false;
         reg_or_memory_dest = 0;
         reserved_0 = 0;
     }
@@ -67,6 +68,11 @@ struct ByteCode
     void setOP(OpCode op_in) noexcept
     {
         op = (uint64_t)op_in;
+    }
+
+    void setConst() noexcept
+    {
+        is_constant = true;
     }
 
     void setReg(Register reg_in, bool is_first) noexcept
@@ -78,6 +84,12 @@ struct ByteCode
             is_reg = (uint64_t) true;
             reg = (uint64_t)reg_in;
         }
+    }
+
+    void regToMemory()
+    {
+        reg_or_memory_dest = reg;
+        reg = 0;
     }
 
     template<typename T> void setMemory(T reg_or_mem_dest)

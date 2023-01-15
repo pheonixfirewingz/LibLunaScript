@@ -18,6 +18,8 @@ set ( compiler_source
      ${PROJECT_SOURCE_DIR}/src/assembler/AssemblerAPI.cpp
      ${PROJECT_SOURCE_DIR}/src/assembler/Lexer.cpp
      
+     ${PROJECT_SOURCE_DIR}/src/lsvm/VmAPI.cpp
+     ${PROJECT_SOURCE_DIR}/src/lsvm/VirtualMachine.cpp
 )
 
 set ( app_source 

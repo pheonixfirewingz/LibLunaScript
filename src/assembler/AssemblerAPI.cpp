@@ -1,9 +1,9 @@
 #include "Lexer.h"
 #include "LunaBytecode.h"
+#include <functional>
 #include <liblunascript/Assembler.h>
 #include <map>
 #include <string>
-#include <functional>
 
 #define REG(x)                                                       \
     case LunaScript::assembler::LexerToken::x: {                     \
@@ -19,6 +19,14 @@
     }                                                     \
     break
 
+#define SPECIAL_OP(x, mode)                               \
+    case LunaScript::assembler::LexerToken::x: {          \
+        byte_code.setOP(LunaScript::bytecode::OpCode::x); \
+        op_mode = true;                                   \
+        mode = true;                                      \
+    }                                                     \
+    break
+
 std::ReadOnlyVector<uint64_t> assemble(const char *src, const data_size_t src_size)
 {
     LunaScript::assembler::Lexer lexer(std::string(src, 0, src_size));
@@ -31,7 +39,31 @@ std::ReadOnlyVector<uint64_t> assemble(const char *src, const data_size_t src_si
     bool second = false;
     bool op_mode = false;
     bool call_mode = false;
+    bool push_mode = false;
     std::string last_identifier;
+    for (auto &token : tokens)
+    {
+        switch (token.token)
+        {
+        case LunaScript::assembler::LexerToken::LABEL: {
+            label_memory_map.emplace(std::hash<std::string>{}(last_identifier), current_op_code);
+            if (last_identifier == "program_main")
+            {
+                ops.push_back(UINT64_MAX);
+                current_op_code++;
+            }
+        }
+        break;
+        case LunaScript::assembler::LexerToken::IDENTIFIER:
+            last_identifier = token.str_token;
+            break;
+        case LunaScript::assembler::LexerToken::NEW_LINE:
+            current_op_code++;
+            break;
+        default:
+            break;
+        }
+    }
     for (auto &token : tokens)
     {
         switch (token.token)
@@ -47,10 +79,10 @@ std::ReadOnlyVector<uint64_t> assemble(const char *src, const data_size_t src_si
             OP(SUB);
             OP(DIV);
             OP(MUL);
-            OP(JMP);
+            SPECIAL_OP(JMP, call_mode);
             OP(CMP);
             OP(NCMP);
-            OP(PUSH);
+            SPECIAL_OP(PUSH, push_mode);
             OP(POP);
             OP(STORE);
             OP(LOAD);
@@ -60,33 +92,19 @@ std::ReadOnlyVector<uint64_t> assemble(const char *src, const data_size_t src_si
             OP(FSUB);
             OP(FDIV);
             OP(FMUL);
-        case LunaScript::assembler::LexerToken::LABEL: {
-            label_memory_map.emplace(std::hash<std::string>{}(last_identifier), current_op_code);
-            if (last_identifier == "program_main")
-            {
-                ops.push_back(UINT64_MAX);
-                current_op_code++;
-            }
+            SPECIAL_OP(ICALL, call_mode);
+        case LunaScript::assembler::LexerToken::CONST: {
+            byte_code.setConst();
         }
         break;
-        case LunaScript::assembler::LexerToken::ICALL: {
-            byte_code.setOP(LunaScript::bytecode::OpCode::ICALL);
-            op_mode = true;
-            call_mode = true;
-        }
-        break;
-        case LunaScript::assembler::LexerToken::CALL: {
-            byte_code.setOP(LunaScript::bytecode::OpCode::CALL);
-            op_mode = true;
-            call_mode = true;
-        }
-        break;
+            SPECIAL_OP(CALL, call_mode);
         case LunaScript::assembler::LexerToken::IDENTIFIER: {
             if (op_mode && !call_mode)
                 byte_code.setMemory<uint64_t>(std::stoull(token.str_token, nullptr, 16));
             else if (call_mode)
             {
-                if (auto search = label_memory_map.find(std::hash<std::string>{}(token.str_token)); search != label_memory_map.end())
+                if (auto search = label_memory_map.find(std::hash<std::string>{}(token.str_token));
+                    search != label_memory_map.end())
                     byte_code.setMemory<uint64_t>(search->second);
             }
             else
@@ -94,13 +112,18 @@ std::ReadOnlyVector<uint64_t> assemble(const char *src, const data_size_t src_si
         }
         break;
         case LunaScript::assembler::LexerToken::NEW_LINE: {
-            current_op_code++;
+            if (push_mode)
+            {
+                if (byte_code.is_reg)
+                    byte_code.regToMemory();
+            }
             if (op_mode)
                 ops.push_back(byte_code.get());
             byte_code.clear();
             second = false;
             op_mode = false;
             call_mode = false;
+            push_mode = false;
         }
         break;
         default:
