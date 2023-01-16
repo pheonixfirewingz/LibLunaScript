@@ -12,14 +12,29 @@
 //
 // Copyright Luke Shore (c) 2020, 2022
 /*! Importation of libraries*/
-#include <libos/Defines.h>
+#include <extend_std/LookUpTable.h>
 #include <extend_std/Vector.h>
-#include <string>
+#include <functional>
+#include <libos/Defines.h>
+#include <stack>
+#include <variant>
+
+typedef std::variant<uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t, float32_t, float64_t>
+    vm_data_t;
+
+struct VMFunctionName
+{
+    uint64_t hash : 53;
+    VMFunctionName(const std::string &name)
+        : hash(std::hash<std::string>{}(name))
+    {
+    }
+};
+
 struct VMData
 {
-    void (*vmPrintRegCallback)(uint64_t);
-    void (*vmErrorCallback)(const char*);
-    void (*vmExitCallback)(uint64_t);
+    std::ReadOnlyLookupTable<uint64_t, std::function<vm_data_t *(std::stack<vm_data_t> *)>> vmCallbacks;
+    void (*vmErrorCallback)(const char *);
 };
 /*!
  * \param[in] operations
@@ -27,4 +42,4 @@ struct VMData
  * \return losResult
  * \brief compile as it say creates and compiles source
  */
-EXPORT_DLL void run(VMData* vm,const std::ReadOnlyVector<uint64_t> ops);
+EXPORT_DLL void run(VMData *vm, const std::ReadOnlyVector<uint64_t> ops,uint8_t debug_mode);

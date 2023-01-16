@@ -3,7 +3,7 @@
 #include <cstring>
 #include <initializer_list>
 #include <memory>
-#include <new>
+#include <cassert>
 #include <vector>
 namespace std
 {
@@ -41,14 +41,22 @@ template<typename T> struct ReadOnlyVector : public ForwardIterator<T>
         return ptr_;
     }
 
-    constexpr T operator[](data_size_t i) const
+    constexpr T operator[](const data_size_t i) const
     {
+        assert(i >= 0 && i < size_);
         return *(begin() + i);
     }
 
-    constexpr T &operator[](data_size_t i)
+    constexpr T &operator[](const data_size_t i)
     {
+        assert(i >= 0 && i < size_);
         return begin() + i;
+    }
+
+    constexpr const T& at(const data_size_t i) const
+    {
+        assert(i >= 0 && i < size_);
+        return *(begin() + i);
     }
 
     virtual data_size_t i_size() const noexcept override final
@@ -76,11 +84,11 @@ template<typename T> struct ReadOnlyVector : public ForwardIterator<T>
         return ptr_;
     }
 
-    constexpr uint64_t findIndex(T index) const noexcept
+    constexpr uint64_t findIndex(const T index) const noexcept
     {
         for (uint64_t i = 0; i < size_; i++)
         {
-            if (this[i] == index)
+            if (at(i) == index)
                 return i;
         }
         return size_;

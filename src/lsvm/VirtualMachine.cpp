@@ -50,74 +50,76 @@ static const char *opToStr(const uint64_t op) noexcept
     }
 }
 
-#define OP(code, type, cast, actor)                                                              \
-    case OpCode::code: {                                                                         \
-        VM_DATA mem_or_reg;                                                                      \
-        if (op_data.op.is_reg)                                                                   \
-        {                                                                                        \
-            mem_or_reg = getRegister((Register)op_data.op.reg_or_memory_dest);                   \
-            setRegister((Register)op_data.op.reg_or_memory_dest, {(cast)0});                     \
-        }                                                                                        \
-        else                                                                                     \
-            mem_or_reg = getMemory(op_data.op.reg_or_memory_dest);                               \
-        setRegister((Register)op_data.op.reg,                                                    \
-                    {(cast)(mem_or_reg.type actor getRegister((Register)op_data.op.reg).type)}); \
-    }                                                                                            \
+#define OP(code, cast, actor)                                                                                    \
+    case OpCode::code: {                                                                                         \
+        vm_data_t mem_or_reg;                                                                                    \
+        if (op_data.op.is_reg)                                                                                   \
+        {                                                                                                        \
+            mem_or_reg = getRegister((Register)op_data.op.reg_or_memory_dest);                                   \
+            setRegister((Register)op_data.op.reg_or_memory_dest, {(cast)0});                                     \
+        }                                                                                                        \
+        else                                                                                                     \
+            mem_or_reg = getMemory(op_data.op.reg_or_memory_dest);                                               \
+        setRegister((Register)op_data.op.reg,                                                                    \
+                    {(std::get<cast>(mem_or_reg) actor std::get<cast>(getRegister((Register)op_data.op.reg)))}); \
+    }                                                                                                            \
     break
 
 uint64_t LunaScriptVirtualMachine::runNextOp(const uint64_t in) noexcept
 {
     OP_DATA op_data(in);
-    printf("OP:%s, REG:%u, is actor register:%s,is actor a const value:%s, LOC:%lu\n", opToStr(op_data.op.op),
-           op_data.op.reg, op_data.op.is_reg == 1 ? "true" : "false", op_data.op.is_constant == 1 ? "true" : "false",
-           op_data.op.reg_or_memory_dest);
+    if (debug_mode)
+        printf("OP:%s, REG:%u, is actor register:%s,is actor a const value:%s, LOC:%lu\n", opToStr(op_data.op.op),
+               op_data.op.reg, op_data.op.is_reg == 1 ? "true" : "false",
+               op_data.op.is_constant == 1 ? "true" : "false", op_data.op.reg_or_memory_dest);
     switch ((OpCode)op_data.op.op)
     {
-        OP(ADD, integer_, uint64_t, +);
-        OP(SUB, integer_, uint64_t, -);
-        OP(DIV, integer_, uint64_t, /);
-        OP(MUL, integer_, uint64_t, *);
-    case OpCode::JMP:{
+        OP(ADD, uint64_t, +);
+        OP(SUB, uint64_t, -);
+        OP(DIV, uint64_t, /);
+        OP(MUL, uint64_t, *);
+    case OpCode::JMP: {
         return_stack->push(pic + 1);
+        set_pic = true;
         return op_data.op.reg_or_memory_dest;
     }
     break;
     case OpCode::CMP: {
-        VM_DATA mem_or_reg;
+        vm_data_t mem_or_reg;
         if (op_data.op.is_reg)
             mem_or_reg = getRegister((Register)op_data.op.reg_or_memory_dest);
         else
             mem_or_reg = getMemory(op_data.op.reg_or_memory_dest);
-        setRegister((Register)op_data.op.reg,
-                    {(uint64_t)(mem_or_reg.integer_ == getRegister((Register)op_data.op.reg).integer_)});
+        setRegister((Register)op_data.op.reg, {(uint64_t)(std::get<uint64_t>(mem_or_reg) ==
+                                                          std::get<uint64_t>(getRegister((Register)op_data.op.reg)))});
     }
     break;
     case OpCode::NCMP: {
-        VM_DATA mem_or_reg;
+        vm_data_t mem_or_reg;
         if (op_data.op.is_reg)
             mem_or_reg = getRegister((Register)op_data.op.reg_or_memory_dest);
         else
             mem_or_reg = getMemory(op_data.op.reg_or_memory_dest);
-        setRegister((Register)op_data.op.reg,
-                    {(uint64_t)(mem_or_reg.integer_ != getRegister((Register)op_data.op.reg).integer_)});
+        setRegister((Register)op_data.op.reg, {(uint64_t)(std::get<uint64_t>(mem_or_reg) !=
+                                                          std::get<uint64_t>(getRegister((Register)op_data.op.reg)))});
     }
     break;
     case OpCode::PUSH: {
-        VM_DATA mem_or_reg;
+        vm_data_t mem_or_reg;
         if (op_data.op.is_reg)
         {
             mem_or_reg = getRegister((Register)op_data.op.reg_or_memory_dest);
-            setRegister((Register)op_data.op.reg_or_memory_dest, {(uint64_t)0});
+            setRegister((Register)op_data.op.reg_or_memory_dest, 0);
         }
         else if (op_data.op.is_constant)
-            mem_or_reg = {op_data.op.reg_or_memory_dest};
+            mem_or_reg = (uint64_t)op_data.op.reg_or_memory_dest;
         else
             mem_or_reg = getMemory(op_data.op.reg_or_memory_dest);
         push(mem_or_reg);
     }
     break;
     case OpCode::POP: {
-        VM_DATA value = pop();
+        vm_data_t value = pop();
         setRegister((Register)op_data.op.reg, value);
     }
     case OpCode::STORE:
@@ -126,10 +128,14 @@ uint64_t LunaScriptVirtualMachine::runNextOp(const uint64_t in) noexcept
     case OpCode::LOAD:
         data->vmErrorCallback("LOAD not implemented");
         break;
-    case OpCode::CALL:
-        data->vmErrorCallback("CALL not implemented");
-        break;
+    case OpCode::CALL: {
+        vm_data_t *data = execute(op_data.op.reg_or_memory_dest, stack);
+        if (data)
+            push(*data);
+    }
+    break;
     case OpCode::RET: {
+        set_pic = true;
         if (!return_stack->empty())
         {
             uint64_t result = return_stack->top();
@@ -141,26 +147,23 @@ uint64_t LunaScriptVirtualMachine::runNextOp(const uint64_t in) noexcept
     }
     break;
     case OpCode::MOV: {
-        VM_DATA mem_or_reg;
+        vm_data_t mem_or_reg;
         if (op_data.op.is_reg)
         {
             mem_or_reg = getRegister((Register)op_data.op.reg_or_memory_dest);
-            setRegister((Register)op_data.op.reg_or_memory_dest, {(uint64_t)0});
+            setRegister((Register)op_data.op.reg_or_memory_dest, 0);
         }
         else if (op_data.op.is_constant)
-            mem_or_reg = {op_data.op.reg_or_memory_dest};
+            mem_or_reg = (uint64_t)op_data.op.reg_or_memory_dest;
         else
             mem_or_reg = getMemory(op_data.op.reg_or_memory_dest);
         setRegister((Register)op_data.op.reg, mem_or_reg);
     }
     break;
-        OP(FADD, float_, float64_t, +);
-        OP(FSUB, float_, float64_t, -);
-        OP(FDIV, float_, float64_t, /);
-        OP(FMUL, float_, float64_t, *);
-    case OpCode::ICALL:
-        data->vmErrorCallback("ICALL not implemented");
-        break;
+        OP(FADD, float64_t, +);
+        OP(FSUB, float64_t, -);
+        OP(FDIV, float64_t, /);
+        OP(FMUL, float64_t, *);
     case OpCode::NOP:
         break;
     default:

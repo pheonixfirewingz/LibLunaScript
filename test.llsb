@@ -1,7 +1,8 @@
-program_main:
-    jmp jump_0
-    ret
-
 jump_0:
     push const 0x08
+    ret
+
+script_main:
+    jmp jump_0
+    call vmExit
     ret

@@ -57,60 +57,27 @@ int main(int, char **)
     libOSInit();
     losResult res;
     setRoot(PROJECT_SOURCE_DIR);
-    /*
-    argparse::ArgumentParser program("LunaScript");
-
-    program.add_argument("input").required().help("the sorce file name");
-    program.add_argument("-asm", "--assembler").default_value(false).help("compile bytecode mode");
-    program.add_argument(" -r ", " --running ").help(" set compiler to run mode ");
-    program.add_argument(" -o ", "--output").required().help("specify the output file.");
-    program.add_argument("-O", "--optimize").required().help("optimization level").default_value(0);
-
-    try
-    {
-        program.parse_args(argc, argv);
-    }
-    catch (const std::runtime_error &err)
-    {
-        std::cerr << err.what() << std::endl;
-        std::cerr << program;
-        std::exit(1);
-    }*/
-    bool assembler_mode = true;
-    bool running_mode = true;
-    if (!assembler_mode)
-    {
-        char *read_str;
-        data_size_t read_str_size = 0;
-        if ((res = fileRead(createP("", "test"), &read_str, &read_str_size)) != LOS_SUCCESS)
-            return res;
-        char *ast_str;
-        data_size_t ast_str_size = 0;
-        if ((res = compile("test", std::string(read_str, 0, read_str_size), &ast_str, &ast_str_size)) != LOS_SUCCESS)
-            return res;
-        if ((res = fileWrite<char>(createP("", "test", ".ast.json"), ast_str, ast_str_size)) != LOS_SUCCESS)
-            return res;
-        free(ast_str);
-    }
-    else
-    {
-        char *read_str;
-        data_size_t read_str_size = 0;
-        if ((res = fileRead(createP("", "test", ".llsb"), &read_str, &read_str_size)) != LOS_SUCCESS)
-            return res;
-        std::ReadOnlyVector<uint64_t> ops = {};
-        if ((res = assemble(std::string(read_str, 0, read_str_size), &ops)) != LOS_SUCCESS)
-            return res;
-        if ((res = fileWrite<uint64_t>(createP("", "test", ".lsobj"), ops.data(), ops.size())) != LOS_SUCCESS)
-            return res;
-        if (running_mode)
-        {
-            VMData data{.vmPrintRegCallback = [](uint64_t reg) { printf("LunaScript - Reg: %lu\n", reg); },
-                        .vmErrorCallback = [](const char* msg) { printf("LunaScript - ERROR: %s\n", msg); },
-                        .vmExitCallback = [](uint64_t reg) { printf("LunaScript - EndCode: %lu\n", reg); }};
-            run(&data, ops);
-        }
-    }
+    char *read_str;
+    data_size_t read_str_size = 0;
+    if ((res = fileRead(createP("", "test", ".llsb"), &read_str, &read_str_size)) != LOS_SUCCESS)
+        return res;
+    std::ReadOnlyVector<uint64_t> ops = {};
+    if ((res = assemble(std::string(read_str, 0, read_str_size), &ops)) != LOS_SUCCESS)
+        return res;
+    if ((res = fileWrite<uint64_t>(createP("", "test", ".lsobj"), ops.data(), ops.size())) != LOS_SUCCESS)
+        return res;
+    VMData data{.vmCallbacks = {{VMFunctionName("vmExit").hash,
+                                 [](std::stack<vm_data_t> *stack) {
+                                     uint64_t typed_reg = std::get<uint64_t>(stack->top());
+                                     stack->pop();
+                                     printf("LunaScript - EndCode: %lu\n", typed_reg);
+                                     return nullptr;
+                                 }}},
+                .vmErrorCallback = [](const char *msg) {
+                    printf("LunaScript - ERROR: %s\n", msg);
+                    std::exit(1);
+                }};
+    run(&data, ops, false);
     libOSCleanUp();
     return 0;
 }

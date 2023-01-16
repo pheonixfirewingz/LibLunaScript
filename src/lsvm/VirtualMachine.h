@@ -1,6 +1,5 @@
 #pragma once
 #include "../assembler/LunaBytecode.h"
-#include <initializer_list>
 #include <liblunascript/Lsvm.h>
 #include <stack>
 #include <stdint.h>
@@ -11,25 +10,19 @@ using namespace LunaScript::bytecode;
 class LunaScriptVirtualMachine
 {
     const VMData *data;
-    union VM_DATA {
-        uint64_t integer_;
-        float64_t float_;
-        VM_DATA() = default;
-        VM_DATA(const float64_t data)
-            : float_(data){};
-        VM_DATA(const uint64_t data)
-            : integer_(data){};
-    };
-    std::stack<VM_DATA> *stack;
+    std::stack<vm_data_t> *stack;
     std::stack<uint64_t> *return_stack;
-    VM_DATA r1 = {(uint64_t)0};
-    VM_DATA r2 = {(uint64_t)0};
-    VM_DATA r3 = {(uint64_t)0};
-    VM_DATA r4 = {(uint64_t)0};
-    VM_DATA r5 = {(uint64_t)0};
-    VM_DATA r6 = {(uint64_t)0};
-    VM_DATA r7 = {(uint64_t)0};
+    vm_data_t r1 = {(uint64_t)0};
+    vm_data_t r2 = {(uint64_t)0};
+    vm_data_t r3 = {(uint64_t)0};
+    vm_data_t r4 = {(uint64_t)0};
+    vm_data_t r5 = {(uint64_t)0};
+    vm_data_t r6 = {(uint64_t)0};
+    vm_data_t r7 = {(uint64_t)0};
     uint64_t pic = 0;
+    bool stop = false;
+    bool set_pic = false;
+    const bool debug_mode;
 
     union OP_DATA {
         uint64_t value;
@@ -40,19 +33,19 @@ class LunaScriptVirtualMachine
         }
     };
 
-    void push(VM_DATA value) noexcept
+    void push(vm_data_t value) noexcept
     {
         stack->push(value);
     }
 
-    VM_DATA pop() noexcept
+    vm_data_t pop() noexcept
     {
-        VM_DATA value = stack->top();
+        vm_data_t value = stack->top();
         stack->pop();
         return value;
     }
 
-    VM_DATA getRegister(const Register reg) const noexcept
+    vm_data_t getRegister(const Register reg) const noexcept
     {
         switch (reg)
         {
@@ -76,7 +69,7 @@ class LunaScriptVirtualMachine
         }
     }
 
-    void setRegister(const Register reg, const VM_DATA value) noexcept
+    void setRegister(const Register reg, const vm_data_t value) noexcept
     {
         switch (reg)
         {
@@ -107,7 +100,7 @@ class LunaScriptVirtualMachine
         }
     }
 
-    VM_DATA getMemory(uint64_t) const noexcept
+    vm_data_t getMemory(uint64_t) const noexcept
     {
         data->vmErrorCallback("memory is not implemented");
         return {(uint64_t)0};
@@ -115,27 +108,43 @@ class LunaScriptVirtualMachine
 
     uint64_t runNextOp(const uint64_t op) noexcept;
 
-  public:
-    explicit LunaScriptVirtualMachine(const VMData *data_in,const std::ReadOnlyVector<uint64_t> ops)
-        : data(data_in)
-        , stack(new std::stack<VM_DATA>())
-        , return_stack(new std::stack<uint64_t>())
+    vm_data_t *execute(const uint64_t name, std::stack<vm_data_t> *stack)
     {
-        for (; pic <= ops.size();)
+        auto func = data->vmCallbacks.find(name);
+        if (func)
+            return (*func)(stack);
+        else
+            data->vmErrorCallback(
+                (std::string("tried to execute a non registered function (Hash Name): ") += std::to_string(name))
+                    .c_str());
+        stop = true;
+        return nullptr;
+    }
+
+  public:
+    explicit LunaScriptVirtualMachine(const VMData *data_in, const std::ReadOnlyVector<uint64_t> ops,
+                                      bool debug_mode_in)
+        : data(data_in)
+        , stack(new std::stack<vm_data_t>())
+        , return_stack(new std::stack<uint64_t>())
+        , debug_mode(debug_mode_in)
+    {
+        pic = ops.findIndex(UINT64_MAX);
+        for (; pic < ops.size();)
         {
-            uint64_t new_pic;
-            if ((new_pic = runNextOp(ops[pic])) != 0)
+            if (stop)
+                break;
+            uint64_t new_pic = runNextOp(ops[pic]);
+            if (set_pic)
+            {
                 pic = new_pic;
-            else 
+                set_pic = false;
+            }
+            else
                 pic++;
             if (new_pic == UINT64_MAX)
                 break;
         }
-    }
-
-    ~LunaScriptVirtualMachine()
-    {
-        data->vmExitCallback(pop().integer_);
     }
 };
 } // namespace LunaScript::lsvm

@@ -40,6 +40,7 @@ std::ReadOnlyVector<uint64_t> assemble(const char *src, const data_size_t src_si
     bool op_mode = false;
     bool call_mode = false;
     bool push_mode = false;
+    bool has_op = false;
     std::string last_identifier;
     for (auto &token : tokens)
     {
@@ -47,20 +48,22 @@ std::ReadOnlyVector<uint64_t> assemble(const char *src, const data_size_t src_si
         {
         case LunaScript::assembler::LexerToken::LABEL: {
             label_memory_map.emplace(std::hash<std::string>{}(last_identifier), current_op_code);
-            if (last_identifier == "program_main")
-            {
-                ops.push_back(UINT64_MAX);
+            if (last_identifier == "script_main")
                 current_op_code++;
-            }
         }
         break;
         case LunaScript::assembler::LexerToken::IDENTIFIER:
             last_identifier = token.str_token;
             break;
-        case LunaScript::assembler::LexerToken::NEW_LINE:
-            current_op_code++;
-            break;
+        case LunaScript::assembler::LexerToken::NEW_LINE: {
+            if (has_op)
+                current_op_code++;
+            has_op = false;
+        }
+        break;
         default:
+            if (!has_op)
+                has_op = true;
             break;
         }
     }
@@ -92,12 +95,16 @@ std::ReadOnlyVector<uint64_t> assemble(const char *src, const data_size_t src_si
             OP(FSUB);
             OP(FDIV);
             OP(FMUL);
-            SPECIAL_OP(ICALL, call_mode);
         case LunaScript::assembler::LexerToken::CONST: {
             byte_code.setConst();
         }
         break;
             SPECIAL_OP(CALL, call_mode);
+        case LunaScript::assembler::LexerToken::LABEL: {
+            if (last_identifier == "script_main")
+                ops.push_back(UINT64_MAX);
+        }
+        break;
         case LunaScript::assembler::LexerToken::IDENTIFIER: {
             if (op_mode && !call_mode)
                 byte_code.setMemory<uint64_t>(std::stoull(token.str_token, nullptr, 16));
@@ -106,6 +113,8 @@ std::ReadOnlyVector<uint64_t> assemble(const char *src, const data_size_t src_si
                 if (auto search = label_memory_map.find(std::hash<std::string>{}(token.str_token));
                     search != label_memory_map.end())
                     byte_code.setMemory<uint64_t>(search->second);
+                else
+                    byte_code.setMemory<uint64_t>(std::hash<std::string>{}(token.str_token));
             }
             else
                 last_identifier = token.str_token;
