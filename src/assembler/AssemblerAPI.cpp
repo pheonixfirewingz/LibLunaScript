@@ -83,6 +83,7 @@ std::ReadOnlyVector<uint64_t> assemble(const char *src, const data_size_t src_si
             OP(DIV);
             OP(MUL);
             SPECIAL_OP(JMP, call_mode);
+            SPECIAL_OP(SKIP, call_mode);
             OP(CMP);
             OP(NCMP);
             SPECIAL_OP(PUSH, push_mode);

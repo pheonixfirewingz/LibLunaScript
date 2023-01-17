@@ -42,7 +42,7 @@ static const char *opToStr(const uint64_t op) noexcept
     case 0x11:
         return "float multiply";
     case 0x12:
-        return "internal call";
+        return "skip";
     case 0x1F:
         return "no operation";
     default:
@@ -84,14 +84,22 @@ uint64_t LunaScriptVirtualMachine::runNextOp(const uint64_t in) noexcept
         return op_data.op.reg_or_memory_dest;
     }
     break;
+    case OpCode::SKIP: {
+        set_pic = true;
+        return op_data.op.reg_or_memory_dest;
+    }
+    break;
     case OpCode::CMP: {
         vm_data_t mem_or_reg;
         if (op_data.op.is_reg)
             mem_or_reg = getRegister((Register)op_data.op.reg_or_memory_dest);
         else
             mem_or_reg = getMemory(op_data.op.reg_or_memory_dest);
-        setRegister((Register)op_data.op.reg, {(uint64_t)(std::get<uint64_t>(mem_or_reg) ==
-                                                          std::get<uint64_t>(getRegister((Register)op_data.op.reg)))});
+        if (std::get<uint64_t>(mem_or_reg) == std::get<uint64_t>(getRegister((Register)op_data.op.reg)))
+        {
+            set_pic = true;
+            return pic + 2;
+        }
     }
     break;
     case OpCode::NCMP: {
@@ -100,8 +108,11 @@ uint64_t LunaScriptVirtualMachine::runNextOp(const uint64_t in) noexcept
             mem_or_reg = getRegister((Register)op_data.op.reg_or_memory_dest);
         else
             mem_or_reg = getMemory(op_data.op.reg_or_memory_dest);
-        setRegister((Register)op_data.op.reg, {(uint64_t)(std::get<uint64_t>(mem_or_reg) !=
-                                                          std::get<uint64_t>(getRegister((Register)op_data.op.reg)))});
+        if (std::get<uint64_t>(mem_or_reg) != std::get<uint64_t>(getRegister((Register)op_data.op.reg)))
+        {
+            set_pic = true;
+            return pic + 2;
+        }
     }
     break;
     case OpCode::PUSH: {

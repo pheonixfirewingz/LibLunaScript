@@ -24,6 +24,7 @@ enum class OpCode : uint8_t
     FSUB = 0x0F,  // 16
     FDIV = 0x10,  // 15
     FMUL = 0x11,  // 14
+    SKIP = 0x12,  // 13
     // can add
     NOP = 0x1F // 0
 };
@@ -42,7 +43,7 @@ enum class Register : uint64_t
 
 struct ByteCode
 {
-    //FIXME: byte dose not support telling if const data is float or not
+    // FIXME: byte dose not support telling if const data is float or not
     uint64_t op : 5;
     uint64_t reg : 3;
     uint64_t is_reg : 1;

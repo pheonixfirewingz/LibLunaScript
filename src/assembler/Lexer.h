@@ -21,6 +21,7 @@ enum class LexerToken
     DIV,
     MUL,
     JMP,
+    SKIP,
     CMP,
     NCMP,
     PUSH,

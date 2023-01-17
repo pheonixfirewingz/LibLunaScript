@@ -77,7 +77,7 @@ int main(int, char **)
                     printf("LunaScript - ERROR: %s\n", msg);
                     std::exit(1);
                 }};
-    run(&data, ops, false);
+    run(&data, ops, true);
     libOSCleanUp();
     return 0;
 }

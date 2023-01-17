@@ -1,8 +1,12 @@
-jump_0:
-    push const 0x08
-    ret
-
 script_main:
-    jmp jump_0
+    mov r1 const 0x01
+    mov r2 const 0x01
+    cmp r1 r2
+    skip if_else
+    push const 0x08
+    skip if_end
+if_else:
+    push const 0x09
+if_end:
     call vmExit
     ret
