@@ -3,6 +3,8 @@
 #include <liblunascript/Lsvm.h>
 #include <stack>
 #include <stdint.h>
+#include <chrono>
+#include <thread>
 
 namespace LunaScript::lsvm
 {
@@ -33,10 +35,7 @@ class LunaScriptVirtualMachine
         }
     };
 
-    void push(vm_data_t value) noexcept
-    {
-        stack->push(value);
-    }
+    #define push_(value) stack->push(value)
 
     vm_data_t pop() noexcept
     {

@@ -92,10 +92,6 @@ std::ReadOnlyVector<uint64_t> assemble(const char *src, const data_size_t src_si
             OP(LOAD);
             OP(RET);
             OP(MOV);
-            OP(FADD);
-            OP(FSUB);
-            OP(FDIV);
-            OP(FMUL);
         case LunaScript::assembler::LexerToken::CONST: {
             byte_code.setConst();
         }
@@ -108,7 +104,7 @@ std::ReadOnlyVector<uint64_t> assemble(const char *src, const data_size_t src_si
         break;
         case LunaScript::assembler::LexerToken::IDENTIFIER: {
             if (op_mode && !call_mode)
-                byte_code.setMemory<uint64_t>(std::stoull(token.str_token, nullptr, 16));
+                byte_code.setMemory<uint64_t>(std::stoul(token.str_token, 0, 16));
             else if (call_mode)
             {
                 if (auto search = label_memory_map.find(std::hash<std::string>{}(token.str_token));

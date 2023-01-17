@@ -19,9 +19,7 @@ static const std::ReadOnlyLookupTable<data_size_t, LexerToken> lookup = {
     {std::hash<std::string>{}("store"), LexerToken::STORE}, {std::hash<std::string>{}("load"), LexerToken::LOAD},
     {std::hash<std::string>{}("call"), LexerToken::CALL},   {std::hash<std::string>{}("icall"), LexerToken::ICALL},
     {std::hash<std::string>{}("ret"), LexerToken::RET},     {std::hash<std::string>{}("const"), LexerToken::CONST},
-    {std::hash<std::string>{}("mov"), LexerToken::MOV},     {std::hash<std::string>{}("fadd"), LexerToken::FADD},
-    {std::hash<std::string>{}("fsub"), LexerToken::FSUB},   {std::hash<std::string>{}("fdiv"), LexerToken::FDIV},
-    {std::hash<std::string>{}("fmul"), LexerToken::FMUL},   {std::hash<std::string>{}("\n"), LexerToken::NEW_LINE},
+    {std::hash<std::string>{}("mov"), LexerToken::MOV},     {std::hash<std::string>{}("\n"), LexerToken::NEW_LINE},
 };
 
 static const std::ReadOnlyLookupTable<data_size_t, bool> reject = {

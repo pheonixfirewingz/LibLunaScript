@@ -54,6 +54,9 @@ losResult assemble(const std::string &src, std::ReadOnlyVector<uint64_t> *ops) n
 // int main(int argc, char **argv)
 int main(int, char **)
 {
+    bool debug;
+    std::cout << "Debug Mode? (1)true or (0)false: ";
+    std::cin >> debug;
     libOSInit();
     losResult res;
     setRoot(PROJECT_SOURCE_DIR);
@@ -70,14 +73,14 @@ int main(int, char **)
                                  [](std::stack<vm_data_t> *stack) {
                                      uint64_t typed_reg = std::get<uint64_t>(stack->top());
                                      stack->pop();
-                                     printf("LunaScript - EndCode: %lu\n", typed_reg);
+                                     printf("\x1B[94mLunaScript\x1B[33m - EndCode: %lu\033[0m\t\t\n", typed_reg);
                                      return nullptr;
                                  }}},
                 .vmErrorCallback = [](const char *msg) {
                     printf("LunaScript - ERROR: %s\n", msg);
                     std::exit(1);
                 }};
-    run(&data, ops, true);
+    run(&data, ops, debug);
     libOSCleanUp();
     return 0;
 }

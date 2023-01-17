@@ -20,11 +20,7 @@ enum class OpCode : uint8_t
     CALL = 0x0B,  // 20
     RET = 0x0C,   // 19
     MOV = 0x0D,   // 18
-    FADD = 0x0E,  // 17
-    FSUB = 0x0F,  // 16
-    FDIV = 0x10,  // 15
-    FMUL = 0x11,  // 14
-    SKIP = 0x12,  // 13
+    SKIP = 0x0E,  // 17
     // can add
     NOP = 0x1F // 0
 };

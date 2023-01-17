@@ -34,17 +34,9 @@ static const char *opToStr(const uint64_t op) noexcept
     case 0x0D:
         return "move";
     case 0x0E:
-        return "float add";
-    case 0x0F:
-        return "float subtract";
-    case 0x10:
-        return "float divide";
-    case 0x11:
-        return "float multiply";
-    case 0x12:
         return "skip";
     case 0x1F:
-        return "no operation";
+        return "no operation/sleep";
     default:
         return "unknown";
     }
@@ -69,8 +61,9 @@ uint64_t LunaScriptVirtualMachine::runNextOp(const uint64_t in) noexcept
 {
     OP_DATA op_data(in);
     if (debug_mode)
-        printf("OP:%s, REG:%u, is actor register:%s,is actor a const value:%s, LOC:%lu\n", opToStr(op_data.op.op),
-               op_data.op.reg, op_data.op.is_reg == 1 ? "true" : "false",
+        printf("\x1B[32mOP:\x1B[37m %s, \x1B[32mREG:\x1B[33m %u, \x1B[32mis actor register:\x1B[33m %s,\x1B[32mis "
+               "actor a const value:\x1B[33m %s, \x1B[32mLOC:\x1B[33m %lu\033[0m\t\t\n",
+               opToStr(op_data.op.op), op_data.op.reg, op_data.op.is_reg == 1 ? "true" : "false",
                op_data.op.is_constant == 1 ? "true" : "false", op_data.op.reg_or_memory_dest);
     switch ((OpCode)op_data.op.op)
     {
@@ -126,7 +119,7 @@ uint64_t LunaScriptVirtualMachine::runNextOp(const uint64_t in) noexcept
             mem_or_reg = (uint64_t)op_data.op.reg_or_memory_dest;
         else
             mem_or_reg = getMemory(op_data.op.reg_or_memory_dest);
-        push(mem_or_reg);
+        push_(mem_or_reg);
     }
     break;
     case OpCode::POP: {
@@ -142,7 +135,7 @@ uint64_t LunaScriptVirtualMachine::runNextOp(const uint64_t in) noexcept
     case OpCode::CALL: {
         vm_data_t *data = execute(op_data.op.reg_or_memory_dest, stack);
         if (data)
-            push(*data);
+            push_(*data);
     }
     break;
     case OpCode::RET: {
@@ -171,11 +164,9 @@ uint64_t LunaScriptVirtualMachine::runNextOp(const uint64_t in) noexcept
         setRegister((Register)op_data.op.reg, mem_or_reg);
     }
     break;
-        OP(FADD, float64_t, +);
-        OP(FSUB, float64_t, -);
-        OP(FDIV, float64_t, /);
-        OP(FMUL, float64_t, *);
     case OpCode::NOP:
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(1ms);
         break;
     default:
         data->vmErrorCallback("operator unknown");

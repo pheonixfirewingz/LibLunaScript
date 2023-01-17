@@ -32,10 +32,6 @@ enum class LexerToken
     ICALL,
     RET,
     MOV,
-    FADD,
-    FSUB,
-    FDIV,
-    FMUL,
     NEW_LINE,
     CONST,
 };
