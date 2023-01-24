@@ -1,9 +1,9 @@
 #pragma once
 #include "../assembler/LunaBytecode.h"
+#include <chrono>
 #include <liblunascript/Lsvm.h>
 #include <stack>
 #include <stdint.h>
-#include <chrono>
 #include <thread>
 
 namespace LunaScript::lsvm
@@ -35,7 +35,7 @@ class LunaScriptVirtualMachine
         }
     };
 
-    #define push_(value) stack->push(value)
+#define push_(value) stack->push(value)
 
     vm_data_t pop() noexcept
     {
@@ -128,7 +128,11 @@ class LunaScriptVirtualMachine
         , return_stack(new std::stack<uint64_t>())
         , debug_mode(debug_mode_in)
     {
+        if (debug_mode)
+            printf("\x1B[94mLunaScriptVM:\x1B[37m starting main\n");
         pic = ops.findIndex(UINT64_MAX);
+        if (debug_mode)
+            printf("\x1B[94mLunaScriptVM:\x1B[37m start main at opcode -> %lu\n", pic);
         for (; pic < ops.size();)
         {
             if (stop)
@@ -142,7 +146,12 @@ class LunaScriptVirtualMachine
             else
                 pic++;
             if (new_pic == UINT64_MAX)
+            {
+                vm_data_t ret = pop();
+                if (debug_mode)
+                    printf("\x1B[94mLunaScriptVM:\x1B[33m - Main Returned: %lu\033[0m\t\t\n", std::get<uint64_t>(ret));
                 break;
+            }
         }
     }
 };

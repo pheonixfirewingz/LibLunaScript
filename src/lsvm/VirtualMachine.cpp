@@ -42,6 +42,7 @@ static const char *opToStr(const uint64_t op) noexcept
     }
 }
 
+//TODO: implement floating math
 #define OP(code, cast, actor)                                                                                    \
     case OpCode::code: {                                                                                         \
         vm_data_t mem_or_reg;                                                                                    \

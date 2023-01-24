@@ -38,7 +38,7 @@ losResult compile(const std::string &filename, const std::string &src, char **ou
         }
         return res;
     }
-    astToString(compiler, output, output_size);
+    toByteCode(compiler, output, output_size);
     freeCompiler(compiler);
     return LOS_SUCCESS;
 }
@@ -54,18 +54,23 @@ losResult assemble(const std::string &src, std::ReadOnlyVector<uint64_t> *ops) n
 // int main(int argc, char **argv)
 int main(int, char **)
 {
-    bool debug;
-    std::cout << "Debug Mode? (1)true or (0)false: ";
-    std::cin >> debug;
+    bool debug = true;
+    // std::cout << "Debug Mode? (1)true or (0)false: ";
+    // std::cin >> debug;
     libOSInit();
     losResult res;
     setRoot(PROJECT_SOURCE_DIR);
     char *read_str;
     data_size_t read_str_size = 0;
-    if ((res = fileRead(createP("", "test", ".llsb"), &read_str, &read_str_size)) != LOS_SUCCESS)
+    if ((res = fileRead(createP("", "test", ".lls"), &read_str, &read_str_size)) != LOS_SUCCESS)
         return res;
     std::ReadOnlyVector<uint64_t> ops = {};
-    if ((res = assemble(std::string(read_str, 0, read_str_size), &ops)) != LOS_SUCCESS)
+    char *byte_code;
+    data_size_t byte_code_size;
+    if ((res = compile("test", std::string(read_str, 0, read_str_size), &byte_code, &byte_code_size)) != LOS_SUCCESS)
+        return res;
+    puts(std::string(byte_code, 0, byte_code_size).c_str());
+    if ((res = assemble(std::string(byte_code, 0, byte_code_size), &ops)) != LOS_SUCCESS)
         return res;
     if ((res = fileWrite<uint64_t>(createP("", "test", ".lsobj"), ops.data(), ops.size())) != LOS_SUCCESS)
         return res;

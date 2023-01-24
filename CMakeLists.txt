@@ -10,16 +10,17 @@ set ( COMPILER_TESTING OFF )
 
 configure_file ( ${PROJECT_SOURCE_DIR}/src/application/Cmake.h.in ${PROJECT_SOURCE_DIR}/src/application/Cmake.h @ONLY )
 
-set ( compiler_source
-     ${PROJECT_SOURCE_DIR}/src/compiler/CompilerAPI.cpp
-     ${PROJECT_SOURCE_DIR}/src/compiler/front/Parser.cpp
-     ${PROJECT_SOURCE_DIR}/src/compiler/front/Json.cpp
+set(compiler_source
+    ${PROJECT_SOURCE_DIR}/src/compiler/CompilerAPI.cpp
+    ${PROJECT_SOURCE_DIR}/src/compiler/front/Parser.cpp
+    ${PROJECT_SOURCE_DIR}/src/compiler/back/CodeGen.cpp
+    ${PROJECT_SOURCE_DIR}/src/compiler/front/Json.cpp
 
-     ${PROJECT_SOURCE_DIR}/src/assembler/AssemblerAPI.cpp
-     ${PROJECT_SOURCE_DIR}/src/assembler/Lexer.cpp
-     
-     ${PROJECT_SOURCE_DIR}/src/lsvm/VmAPI.cpp
-     ${PROJECT_SOURCE_DIR}/src/lsvm/VirtualMachine.cpp
+    ${PROJECT_SOURCE_DIR}/src/assembler/AssemblerAPI.cpp
+    ${PROJECT_SOURCE_DIR}/src/assembler/Lexer.cpp
+
+    ${PROJECT_SOURCE_DIR}/src/lsvm/VmAPI.cpp
+    ${PROJECT_SOURCE_DIR}/src/lsvm/VirtualMachine.cpp
 )
 
 set ( app_source 
