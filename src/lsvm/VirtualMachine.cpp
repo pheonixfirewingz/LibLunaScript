@@ -126,6 +126,7 @@ uint64_t LunaScriptVirtualMachine::runNextOp(const uint64_t in) noexcept
     case OpCode::POP: {
         vm_data_t value = pop();
         setRegister((Register)op_data.op.reg, value);
+        break;
     }
     case OpCode::STORE:
         data->vmErrorCallback("STORE not implemented");

@@ -47,6 +47,16 @@ struct ByteCode
     uint64_t reg_or_memory_dest : 53;
     uint64_t reserved_0 : 1 = 0;
 
+    ByteCode()
+    {
+        op = (uint64_t)OpCode::NOP;
+        reg = (uint64_t)Register::NONE;
+        is_reg = false;
+        is_constant = false;
+        reg_or_memory_dest = 0;
+        reserved_0 = 0;
+    }
+
     uint64_t get() noexcept
     {
         return op | reg << 5 | is_reg << 8 | is_constant << 9 | reg_or_memory_dest << 10 | (uint64_t)reserved_0 << 63;

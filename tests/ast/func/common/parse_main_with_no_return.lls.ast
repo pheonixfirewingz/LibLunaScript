@@ -5,7 +5,7 @@
             "type": "FunctionDef",
             "is_public": true,
             "name": "main",
-            "return_type": "Void",
+            "return_type": "void",
             "parameters": {
                 "type": "Expression",
                 "id": "ParameterList",

@@ -10,7 +10,6 @@ enum class NodeType
     ROOT,
     BLOCK,
     FUNC_DEF,
-    FUNC_CALL,
     EXPRESSION,
     BINARY,
     LITERAL
@@ -21,7 +20,8 @@ enum class ExpressionType
     RETURN,
     NO_RETURN,
     VAR_DEFINED,
-    PRAM_LIST
+    PRAM_LIST,
+    FUNC_CALL
 };
 
 enum class DataType
@@ -93,6 +93,12 @@ struct ASTExpression : public ASTNode
     {
         return NodeType::EXPRESSION;
     }
+    ASTExpression() = default;
+    ASTExpression(std::string name_in, ExpressionType type_in)
+        : type(type_in)
+        , extra_data(name_in)
+    {
+    }
 
     virtual ~ASTExpression()
     {
@@ -110,6 +116,27 @@ struct ASTBlock : public ASTNode
     virtual ~ASTBlock()
     {
         list.clear();
+    }
+};
+
+struct ASTFuncCall : public ASTExpression
+{
+    const ASTExpression *args;
+    explicit ASTFuncCall(std::string name_in, const ASTExpression *args_in)
+        : ASTExpression(name_in, ExpressionType::FUNC_CALL)
+        , args(args_in)
+    {
+    }
+
+    NodeType getType() const noexcept override
+    {
+        return ASTExpression::getType();
+    }
+
+    virtual ~ASTFuncCall()
+    {
+        if (args)
+            delete args;
     }
 };
 

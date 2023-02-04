@@ -64,8 +64,9 @@ class LunaScriptVirtualMachine
             return r7;
         case Register::NONE:
             data->vmErrorCallback("tried to access register that does not exist");
-            return {(uint64_t)0};
+            return {(vm_data_t)0};
         }
+        return {(vm_data_t)0};
     }
 
     void setRegister(const Register reg, const vm_data_t value) noexcept

@@ -1,7 +1,7 @@
 #pragma once
 #include "../AST.h"
-#include <libos/Defines.h>
 #include <extend_std/LookUpTable.h>
+#include <libos/Defines.h>
 #include <regex>
 #include <stack>
 #include <stdio.h>
@@ -21,51 +21,52 @@ class Parser
   public:
     enum class LexToken : uint8_t
     {
-       IDENTIFIER,
-       FUNC,
-       PUBLIC_FUNC,
-       RET,
-       R_SQUIGGLY,
-       L_SQUIGGLY,
-       R_CURLY,
-       L_CURLY,
-       COMMA,
-       DOT,
-       ADD,
-       SUB,
-       MUL,
-       DIV,
-       AND,
-       OR,
-       XOR,
-       MODULO,
-       EQUAL,
-       R_ARROW,
-       L_ARROW,
-       S_ARROW,
-       QUOTE,
-       SINGLE_LETTER_QUOTE,
+        ERROR,
+        IDENTIFIER,
+        FUNC,
+        PUBLIC_FUNC,
+        RET,
+        R_SQUIGGLY,
+        L_SQUIGGLY,
+        R_CURLY,
+        L_CURLY,
+        COMMA,
+        DOT,
+        ADD,
+        SUB,
+        MUL,
+        DIV,
+        AND,
+        OR,
+        XOR,
+        MODULO,
+        EQUAL,
+        R_ARROW,
+        L_ARROW,
+        S_ARROW,
+        QUOTE,
+        SINGLE_LETTER_QUOTE,
         // types
-       NO_RETURN,
-       INT8,
-       INT16,
-       INT32,
-       INT64,
-       UINT8,
-       UINT16,
-       UINT32,
-       UINT64,
-       FLOAT32,
-       FLOAT64,
-       STRING,
+        NO_RETURN,
+        INT8,
+        INT16,
+        INT32,
+        INT64,
+        UINT8,
+        UINT16,
+        UINT32,
+        UINT64,
+        FLOAT32,
+        FLOAT64,
+        STRING,
     };
 
     struct lexToken
     {
-        LexToken token;
+        LexToken token = LexToken::ERROR;
         std::string str_token = "";
         uint32_t line = 0;
-        explicit lexToken() = default;
+        lexToken() = default;
         lexToken(LexToken in_tok, uint32_t int_in, std::string str_token) noexcept
             : token(in_tok)
             , str_token(str_token)
@@ -102,7 +103,8 @@ class Parser
 
     inline bool isValidFuncCall(const std::vector<lexToken> &lexer) noexcept
     {
-        if (lexer[getIndexGuard(lexer)].token == LexToken::IDENTIFIER && lexer[getIndexGuard(lexer) + 1].token == LexToken::L_CURLY)
+        if (lexer[getIndexGuard(lexer)].token == LexToken::IDENTIFIER &&
+            lexer[getIndexGuard(lexer) + 1].token == LexToken::L_CURLY)
             return true;
         return false;
     }

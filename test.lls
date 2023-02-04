@@ -1,4 +1,3 @@
-public script_main() -> int32
+public main()
 {
-    ret 1
 }

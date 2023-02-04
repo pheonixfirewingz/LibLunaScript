@@ -152,8 +152,11 @@ const ASTExpression *Parser::parseVar(const std::vector<lexToken> &lexer, bool i
 
         if (isValidFuncCall(lexer) && !is_global)
         {
-            puts("var def: function call hit");
-            std::exit(0);
+            [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
+                error(lexer[getIndexGuard(lexer)], "this is not a valid function name");
+            std::string name = lexer[getIndexGuard(lexer, true)].str_token;
+            const ASTFuncCall *func_call = new ASTFuncCall(name, std::move(parseArgs(lexer)));
+            node->list.emplace_back(func_call);
         }
         if (!isInteger(lexer[getIndexGuard(lexer)]) && !isValidName(lexer[getIndexGuard(lexer)]))
         {
@@ -228,6 +231,11 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer) noexcept
     ASTBlock *block = new ASTBlock();
     if (lexer[getIndexGuard(lexer, true)].token != LexToken::R_SQUIGGLY)
     {
+        if (lexer[getIndexGuard(lexer)].token == LexToken::R_SQUIGGLY)
+        {
+            (void)getIndexGuard(lexer, true);
+            return block;
+        }
         do
         {
             if (lexer.size() <= getIndexGuard(lexer))
@@ -260,8 +268,11 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer) noexcept
                 }
                 else if (isValidFuncCall(lexer))
                 {
-                    puts("ret: function call hit");
-                    std::exit(0);
+                    [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
+                        error(lexer[getIndexGuard(lexer)], "this is not a valid function name");
+                    std::string name = lexer[getIndexGuard(lexer, true)].str_token;
+                    const ASTFuncCall *func_call = new ASTFuncCall(name, std::move(parseArgs(lexer)));
+                    node->list.emplace_back(func_call);
                 }
                 else
                 {
@@ -281,8 +292,11 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer) noexcept
             }
             else if (isValidFuncCall(lexer))
             {
-                puts("func global: function call hit");
-                std::exit(0);
+                [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
+                    error(lexer[getIndexGuard(lexer)], "this is not a valid function name");
+                std::string name = lexer[getIndexGuard(lexer, true)].str_token;
+                const ASTFuncCall *func_call = new ASTFuncCall(name, std::move(parseArgs(lexer)));
+                block->list.emplace_back(func_call);
             }
             else if (isDataType(lexer[getIndexGuard(lexer)]))
                 block->list.emplace_back(parseVar(lexer));
@@ -382,7 +396,7 @@ void Parser::parse(const std::string &&source) noexcept
                 if (isDataType(lexer[getIndexGuard(lexer)]))
                     error(lexer[getIndexGuard(lexer, true)],
                           "you forgot to declare the return type -> to tell me what you are returning");
-                else if (lexer[getIndexGuard(lexer, true)].token != LexToken::L_SQUIGGLY)
+                else if (lexer[getIndexGuard(lexer)].token != LexToken::L_SQUIGGLY)
                     error(lexer[getIndexGuard(lexer, true)], "syntax error garbage return type");
                 else
                     node->return_type = DataType::VOID;
@@ -395,7 +409,10 @@ void Parser::parse(const std::string &&source) noexcept
                 node->return_type = parseDataType(lexer[getIndexGuard(lexer, true)]);
             }
             if (lexer[getIndexGuard(lexer)].token != LexToken::L_SQUIGGLY)
+            {
                 error(lexer[getIndexGuard(lexer)], "this is not a valid function block opener");
+                break;
+            }
             else
                 node->body = parseBlock(lexer);
             root->children.emplace_back(std::move(node));
@@ -410,6 +427,9 @@ void Parser::parse(const std::string &&source) noexcept
                 node_->list.emplace_back(std::move(expr));
                 node->body->list.emplace_back(node_);
             }
+            else if (node->return_type != DataType::VOID &&
+                     (node->body->list.empty() || node->body->list.back()->type != ExpressionType::RETURN))
+                error(lexer[getIndexGuard(lexer)], "a data expected return type must explicitly return a value");
         }
         else if (isDataType(lexer[getIndexGuard(lexer)]))
             root->children.emplace_back(parseVar(lexer, true));

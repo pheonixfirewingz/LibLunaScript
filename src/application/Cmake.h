@@ -11,7 +11,7 @@
 #endif
 
 #ifndef CMAKE_CXX_COMPILER_ID
-#define CMAKE_CXX_COMPILER_ID = "Clang"
+#define CMAKE_CXX_COMPILER_ID = "GNU"
 #endif
 
 #ifndef CMAKE_LIB_MODE
@@ -19,7 +19,7 @@
 #endif
 
 #ifndef COMPILER_TESTING
-#define COMPILER_TESTING 0
+#define COMPILER_TESTING 1
 #endif
 
 #ifndef FUZZING

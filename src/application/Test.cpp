@@ -105,10 +105,10 @@ BAD_COMPILER_TEST(AST, "var/bad_syntax/", bad_syntax_15)
 BAD_COMPILER_TEST(AST, "var/bad_syntax/", bad_syntax_16)
 // function basics
 COMPILER_TEST(AST, "func/common/", parse_main_func)
-// COMPILER_TEST(AST, "func/common/", parse_main_with_no_return)
-// COMPILER_TEST(AST, "func/common/", parse_main_with_no_return_used_return)
+COMPILER_TEST(AST, "func/common/", parse_main_with_no_return)
+COMPILER_TEST(AST, "func/common/", parse_main_with_no_return_used_return)
 COMPILER_TEST(AST, "func/common/", parse_main_with_another_function_no_call)
-// COMPILER_TEST(AST, "func/common/", parse_main_with_another_function_call)
+COMPILER_TEST(AST, "func/common/", parse_main_with_another_function_call)
 //  function basics - variables with set value
 COMPILER_TEST(AST, "func/var/value/", parse_main_func_with_uint8_with_value)
 COMPILER_TEST(AST, "func/var/value/", parse_main_func_with_uint16_with_value)

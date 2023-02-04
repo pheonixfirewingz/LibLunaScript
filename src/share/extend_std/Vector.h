@@ -1,9 +1,9 @@
 #pragma once
 #include "Iterator.h"
+#include <cassert>
 #include <cstring>
 #include <initializer_list>
 #include <memory>
-#include <cassert>
 #include <vector>
 namespace std
 {
@@ -43,19 +43,19 @@ template<typename T> struct ReadOnlyVector : public ForwardIterator<T>
 
     constexpr T operator[](const data_size_t i) const
     {
-        assert(i >= 0 && i < size_);
+        assert(i < size_);
         return *(begin() + i);
     }
 
     constexpr T &operator[](const data_size_t i)
     {
-        assert(i >= 0 && i < size_);
+        assert(i < size_);
         return begin() + i;
     }
 
-    constexpr const T& at(const data_size_t i) const
+    constexpr const T &at(const data_size_t i) const
     {
-        assert(i >= 0 && i < size_);
+        assert(i < size_);
         return *(begin() + i);
     }
 

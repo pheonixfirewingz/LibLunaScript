@@ -22,12 +22,15 @@ union Data {
     ByteCode op;
 };
 
-losResult compile(const std::string &filename, const std::string &src, char **output, data_size_t *output_size) noexcept
+losResult compile(const std::string &filename, const std::string &src, char **output, data_size_t *output_size,
+                  bool ast_debug) noexcept
 {
     losResult res;
     Compiler compiler;
     if ((res = compile(&compiler, src.c_str(), src.size(), filename.c_str(), filename.size())) != LOS_SUCCESS)
     {
+        if (res == LOS_ERROR_COULD_NOT_INIT)
+            return res;
         while (hasErrorOnStack(compiler))
         {
             char *read_str;
@@ -38,7 +41,12 @@ losResult compile(const std::string &filename, const std::string &src, char **ou
         }
         return res;
     }
-    toByteCode(compiler, output, output_size);
+    if (!ast_debug)
+        toByteCode(compiler, output, output_size);
+    char *json_str;
+    data_size_t json_str_size;
+    astToString(compiler, &json_str, &json_str_size);
+    fileWrite(createP("", "test", ".ast.json"), json_str, json_str_size);
     freeCompiler(compiler);
     return LOS_SUCCESS;
 }
@@ -54,6 +62,7 @@ losResult assemble(const std::string &src, std::ReadOnlyVector<uint64_t> *ops) n
 // int main(int argc, char **argv)
 int main(int, char **)
 {
+    bool ast_debug = true;
     bool debug = true;
     // std::cout << "Debug Mode? (1)true or (0)false: ";
     // std::cin >> debug;
@@ -67,8 +76,12 @@ int main(int, char **)
     std::ReadOnlyVector<uint64_t> ops = {};
     char *byte_code;
     data_size_t byte_code_size;
-    if ((res = compile("test", std::string(read_str, 0, read_str_size), &byte_code, &byte_code_size)) != LOS_SUCCESS)
+    if ((res = compile("test", std::string(read_str, 0, read_str_size), &byte_code, &byte_code_size, ast_debug)) !=
+        LOS_SUCCESS)
         return res;
+    if (ast_debug)
+        return 0;
+
     puts(std::string(byte_code, 0, byte_code_size).c_str());
     if ((res = assemble(std::string(byte_code, 0, byte_code_size), &ops)) != LOS_SUCCESS)
         return res;

@@ -15,8 +15,6 @@ const char *idToString(const NodeType &id) noexcept
         return "Program";
     case NodeType::FUNC_DEF:
         return "FunctionDef";
-    case NodeType::FUNC_CALL:
-        return "FunctionCall";
     case NodeType::EXPRESSION:
         return "Expression";
     case NodeType::BINARY:
@@ -37,7 +35,7 @@ const char *idToStringT(const DataType &id) noexcept
     case DataType::NOT_DETERMINED:
         return "To Be Determined";
     case DataType::VOID:
-        return "Void";
+        return "void";
     case DataType::INT8:
         return "int8";
     case DataType::INT16:
@@ -81,6 +79,8 @@ const char *idToStringE(const ExpressionType &id) noexcept
         return "VariableDefinition";
     case ExpressionType::PRAM_LIST:
         return "ParameterList";
+    case ExpressionType::FUNC_CALL:
+        return "FunctionCall";
     default:
         return "unknown";
     }
@@ -148,8 +148,6 @@ template<typename T> void writeBranch(T *writer, const ASTNode *node)
         writeBranch(writer, real_node->body);
         break;
     }
-    case NodeType::FUNC_CALL: {
-    }
     case NodeType::EXPRESSION: {
         const ASTExpression *real_node = static_cast<const ASTExpression *>(node);
         writer->Key("id");
@@ -164,11 +162,20 @@ template<typename T> void writeBranch(T *writer, const ASTNode *node)
             writer->Key("name");
             writer->String(real_node->extra_data.c_str());
         }
-        writer->Key("declarations");
-        writer->StartArray();
-        for (const ASTNode *child : real_node->list)
-            writeBranch(writer, child);
-        writer->EndArray();
+        if (real_node->type == ExpressionType::FUNC_CALL)
+        {
+            const ASTFuncCall *func_node = static_cast<const ASTFuncCall *>(real_node);
+            writer->Key("parameters");
+            writeBranch(writer, func_node->args);
+        }
+        else
+        {
+            writer->Key("declarations");
+            writer->StartArray();
+            for (const ASTNode *child : real_node->list)
+                writeBranch(writer, child);
+            writer->EndArray();
+        }
         break;
     }
     case NodeType::LITERAL: {
@@ -220,4 +227,4 @@ const std::string Parser::asString(const bool pretty_mode) noexcept
     }
     return s.GetString();
 }
-} // namespace LunaScript::compiler
+} // namespace LunaScript::compiler::front
