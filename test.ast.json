@@ -5,7 +5,7 @@
             "type": "FunctionDef",
             "is_public": true,
             "name": "main",
-            "return_type": "Void",
+            "return_type": "void",
             "parameters": {
                 "type": "Expression",
                 "id": "ParameterList",
@@ -16,14 +16,8 @@
                 "execution": [
                     {
                         "type": "Expression",
-                        "id": "ReturnType",
-                        "declarations": [
-                            {
-                                "type": "Expression",
-                                "id": "NoDataReturn",
-                                "declarations": []
-                            }
-                        ]
+                        "id": "NoDataReturn",
+                        "declarations": []
                     }
                 ]
             }

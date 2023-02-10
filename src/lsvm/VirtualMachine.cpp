@@ -62,8 +62,8 @@ uint64_t LunaScriptVirtualMachine::runNextOp(const uint64_t in) noexcept
 {
     OP_DATA op_data(in);
     if (debug_mode)
-        printf("\x1B[32mOP:\x1B[37m %s, \x1B[32mREG:\x1B[33m %u, \x1B[32mis actor register:\x1B[33m %s,\x1B[32mis "
-               "actor a const value:\x1B[33m %s, \x1B[32mLOC:\x1B[33m %lu\033[0m\t\t\n",
+        printf("\x1B[32mOP:\x1B[37m %s, \x1B[32mREG:\x1B[33m %llu, \x1B[32mis actor register:\x1B[33m %s,\x1B[32mis "
+               "actor a const value:\x1B[33m %s, \x1B[32mLOC:\x1B[33m %llu\033[0m\t\t\n",
                opToStr(op_data.op.op), op_data.op.reg, op_data.op.is_reg == 1 ? "true" : "false",
                op_data.op.is_constant == 1 ? "true" : "false", op_data.op.reg_or_memory_dest);
     switch ((OpCode)op_data.op.op)

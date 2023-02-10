@@ -2,10 +2,21 @@
 #include "Parser.h"
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/stringbuffer.h>
-
 namespace LunaScript::compiler::front
 {
 using namespace rapidjson;
+#ifdef WIN32
+std::string ReplaceAll(std::string str, const std::string &from, const std::string &to)
+{
+    size_t start_pos = 0;
+    while ((start_pos = str.find(from, start_pos)) != std::string::npos)
+    {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length();
+    }
+    return str;
+}
+#endif //  WIN32
 
 const char *idToString(const NodeType &id) noexcept
 {
@@ -225,6 +236,10 @@ const std::string Parser::asString(const bool pretty_mode) noexcept
         Writer<StringBuffer> writer(s);
         writeBranch<Writer<StringBuffer>>(&writer, root);
     }
+#ifdef WIN32
+    return ReplaceAll(s.GetString(), "\n", "\r\n");
+#else
     return s.GetString();
+#endif
 }
 } // namespace LunaScript::compiler::front

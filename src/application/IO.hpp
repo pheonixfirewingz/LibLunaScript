@@ -1,6 +1,7 @@
 #pragma once
 #include <libos/Defines.h>
 #include <libos/FileIO.h>
+#include <string>
 
 void setRoot(const char* root) noexcept
 {

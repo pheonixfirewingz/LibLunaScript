@@ -89,7 +89,7 @@ class Parser
     uint32_t lexer_index = 0;
     inline uint32_t getIndexGuard(const std::vector<lexToken> &lexer, bool inc = false) noexcept
     {
-        if (inc && lexer_index < lexer.size())
+        if (inc && lexer_index < (lexer.size() - 1))
             return lexer_index++;
         return lexer_index;
     }
@@ -104,7 +104,7 @@ class Parser
     inline bool isValidFuncCall(const std::vector<lexToken> &lexer) noexcept
     {
         if (lexer[getIndexGuard(lexer)].token == LexToken::IDENTIFIER &&
-            lexer[getIndexGuard(lexer) + 1].token == LexToken::L_CURLY)
+            lexer[(uint64_t)getIndexGuard(lexer) + 1].token == LexToken::L_CURLY)
             return true;
         return false;
     }

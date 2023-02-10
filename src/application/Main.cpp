@@ -23,7 +23,7 @@ union Data {
 };
 
 losResult compile(const std::string &filename, const std::string &src, char **output, data_size_t *output_size,
-                  bool ast_debug) noexcept
+                  bool ast_debug, bool gen_debug) noexcept
 {
     losResult res;
     Compiler compiler;
@@ -41,12 +41,15 @@ losResult compile(const std::string &filename, const std::string &src, char **ou
         }
         return res;
     }
+    if (ast_debug || gen_debug)
+    {
+        char *json_str;
+        data_size_t json_str_size;
+        astToString(compiler, &json_str, &json_str_size);
+        fileWrite(createP("", "test", ".ast.json"), json_str, json_str_size);
+    }
     if (!ast_debug)
         toByteCode(compiler, output, output_size);
-    char *json_str;
-    data_size_t json_str_size;
-    astToString(compiler, &json_str, &json_str_size);
-    fileWrite(createP("", "test", ".ast.json"), json_str, json_str_size);
     freeCompiler(compiler);
     return LOS_SUCCESS;
 }
@@ -62,8 +65,8 @@ losResult assemble(const std::string &src, std::ReadOnlyVector<uint64_t> *ops) n
 // int main(int argc, char **argv)
 int main(int, char **)
 {
-    bool ast_debug = true;
-    bool debug = true;
+    bool ast_debug = false;
+    bool gen_debug = true;
     // std::cout << "Debug Mode? (1)true or (0)false: ";
     // std::cin >> debug;
     libOSInit();
@@ -76,29 +79,35 @@ int main(int, char **)
     std::ReadOnlyVector<uint64_t> ops = {};
     char *byte_code;
     data_size_t byte_code_size;
-    if ((res = compile("test", std::string(read_str, 0, read_str_size), &byte_code, &byte_code_size, ast_debug)) !=
-        LOS_SUCCESS)
+    if ((res = compile("test", std::string(read_str, 0, read_str_size), &byte_code, &byte_code_size, ast_debug,
+                       gen_debug)) != LOS_SUCCESS)
         return res;
     if (ast_debug)
         return 0;
 
-    puts(std::string(byte_code, 0, byte_code_size).c_str());
+    if (gen_debug)
+        puts(std::string(std::string("\x1B[94mLunaScriptCodeGen:\x1B[33m\n") += std::string(byte_code, 0, byte_code_size)).c_str());
+
     if ((res = assemble(std::string(byte_code, 0, byte_code_size), &ops)) != LOS_SUCCESS)
         return res;
-    if ((res = fileWrite<uint64_t>(createP("", "test", ".lsobj"), ops.data(), ops.size())) != LOS_SUCCESS)
-        return res;
+
+    if (!gen_debug)
+    {
+        if ((res = fileWrite<uint64_t>(createP("", "test", ".lsobj"), ops.data(), ops.size())) != LOS_SUCCESS)
+            return res;
+    }
     VMData data{.vmCallbacks = {{VMFunctionName("vmExit").hash,
                                  [](std::stack<vm_data_t> *stack) {
                                      uint64_t typed_reg = std::get<uint64_t>(stack->top());
                                      stack->pop();
-                                     printf("\x1B[94mLunaScript\x1B[33m - EndCode: %lu\033[0m\t\t\n", typed_reg);
+                                     printf("\x1B[94mLunaScript\x1B[33m - EndCode: %llu\033[0m\t\t\n", typed_reg);
                                      return nullptr;
                                  }}},
                 .vmErrorCallback = [](const char *msg) {
                     printf("LunaScript - ERROR: %s\n", msg);
                     std::exit(1);
                 }};
-    run(&data, ops, debug);
+    run(&data, ops, gen_debug);
     libOSCleanUp();
     return 0;
 }

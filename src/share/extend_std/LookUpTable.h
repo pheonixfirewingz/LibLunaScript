@@ -2,16 +2,24 @@
 #include "Iterator.h"
 #include <initializer_list>
 #include <memory>
-#include <new>
+#include <stdexcept>
 namespace std
 {
-template<typename Key, typename Value> struct TableEntry
+template<typename T>
+concept is_numeric_type = requires(T param) {
+                          requires std::is_integral_v<T> || std::is_floating_point_v<T>;
+                          requires !std::is_same_v<bool, T>;
+                          requires std::is_arithmetic_v<decltype(param + 1)>;
+                          requires !std::is_pointer_v<T>;
+                      };
+
+template<typename Key, typename Value>
+    requires std::is_numeric_type<Key>
+struct TableEntry
 {
-    Key key;
+    Key key = 0;
     Value value;
-    constexpr TableEntry() noexcept
-    {
-    }
+    TableEntry() noexcept = default;
     constexpr TableEntry(const Key key, const Value value) noexcept
         : key(key)
         , value(value)
@@ -31,8 +39,7 @@ template<typename Key, typename Value> struct TableEntry
     };
 };
 
-template<typename Key, typename Value>
-struct ReadOnlyLookupTable : public ForwardIterator<TableEntry<Key, Value>>
+template<typename Key, typename Value> struct ReadOnlyLookupTable : public ForwardIterator<TableEntry<Key, Value>>
 {
   private:
     TableEntry<Key, Value> *table;
@@ -40,9 +47,9 @@ struct ReadOnlyLookupTable : public ForwardIterator<TableEntry<Key, Value>>
 
   public:
     constexpr ReadOnlyLookupTable() noexcept = default;
-    constexpr ReadOnlyLookupTable(initializer_list<TableEntry<Key, Value>> entries) noexcept
+    constexpr ReadOnlyLookupTable(initializer_list<TableEntry<Key, Value>> entries)
     {
-        table = new (nothrow) TableEntry<Key, Value>[(size_of_table = entries.size())];
+        table = new TableEntry<Key, Value>[(size_of_table = entries.size())];
         size_t index = 0;
         for (auto &entry : entries)
             table[index++] = entry;

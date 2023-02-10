@@ -5,7 +5,7 @@ set ( CMAKE_CXX_STANDARD_REQUIRED ON )
 # options
 set ( DEBUG_MODE ON )
 set ( FUZZING OFF )
-set ( COMPILER_TESTING OFF )
+set ( COMPILER_TESTING ON )
 # options end
 
 configure_file ( ${PROJECT_SOURCE_DIR}/src/application/Cmake.h.in ${PROJECT_SOURCE_DIR}/src/application/Cmake.h @ONLY )
@@ -62,4 +62,9 @@ target_include_directories (LunaScript PRIVATE  ${PROJECT_SOURCE_DIR}/src/share 
 if ( ${COMPILER_TESTING} )
     gtest_discover_tests ( LunaScript )
     target_link_libraries(LunaScript PRIVATE GTest::gtest_main liblunascript libos)
+endif ()
+
+if(MSVC AND ${DEBUG_MODE})
+    target_compile_options(LunaScript PRIVATE /Od /W4 /WX /RTC1 /Z7  /EHsc /sdl /JMC /external:anglebrackets /external:W0)
+    target_link_options(LunaScript PRIVATE /DEBUG:FULL)
 endif ()

@@ -16,14 +16,8 @@
                 "execution": [
                     {
                         "type": "Expression",
-                        "id": "ReturnType",
-                        "declarations": [
-                            {
-                                "type": "Expression",
-                                "id": "NoDataReturn",
-                                "declarations": []
-                            }
-                        ]
+                        "id": "NoDataReturn",
+                        "declarations": []
                     }
                 ]
             }

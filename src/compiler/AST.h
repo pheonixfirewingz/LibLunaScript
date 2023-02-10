@@ -40,7 +40,7 @@ enum class DataType
     FLOAT64,
     ANY_FLOAT,
     ANY_UINT,
-    ANY_INT
+    ANY_INT,
 };
 
 enum class OperatorType
@@ -145,7 +145,7 @@ struct ASTFuncDef : public ASTNode
     const std::string name = "";
     const bool is_public;
     const ASTExpression *args;
-    ASTBlock *body;
+    ASTBlock *body = nullptr;
     DataType return_type = DataType::NOT_DETERMINED;
     NodeType getType() const noexcept override
     {
@@ -165,11 +165,23 @@ struct ASTFuncDef : public ASTNode
     }
 };
 
+struct ASTLiteral : public ASTNode
+{
+    std::string value = "";
+    DataType data_type = DataType::NOT_DETERMINED;
+    NodeType getType() const noexcept override
+    {
+        return NodeType::LITERAL;
+    }
+
+    virtual ~ASTLiteral() = default;
+};
+
 struct ASTBinaryExpression : public ASTNode
 {
     uint16_t precedence = 0;
     const ASTNode *right = nullptr;
-    const ASTNode *left = nullptr;
+    const ASTLiteral *left = nullptr;
     OperatorType op = OperatorType::NOT_DETERMINED;
     NodeType getType() const noexcept override
     {
@@ -182,17 +194,5 @@ struct ASTBinaryExpression : public ASTNode
         if (right)
             delete right;
     }
-};
-
-struct ASTLiteral : public ASTNode
-{
-    std::string value = "";
-    DataType data_type = DataType::NOT_DETERMINED;
-    NodeType getType() const noexcept override
-    {
-        return NodeType::LITERAL;
-    }
-
-    virtual ~ASTLiteral() = default;
 };
 } // namespace LunaScript::compiler::ast

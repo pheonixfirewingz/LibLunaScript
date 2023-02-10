@@ -133,7 +133,7 @@ class LunaScriptVirtualMachine
             printf("\x1B[94mLunaScriptVM:\x1B[37m starting main\n");
         pic = ops.findIndex(UINT64_MAX);
         if (debug_mode)
-            printf("\x1B[94mLunaScriptVM:\x1B[37m start main at opcode -> %lu\n", pic);
+            printf("\x1B[94mLunaScriptVM:\x1B[37m start main at opcode -> %llu\n", pic);
         for (; pic < ops.size();)
         {
             if (stop)
@@ -150,7 +150,7 @@ class LunaScriptVirtualMachine
             {
                 vm_data_t ret = pop();
                 if (debug_mode)
-                    printf("\x1B[94mLunaScriptVM:\x1B[33m - Main Returned: %lu\033[0m\t\t\n", std::get<uint64_t>(ret));
+                    printf("\x1B[94mLunaScriptVM:\x1B[33m - Main Returned: %llu\033[0m\t\t\n", std::get<uint64_t>(ret));
                 break;
             }
         }

@@ -7,11 +7,11 @@
 // Copyright Luke Shore (c) 2020, 2022
 
 #ifndef CMAKE_SYSTEM_NAME
-#define CMAKE_SYSTEM_NAME = "Linux"
+#define CMAKE_SYSTEM_NAME = "Windows"
 #endif
 
 #ifndef CMAKE_CXX_COMPILER_ID
-#define CMAKE_CXX_COMPILER_ID = "GNU"
+#define CMAKE_CXX_COMPILER_ID = "MSVC"
 #endif
 
 #ifndef CMAKE_LIB_MODE
@@ -27,5 +27,5 @@
 #endif
 
 #ifndef PROJECT_SOURCE_DIR
-#define PROJECT_SOURCE_DIR "/home/digitech/Desktop/LibLunaScript"
+#define PROJECT_SOURCE_DIR "C:/Users/luket/Desktop/LibLunaScript"
 #endif

@@ -21,7 +21,7 @@ template<typename T> struct ReadOnlyVector : public ForwardIterator<T>
         for (size_t i = 0; i < size; ++i)
             ptr_[i] = data_in[i];
     }
-    constexpr ReadOnlyVector(initializer_list<T> entries) noexcept
+    ReadOnlyVector(initializer_list<T> entries) noexcept
         : size_(entries.size())
     {
         ptr_ = new T[entries.size()];

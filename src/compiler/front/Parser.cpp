@@ -1,4 +1,5 @@
 #include "Parser.h"
+#include <algorithm>
 namespace LunaScript::compiler::front
 {
 static const std::ReadOnlyLookupTable<data_size_t, Parser::LexToken> lookup = {
@@ -54,13 +55,13 @@ ASTLiteral *Parser::parseLiteral(const std::vector<lexToken> &lexer) noexcept
     {
         [[unlikely]] if (!isInteger(lexer[getIndexGuard(lexer)]) && !isValidName(lexer[getIndexGuard(lexer)]))
             error(lexer[getIndexGuard(lexer)], "this is not a valid numeric value or variable name");
-        literal->value = std::move(lexer[getIndexGuard(lexer, true)].str_token);
+        literal->value = lexer[getIndexGuard(lexer, true)].str_token;
         if (lexer[getIndexGuard(lexer)].token == LexToken::DOT)
         {
             [[unlikely]] if (!isInteger(lexer[getIndexGuard(lexer, true)]) && !isValidName(lexer[getIndexGuard(lexer)]))
                 error(lexer[getIndexGuard(lexer)], "this is not a valid numeric value or variable name");
             literal->value += '.';
-            literal->value += std::move(lexer[getIndexGuard(lexer, true)].str_token);
+            literal->value += lexer[getIndexGuard(lexer, true)].str_token;
         }
         else if (literal->data_type == DataType::FLOAT32 || literal->data_type == DataType::FLOAT64)
         {
@@ -69,7 +70,7 @@ ASTLiteral *Parser::parseLiteral(const std::vector<lexToken> &lexer) noexcept
     }
     else
         error(lexer[getIndexGuard(lexer)], "we don't have string support yet");
-    return std::move(literal);
+    return literal;
 }
 
 const ASTBinaryExpression *Parser::parseBinaryExpr(const uint8_t precedence_inflator,
@@ -77,10 +78,10 @@ const ASTBinaryExpression *Parser::parseBinaryExpr(const uint8_t precedence_infl
 {
     ASTBinaryExpression *expr = new ASTBinaryExpression();
     ASTLiteral *lit_1 = parseLiteral(lexer);
-    if (lexer[getIndexGuard(lexer) - 2].token == LexToken::DOT)
+    if (lexer[(int64_t)getIndexGuard(lexer) - 2].token == LexToken::DOT)
         lit_1->data_type = DataType::ANY_FLOAT;
-    else if (lexer[getIndexGuard(lexer) - 1].token == LexToken::IDENTIFIER &&
-             !isInteger(lexer[getIndexGuard(lexer) - 1]))
+    else if (lexer[(int64_t)getIndexGuard(lexer) - 1].token == LexToken::IDENTIFIER &&
+             !isInteger(lexer[(int64_t)getIndexGuard(lexer) - 1]))
         lit_1->data_type = DataType::NOT_DETERMINED;
     else
         lit_1->data_type = DataType::ANY_UINT;
@@ -89,9 +90,9 @@ const ASTBinaryExpression *Parser::parseBinaryExpr(const uint8_t precedence_infl
     expr->op = std::get<1>(type);
     expr->precedence = std::get<0>(type) + precedence_inflator;
     uint32_t fake_i = std::min<uint32_t>(getIndexGuard(lexer) + 1, lexer.size());
-    if (lexer[fake_i].token == LexToken::DOT)
+    if (lexer[std::min((uint32_t)lexer.size() - 1, fake_i)].token == LexToken::DOT)
         fake_i += 2;
-    if (isBinaryExpr(lexer[fake_i]))
+    if (isBinaryExpr(lexer[std::min((uint32_t)lexer.size() - 1, fake_i)]))
     {
         const ASTBinaryExpression *r_expr = parseBinaryExpr(1 + precedence_inflator, lexer);
         [[unlikely]] if (!r_expr)
@@ -106,10 +107,10 @@ const ASTBinaryExpression *Parser::parseBinaryExpr(const uint8_t precedence_infl
             return expr;
         }
         ASTLiteral *lit_2 = parseLiteral(lexer);
-        if (lexer[getIndexGuard(lexer) - 2].token == LexToken::DOT)
+        if (lexer[(int64_t)getIndexGuard(lexer) - 2].token == LexToken::DOT)
             lit_2->data_type = DataType::ANY_FLOAT;
-        else if (lexer[getIndexGuard(lexer) - 1].token == LexToken::IDENTIFIER &&
-                 !isInteger(lexer[getIndexGuard(lexer) - 1]))
+        else if (lexer[(int64_t)getIndexGuard(lexer) - 1].token == LexToken::IDENTIFIER &&
+                 !isInteger(lexer[(int64_t)getIndexGuard(lexer) - 1]))
             lit_2->data_type = DataType::NOT_DETERMINED;
         else
             lit_2->data_type = DataType::ANY_UINT;
@@ -131,7 +132,7 @@ const ASTExpression *Parser::parseVar(const std::vector<lexToken> &lexer, bool i
     node->data_type = data_type;
     [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
         error(lexer[getIndexGuard(lexer)], "this is not a valid param name");
-    node->extra_data = std::move(lexer[getIndexGuard(lexer, true)].str_token);
+    node->extra_data = lexer[getIndexGuard(lexer, true)].str_token;
     if (lexer[getIndexGuard(lexer)].token != LexToken::EQUAL)
     {
         if (isInteger(lexer[getIndexGuard(lexer)]))
@@ -149,8 +150,7 @@ const ASTExpression *Parser::parseVar(const std::vector<lexToken> &lexer, bool i
     else
     {
         (void)getIndexGuard(lexer, true);
-
-        if (isValidFuncCall(lexer) && !is_global)
+        if (!is_global && isValidFuncCall(lexer))
         {
             [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
                 error(lexer[getIndexGuard(lexer)], "this is not a valid function name");
@@ -165,9 +165,9 @@ const ASTExpression *Parser::parseVar(const std::vector<lexToken> &lexer, bool i
         }
         uint32_t fake_i = getIndexGuard(lexer);
         fake_i++;
-        if (lexer[fake_i].token == LexToken::DOT)
+        if (lexer[std::min((uint32_t)lexer.size() - 1, fake_i)].token == LexToken::DOT)
             fake_i += 2;
-        if (isBinaryExpr(lexer[fake_i]))
+        if (isBinaryExpr(lexer[std::min((uint32_t)lexer.size() - 1, fake_i)]))
         {
             const ASTBinaryExpression *expr = parseBinaryExpr(0, lexer);
             [[unlikely]] if (!expr)
@@ -208,7 +208,7 @@ const ASTExpression *Parser::parseArgs(const std::vector<lexToken> &lexer) noexc
             literal->data_type = parseDataType(lexer[getIndexGuard(lexer, true)]);
             [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
                 error(lexer[getIndexGuard(lexer)], "this is not a valid param name");
-            literal->value = std::move(lexer[getIndexGuard(lexer, true)].str_token);
+            literal->value = lexer[getIndexGuard(lexer, true)].str_token;
             expression->list.emplace_back(std::move(literal));
             if (lexer[getIndexGuard(lexer)].token == LexToken::COMMA)
             {
@@ -238,7 +238,7 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer) noexcept
         }
         do
         {
-            if (lexer.size() <= getIndexGuard(lexer))
+            if ((lexer.size() - 1) <= getIndexGuard(lexer))
             {
                 error(lexer[getIndexGuard(lexer)], "there was no was to know when a block ended");
                 break;
@@ -250,10 +250,10 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer) noexcept
                 node->type = ExpressionType::RETURN;
                 uint32_t fake_i = getIndexGuard(lexer);
                 fake_i++;
-                if (lexer[fake_i].token == LexToken::DOT)
+                if (lexer[std::min((uint32_t)lexer.size() - 1, fake_i)].token == LexToken::DOT)
                     fake_i += 2;
 
-                if (isBinaryExpr(lexer[fake_i]))
+                if (isBinaryExpr(lexer[std::min((uint32_t)lexer.size() - 1, fake_i)]))
                 {
                     const ASTBinaryExpression *expr = parseBinaryExpr(0, lexer);
                     [[unlikely]] if (!expr)
@@ -279,10 +279,10 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer) noexcept
                     ASTLiteral *literal = parseLiteral(lexer);
                     [[unlikely]] if (!literal)
                         literal = new ASTLiteral();
-                    if (lexer[getIndexGuard(lexer) - 2].token == LexToken::DOT)
+                    if (lexer[(int64_t)getIndexGuard(lexer) - 2].token == LexToken::DOT)
                         literal->data_type = DataType::ANY_FLOAT;
-                    else if (lexer[getIndexGuard(lexer) - 1].token == LexToken::IDENTIFIER &&
-                             !isInteger(lexer[getIndexGuard(lexer) - 1]))
+                    else if (lexer[(int64_t)getIndexGuard(lexer) - 1].token == LexToken::IDENTIFIER &&
+                             !isInteger(lexer[(int64_t)getIndexGuard(lexer) - 1]))
                         literal->data_type = DataType::NOT_DETERMINED;
                     else
                         literal->data_type = DataType::ANY_UINT;
@@ -347,7 +347,7 @@ void Parser::parse(const std::string &&source) noexcept
             if (t == NULL)
             {
                 token.token = LexToken::IDENTIFIER;
-                token.str_token = std::move(word);
+                token.str_token = word;
             }
             else
             {
@@ -420,12 +420,9 @@ void Parser::parse(const std::string &&source) noexcept
             if (node->return_type == DataType::VOID &&
                 (node->body->list.empty() || node->body->list.back()->type != ExpressionType::RETURN))
             {
-                ASTExpression *node_ = new ASTExpression();
-                node_->type = ExpressionType::RETURN;
                 ASTExpression *expr = new ASTExpression();
                 expr->type = ExpressionType::NO_RETURN;
-                node_->list.emplace_back(std::move(expr));
-                node->body->list.emplace_back(node_);
+                node->body->list.emplace_back(expr);
             }
             else if (node->return_type != DataType::VOID &&
                      (node->body->list.empty() || node->body->list.back()->type != ExpressionType::RETURN))
