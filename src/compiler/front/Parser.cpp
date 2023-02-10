@@ -48,7 +48,7 @@ static const std::regex regex(
     "(([A-Za-z0-9_-]+)|(\\s)|([\\\",\\\\',\\(,\\),\\[,\\],\\<,\\>,\\{,\\},\\,:,\\.])|([+,=,*,/]+))",
     std::regex_constants::icase);
 
-ASTLiteral *Parser::parseLiteral(const std::vector<lexToken> &lexer) noexcept
+ASTLiteral *Parser::parseLiteral(const std::vector<lexToken> &lexer)
 {
     ASTLiteral *literal = new ASTLiteral();
     if (lexer[getIndexGuard(lexer)].token != LexToken::QUOTE)
@@ -74,7 +74,7 @@ ASTLiteral *Parser::parseLiteral(const std::vector<lexToken> &lexer) noexcept
 }
 
 const ASTBinaryExpression *Parser::parseBinaryExpr(const uint8_t precedence_inflator,
-                                                   const std::vector<lexToken> &lexer) noexcept
+                                                   const std::vector<lexToken> &lexer)
 {
     ASTBinaryExpression *expr = new ASTBinaryExpression();
     ASTLiteral *lit_1 = parseLiteral(lexer);
@@ -95,8 +95,7 @@ const ASTBinaryExpression *Parser::parseBinaryExpr(const uint8_t precedence_infl
     if (isBinaryExpr(lexer[std::min((uint32_t)lexer.size() - 1, fake_i)]))
     {
         const ASTBinaryExpression *r_expr = parseBinaryExpr(1 + precedence_inflator, lexer);
-        [[unlikely]] if (!r_expr)
-            r_expr = new ASTBinaryExpression();
+        [[unlikely]] if (!r_expr) r_expr = new ASTBinaryExpression();
         expr->right = std::move(r_expr);
     }
     else
@@ -107,7 +106,8 @@ const ASTBinaryExpression *Parser::parseBinaryExpr(const uint8_t precedence_infl
             return expr;
         }
         ASTLiteral *lit_2 = parseLiteral(lexer);
-        if (lexer[(int64_t)getIndexGuard(lexer) - 2].token == LexToken::DOT)
+        ;
+        if (lit_2->value.find(".") != std::string::npos)
             lit_2->data_type = DataType::ANY_FLOAT;
         else if (lexer[(int64_t)getIndexGuard(lexer) - 1].token == LexToken::IDENTIFIER &&
                  !isInteger(lexer[(int64_t)getIndexGuard(lexer) - 1]))
@@ -119,7 +119,7 @@ const ASTBinaryExpression *Parser::parseBinaryExpr(const uint8_t precedence_infl
     return expr;
 }
 
-const ASTExpression *Parser::parseVar(const std::vector<lexToken> &lexer, bool is_global) noexcept
+const ASTExpression *Parser::parseVar(const std::vector<lexToken> &lexer, bool is_global)
 {
     ASTExpression *node = new ASTExpression();
     node->type = ExpressionType::VAR_DEFINED;
@@ -170,15 +170,13 @@ const ASTExpression *Parser::parseVar(const std::vector<lexToken> &lexer, bool i
         if (isBinaryExpr(lexer[std::min((uint32_t)lexer.size() - 1, fake_i)]))
         {
             const ASTBinaryExpression *expr = parseBinaryExpr(0, lexer);
-            [[unlikely]] if (!expr)
-                expr = new ASTBinaryExpression();
+            [[unlikely]] if (!expr) expr = new ASTBinaryExpression();
             node->list.emplace_back(std::move(expr));
         }
         else
         {
             ASTLiteral *literal = parseLiteral(lexer);
-            [[unlikely]] if (!literal)
-                literal = new ASTLiteral();
+            [[unlikely]] if (!literal) literal = new ASTLiteral();
             literal->data_type = std::move(data_type);
             node->list.emplace_back(std::move(literal));
         }
@@ -186,7 +184,7 @@ const ASTExpression *Parser::parseVar(const std::vector<lexToken> &lexer, bool i
     return std::move(node);
 }
 
-const ASTExpression *Parser::parseArgs(const std::vector<lexToken> &lexer) noexcept
+const ASTExpression *Parser::parseArgs(const std::vector<lexToken> &lexer)
 {
     ASTExpression *expression = new ASTExpression();
     expression->type = ExpressionType::PRAM_LIST;
@@ -226,7 +224,7 @@ const ASTExpression *Parser::parseArgs(const std::vector<lexToken> &lexer) noexc
     return std::move(expression);
 }
 
-ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer) noexcept
+ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer)
 {
     ASTBlock *block = new ASTBlock();
     if (lexer[getIndexGuard(lexer, true)].token != LexToken::R_SQUIGGLY)
@@ -256,8 +254,7 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer) noexcept
                 if (isBinaryExpr(lexer[std::min((uint32_t)lexer.size() - 1, fake_i)]))
                 {
                     const ASTBinaryExpression *expr = parseBinaryExpr(0, lexer);
-                    [[unlikely]] if (!expr)
-                        expr = new ASTBinaryExpression();
+                    [[unlikely]] if (!expr) expr = new ASTBinaryExpression();
                     node->list.emplace_back(std::move(expr));
                 }
                 else if (!isInteger(lexer[getIndexGuard(lexer)]) && !isValidName(lexer[getIndexGuard(lexer)]))
@@ -277,8 +274,7 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer) noexcept
                 else
                 {
                     ASTLiteral *literal = parseLiteral(lexer);
-                    [[unlikely]] if (!literal)
-                        literal = new ASTLiteral();
+                    [[unlikely]] if (!literal) literal = new ASTLiteral();
                     if (lexer[(int64_t)getIndexGuard(lexer) - 2].token == LexToken::DOT)
                         literal->data_type = DataType::ANY_FLOAT;
                     else if (lexer[(int64_t)getIndexGuard(lexer) - 1].token == LexToken::IDENTIFIER &&
@@ -312,128 +308,138 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer) noexcept
 
 void Parser::parse(const std::string &&source) noexcept
 {
-    std::vector<lexToken> lexer;
+    try
     {
-        uint32_t line = 0;
-        auto words_begin = std::sregex_token_iterator(source.begin(), source.end(), regex);
-        auto words_end = std::sregex_token_iterator();
-        std::vector<std::string> split;
-        split.reserve(std::distance(words_begin, words_end));
-        std::move(words_begin, words_end, std::back_inserter(split));
-        lexer.reserve(split.size());
-        uint32_t i = 1;
-        const uint32_t size = split.size() - 1;
-        bool skip = false;
-        for (const auto &word : split)
+        std::vector<lexToken> lexer;
         {
-            if (skip)
+            uint32_t line = 0;
+            auto words_begin = std::sregex_token_iterator(source.begin(), source.end(), regex);
+            auto words_end = std::sregex_token_iterator();
+            std::vector<std::string> split;
+            split.reserve(std::distance(words_begin, words_end));
+            std::move(words_begin, words_end, std::back_inserter(split));
+            lexer.reserve(split.size());
+            uint32_t i = 1;
+            const uint32_t size = split.size() - 1;
+            bool skip = false;
+            for (const auto &word : split)
             {
-                skip = false;
-                const uint32_t n = ++i;
-                i = std::min<uint32_t>(size, n);
-                continue;
-            }
-            auto o = reject.find(std::hash<std::string>{}(word));
-            if (o != NULL)
-            {
-                if (*o)
-                    line++;
-                const uint32_t n = ++i;
-                i = std::min<uint32_t>(size, n);
-                continue;
-            }
-            lexToken token;
-            auto t = lookup.find(std::hash<std::string>{}(word));
-            if (t == NULL)
-            {
-                token.token = LexToken::IDENTIFIER;
-                token.str_token = word;
-            }
-            else
-            {
-                if (i < split.size())
+                if (skip)
                 {
-                    auto k = lookup.find(std::hash<std::string>{}(split[i]));
-                    if (k == NULL)
-                        token.token = *t;
-                    else
+                    skip = false;
+                    const uint32_t n = ++i;
+                    i = std::min<uint32_t>(size, n);
+                    continue;
+                }
+                auto o = reject.find(std::hash<std::string>{}(word));
+                if (o != NULL)
+                {
+                    if (*o)
+                        line++;
+                    const uint32_t n = ++i;
+                    i = std::min<uint32_t>(size, n);
+                    continue;
+                }
+                lexToken token;
+                auto t = lookup.find(std::hash<std::string>{}(word));
+                if (t == NULL)
+                {
+                    token.token = LexToken::IDENTIFIER;
+                    token.str_token = word;
+                }
+                else
+                {
+                    if (i < split.size())
                     {
-                        if ((*k) == LexToken::L_ARROW && (*t) == LexToken::SUB)
-                        {
-                            token.token = LexToken::S_ARROW;
-                            skip = true;
-                        }
-                        else
+                        auto k = lookup.find(std::hash<std::string>{}(split[i]));
+                        if (k == NULL)
                             token.token = *t;
+                        else
+                        {
+                            if ((*k) == LexToken::L_ARROW && (*t) == LexToken::SUB)
+                            {
+                                token.token = LexToken::S_ARROW;
+                                skip = true;
+                            }
+                            else
+                                token.token = *t;
+                        }
                     }
                 }
+                token.line = line;
+                const uint32_t n = ++i;
+                i = std::min<uint32_t>(size, n);
+                if (lexer.size() < i)
+                    lexer.emplace_back(token);
             }
-            token.line = line;
-            const uint32_t n = ++i;
-            i = std::min<uint32_t>(size, n);
-            if (lexer.size() < i)
-                lexer.emplace_back(token);
+            lexer.shrink_to_fit();
         }
-        lexer.shrink_to_fit();
-    }
-    // end lexer here
-    //------------------------------------------------------------------------------------
-    // now we parse
-    for (; lexer_index < lexer.size(); lexer_index++)
-    {
-        if (lexer[getIndexGuard(lexer)].token == LexToken::FUNC ||
-            lexer[getIndexGuard(lexer)].token == LexToken::PUBLIC_FUNC)
+        // end lexer here
+        //------------------------------------------------------------------------------------
+        // now we parse
+        for (; lexer_index < lexer.size(); lexer_index++)
         {
-            bool public_ = lexer[getIndexGuard(lexer, true)].token != LexToken::FUNC;
-            [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
-                error(lexer[getIndexGuard(lexer)], "this is not a valid function name");
-            ASTFuncDef *node = new ASTFuncDef(std::move(lexer[getIndexGuard(lexer, true)].str_token), public_);
-            if (lexer[getIndexGuard(lexer)].token != LexToken::L_CURLY)
-                error(lexer[getIndexGuard(lexer, true)], "this is not a valid function args opener");
-            node->args = parseArgs(lexer);
-            if (lexer[getIndexGuard(lexer)].token != LexToken::S_ARROW)
+            if (lexer[getIndexGuard(lexer)].token == LexToken::FUNC ||
+                lexer[getIndexGuard(lexer)].token == LexToken::PUBLIC_FUNC)
             {
-                if (isDataType(lexer[getIndexGuard(lexer)]))
-                    error(lexer[getIndexGuard(lexer, true)],
-                          "you forgot to declare the return type -> to tell me what you are returning");
-                else if (lexer[getIndexGuard(lexer)].token != LexToken::L_SQUIGGLY)
-                    error(lexer[getIndexGuard(lexer, true)], "syntax error garbage return type");
+                bool public_ = lexer[getIndexGuard(lexer, true)].token != LexToken::FUNC;
+                [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
+                    error(lexer[getIndexGuard(lexer)], "this is not a valid function name");
+                ASTFuncDef *node = new ASTFuncDef(std::move(lexer[getIndexGuard(lexer, true)].str_token), public_);
+                if (lexer[getIndexGuard(lexer)].token != LexToken::L_CURLY)
+                    error(lexer[getIndexGuard(lexer, true)], "this is not a valid function args opener");
+                node->args = parseArgs(lexer);
+                if (lexer[getIndexGuard(lexer)].token != LexToken::S_ARROW)
+                {
+                    if (isDataType(lexer[getIndexGuard(lexer)]))
+                        error(lexer[getIndexGuard(lexer, true)],
+                              "you forgot to declare the return type -> to tell me what you are returning");
+                    else if (lexer[getIndexGuard(lexer)].token != LexToken::L_SQUIGGLY)
+                        error(lexer[getIndexGuard(lexer, true)], "syntax error garbage return type");
+                    else
+                        node->return_type = DataType::VOID;
+                }
                 else
-                    node->return_type = DataType::VOID;
-            }
-            else
-            {
-                (void)getIndexGuard(lexer, true);
-                if (!isDataType(lexer[getIndexGuard(lexer)]))
-                    error(lexer[getIndexGuard(lexer, true)], "this is not a supported data type");
-                node->return_type = parseDataType(lexer[getIndexGuard(lexer, true)]);
-            }
-            if (lexer[getIndexGuard(lexer)].token != LexToken::L_SQUIGGLY)
-            {
-                error(lexer[getIndexGuard(lexer)], "this is not a valid function block opener");
-                break;
-            }
-            else
-                node->body = parseBlock(lexer);
-            root->children.emplace_back(std::move(node));
+                {
+                    (void)getIndexGuard(lexer, true);
+                    if (!isDataType(lexer[getIndexGuard(lexer)]))
+                        error(lexer[getIndexGuard(lexer, true)], "this is not a supported data type");
+                    node->return_type = parseDataType(lexer[getIndexGuard(lexer, true)]);
+                }
+                if (lexer[getIndexGuard(lexer)].token != LexToken::L_SQUIGGLY)
+                {
+                    error(lexer[getIndexGuard(lexer)], "this is not a valid function block opener");
+                    break;
+                }
+                else
+                    node->body = parseBlock(lexer);
+                root->children.emplace_back(std::move(node));
 
-            if (node->return_type == DataType::VOID &&
-                (node->body->list.empty() || node->body->list.back()->type != ExpressionType::RETURN))
-            {
-                ASTExpression *expr = new ASTExpression();
-                expr->type = ExpressionType::NO_RETURN;
-                node->body->list.emplace_back(expr);
+                if (node->return_type == DataType::VOID &&
+                    (node->body->list.empty() || node->body->list.back()->type != ExpressionType::RETURN))
+                {
+                    ASTExpression *expr = new ASTExpression();
+                    expr->type = ExpressionType::NO_RETURN;
+                    node->body->list.emplace_back(expr);
+                }
+                else if (node->return_type != DataType::VOID &&
+                         (node->body->list.empty() || node->body->list.back()->type != ExpressionType::RETURN))
+                    error(lexer[getIndexGuard(lexer)], "a data expected return type must explicitly return a value");
             }
-            else if (node->return_type != DataType::VOID &&
-                     (node->body->list.empty() || node->body->list.back()->type != ExpressionType::RETURN))
-                error(lexer[getIndexGuard(lexer)], "a data expected return type must explicitly return a value");
+            else if (isDataType(lexer[getIndexGuard(lexer)]))
+                root->children.emplace_back(parseVar(lexer, true));
+            else
+            {
+                error(lexer[getIndexGuard(lexer)], "this is not a valid in global scope");
+            }
         }
-        else if (isDataType(lexer[getIndexGuard(lexer)]))
-            root->children.emplace_back(parseVar(lexer, true));
+    }
+    catch (const std::exception &e)
+    {
+        if(gf_error_stack)
+            gf_error_stack->push(e.what());
         else
-        {
-            error(lexer[getIndexGuard(lexer)], "this is not a valid in global scope");
-        }
+            puts(e.what());
     }
 }
 } // namespace LunaScript::compiler::front

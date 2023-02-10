@@ -31,15 +31,6 @@ losResult compile(const std::string &filename, const std::string &src, char **ou
     {
         if (res == LOS_ERROR_COULD_NOT_INIT)
             return res;
-        while (hasErrorOnStack(compiler))
-        {
-            char *read_str;
-            data_size_t read_str_size = 0;
-            getErrorOffStack(compiler, &read_str, &read_str_size);
-            puts(std::string(read_str, 0, read_str_size).c_str());
-            free(read_str);
-        }
-        return res;
     }
     if (ast_debug || gen_debug)
     {

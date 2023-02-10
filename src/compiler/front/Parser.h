@@ -323,8 +323,14 @@ class Parser
         puts(out.c_str());
     }
 
-    void error(const lexToken &token, const char *msg_text) noexcept
+    uint8_t error_count = 0;
+    void error(const lexToken &token, const char *msg_text)
     {
+        if(error_count >= 20)
+            throw std::runtime_error("Too many errors");
+        else
+            error_count++;
+
         if (gf_error_stack)
         {
             std::string name;
@@ -352,12 +358,12 @@ class Parser
         }
     }
 
-    ASTLiteral *parseLiteral(const std::vector<lexToken> &lexer) noexcept;
+    ASTLiteral *parseLiteral(const std::vector<lexToken> &lexer);
     const ASTBinaryExpression *parseBinaryExpr(const uint8_t precedence_inflator,
-                                               const std::vector<lexToken> &lexer) noexcept;
-    const ASTExpression *parseVar(const std::vector<lexToken> &lexer, bool is_global = false) noexcept;
-    const ASTExpression *parseArgs(const std::vector<lexToken> &lexer) noexcept;
-    ASTBlock *parseBlock(const std::vector<lexToken> &lexer) noexcept;
+                                               const std::vector<lexToken> &lexer);
+    const ASTExpression *parseVar(const std::vector<lexToken> &lexer, bool is_global = false);
+    const ASTExpression *parseArgs(const std::vector<lexToken> &lexer);
+    ASTBlock *parseBlock(const std::vector<lexToken> &lexer);
     void parse(const std::string &&source) noexcept;
 
   public:

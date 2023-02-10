@@ -133,27 +133,41 @@ class LunaScriptVirtualMachine
             printf("\x1B[94mLunaScriptVM:\x1B[37m starting main\n");
         pic = ops.findIndex(UINT64_MAX);
         if (debug_mode)
+#if defined(WIN32) || defined(_WIN64)
             printf("\x1B[94mLunaScriptVM:\x1B[37m start main at opcode -> %llu\n", pic);
-        for (; pic < ops.size();)
-        {
-            if (stop)
-                break;
-            uint64_t new_pic = runNextOp(ops[pic]);
-            if (set_pic)
+#else
+            printf("\x1B[94mLunaScriptVM:\x1B[37m start main at opcode -> %lu\n", pic);
+#endif
+        while (pic != UINT64_MAX)
+            for (; pic < ops.size();)
             {
-                pic = new_pic;
-                set_pic = false;
+                if (stop)
+                    break;
+                uint64_t new_pic = runNextOp(ops[pic]);
+                if (set_pic)
+                {
+                    pic = new_pic;
+                    set_pic = false;
+                }
+                else
+                    pic++;
+                if (new_pic == UINT64_MAX)
+                {
+                    if (!stack->empty())
+                    {
+                        vm_data_t ret = pop();
+                        if (debug_mode)
+#if defined(WIN32) || defined(_WIN64)
+                            printf("\x1B[94mLunaScriptVM:\x1B[33m - Main Returned: %llu\033[0m\t\t\n",
+                                   std::get<uint64_t>(ret));
+#else
+                            printf("\x1B[94mLunaScriptVM:\x1B[33m - Main Returned: %lu\033[0m\t\t\n",
+                                   std::get<uint64_t>(ret));
+#endif
+                    }
+                    break;
+                }
             }
-            else
-                pic++;
-            if (new_pic == UINT64_MAX)
-            {
-                vm_data_t ret = pop();
-                if (debug_mode)
-                    printf("\x1B[94mLunaScriptVM:\x1B[33m - Main Returned: %llu\033[0m\t\t\n", std::get<uint64_t>(ret));
-                break;
-            }
-        }
     }
 };
 } // namespace LunaScript::lsvm

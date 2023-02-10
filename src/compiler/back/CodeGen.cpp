@@ -10,7 +10,7 @@ void LunaScript::compiler::back::CodeGenerator::error()
 std::string LunaScript::compiler::back::CodeGenerator::genFunction(const ASTFuncDef *func)
 {
     std::string ret(func->name);
-    [[unlikey]] if (func->name == "main")
+    [[unlikely]] if (func->name == "main")
         ret = "script_main";
     ret += ":\n";
     for (auto &data : func->body->list)
@@ -121,6 +121,8 @@ std::string LunaScript::compiler::back::CodeGenerator::genBinary(const ASTBinary
     case OperatorType::MOD:
         ret += "mod r1 r2\n";
         ret += tab_str;
+        break;
+    case OperatorType::NOT_DETERMINED:
         break;
     }
     ret += "push r1\n";

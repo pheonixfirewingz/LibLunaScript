@@ -5,7 +5,7 @@ set ( CMAKE_CXX_STANDARD_REQUIRED ON )
 # options
 set ( DEBUG_MODE ON )
 set ( FUZZING OFF )
-set ( COMPILER_TESTING ON )
+set ( COMPILER_TESTING OFF )
 # options end
 
 configure_file ( ${PROJECT_SOURCE_DIR}/src/application/Cmake.h.in ${PROJECT_SOURCE_DIR}/src/application/Cmake.h @ONLY )

@@ -72,8 +72,8 @@ struct ASTRoot : public ASTNode
         return NodeType::ROOT;
     }
 
-    constexpr ASTRoot(const std::string &name) noexcept
-        : name(name)
+    ASTRoot(const std::string name) noexcept
+        : name(std::move(name))
     {
     }
 
