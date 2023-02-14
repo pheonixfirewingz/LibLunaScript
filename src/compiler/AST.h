@@ -48,12 +48,12 @@ enum class OperatorType
     NOT_DETERMINED,
     ADD,
     SUB,
-    DIV,
     MUL,
+    DIV,
+    MOD,
     AND,
-    OR,
     XOR,
-    MOD
+    OR
 };
 
 struct ASTNode

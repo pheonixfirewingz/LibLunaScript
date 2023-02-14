@@ -104,7 +104,7 @@ std::ReadOnlyVector<uint64_t> assemble(const char *src, const data_size_t src_si
         break;
         case LunaScript::assembler::LexerToken::IDENTIFIER: {
             if (op_mode && !call_mode)
-                byte_code.setMemory<uint64_t>(std::stoul(token.str_token, 0, 16));
+                byte_code.setMemory<uint64_t>(std::stoul(token.str_token, 0));
             else if (call_mode)
             {
                 if (auto search = label_memory_map.find(std::hash<std::string>{}(token.str_token));

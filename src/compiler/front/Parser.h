@@ -180,21 +180,21 @@ class Parser
         switch (token.token)
         {
         case LexToken::ADD:
-            return std::make_tuple<uint8_t, OperatorType>(5, OperatorType::ADD);
+            return std::make_tuple<uint8_t, OperatorType>(10, OperatorType::ADD);
         case LexToken::SUB:
-            return std::make_tuple<uint8_t, OperatorType>(5, OperatorType::SUB);
+            return std::make_tuple<uint8_t, OperatorType>(20, OperatorType::SUB);
         case LexToken::MUL:
-            return std::make_tuple<uint8_t, OperatorType>(6, OperatorType::MUL);
+            return std::make_tuple<uint8_t, OperatorType>(30, OperatorType::MUL);
         case LexToken::DIV:
-            return std::make_tuple<uint8_t, OperatorType>(6, OperatorType::DIV);
+            return std::make_tuple<uint8_t, OperatorType>(40, OperatorType::DIV);
         case LexToken::AND:
-            return std::make_tuple<uint8_t, OperatorType>(1, OperatorType::AND);
+            return std::make_tuple<uint8_t, OperatorType>(60, OperatorType::AND);
         case LexToken::OR:
-            return std::make_tuple<uint8_t, OperatorType>(1, OperatorType::OR);
+            return std::make_tuple<uint8_t, OperatorType>(70, OperatorType::OR);
         case LexToken::XOR:
-            return std::make_tuple<uint8_t, OperatorType>(1, OperatorType::XOR);
+            return std::make_tuple<uint8_t, OperatorType>(80, OperatorType::XOR);
         case LexToken::MODULO:
-            return std::make_tuple<uint8_t, OperatorType>(6, OperatorType::MOD);
+            return std::make_tuple<uint8_t, OperatorType>(50, OperatorType::MOD);
         [[unlikely]] default:
             return std::make_tuple<uint8_t, OperatorType>(0, OperatorType::NOT_DETERMINED);
         }

@@ -1,4 +1,5 @@
 #include "CodeGen.h"
+#include <algorithm>
 #include <string>
 
 void LunaScript::compiler::back::CodeGenerator::error()
@@ -10,8 +11,7 @@ void LunaScript::compiler::back::CodeGenerator::error()
 std::string LunaScript::compiler::back::CodeGenerator::genFunction(const ASTFuncDef *func)
 {
     std::string ret(func->name);
-    [[unlikely]] if (func->name == "main")
-        ret = "script_main";
+    [[unlikely]] if (func->name == "main") ret = "script_main";
     ret += ":\n";
     for (auto &data : func->body->list)
     {
@@ -35,7 +35,7 @@ std::string LunaScript::compiler::back::CodeGenerator::genFunction(const ASTFunc
                 }
             }
             else if (data->list[0]->getType() == NodeType::BINARY)
-                ret += genBinary(static_cast<const ASTBinaryExpression*>(data->list[0]));
+                ret += genBinary(static_cast<const ASTBinaryExpression *>(data->list[0]));
         }
             [[fallthrough]];
         case ExpressionType::NO_RETURN: {
@@ -51,82 +51,97 @@ std::string LunaScript::compiler::back::CodeGenerator::genFunction(const ASTFunc
     return ret;
 }
 
-std::string LunaScript::compiler::back::CodeGenerator::genBinary(const ASTBinaryExpression * node)
+std::string LunaScript::compiler::back::CodeGenerator::genBinary(const ASTBinaryExpression *node)
 {
     std::string ret;
-    if (isIDaNumeric(node->left->data_type))
+    std::vector<const BinaryInfo *> infos;
+    const ASTBinaryExpression *current = node;
+    for (; current->right->getType() == NodeType::BINARY;)
     {
-        ret += "push const ";
-        ret += std::to_string(std::stoul(node->left->value, 0, 16));
-        ret += "\n";
-        ret += tab_str;
+        infos.push_back(new BinaryInfo(current->precedence, current->op, current->left, nullptr));
+        current = static_cast<const ASTBinaryExpression *>(current->right);
     }
-    else
+    infos.push_back(new BinaryInfo(current->precedence, current->op, current->left,
+                                   static_cast<const ASTLiteral *>(current->right)));
+    std::sort(infos.begin(), infos.end(),
+              [](const BinaryInfo *lhs, const BinaryInfo *rhs) { return lhs->precedence > rhs->precedence; });
+    
+    std::string block;
+    std::string data;
+    for (auto &info : infos)
     {
-        error();
-    }
-
-    if (node->right ->getType() == NodeType::LITERAL)
-    {
-        if (isIDaNumeric(((const ASTLiteral*)node->right)->data_type))
+        if(info->right != nullptr)
         {
-            ret += "push const ";
-            ret += std::to_string(std::stoul(((const ASTLiteral *)node->right)->value, 0, 16));
-            ret += "\n";
-            ret += tab_str;
+            data += genLiteral(1,info->left);
+            data += tab_str;
+            block += genLiteral(2,info->right);
+            block += tab_str;
         }
         else
         {
-            error();
+            block += genLiteral(2,info->left);
+            block += tab_str;
         }
+        switch (info->op)
+        {
+        case OperatorType::ADD:
+            block += "add r1 r2\n";
+            block += tab_str;
+            break;
+        case OperatorType::SUB:
+            block += "sub r1 r2\n";
+            block += tab_str;
+            break;
+        case OperatorType::DIV:
+            block += "div r1 r2\n";
+            block += tab_str;
+            break;
+        case OperatorType::MUL:
+            block += "mul r1 r2\n";
+            block += tab_str;
+            break;
+        case OperatorType::AND:
+            block += "and r1 r2\n";
+            block += tab_str;
+            break;
+        case OperatorType::OR:
+            block += "or r1 r2\n";
+            block += tab_str;
+            break;
+        case OperatorType::XOR:
+            block += "xor r1 r2\n";
+            block += tab_str;
+            break;
+        case OperatorType::MOD:
+            block += "mod r1 r2\n";
+            block += tab_str;
+            break;
+        case OperatorType::NOT_DETERMINED:
+            break;
+        }
+    }
+    ret += data;
+    ret += block;
+    ret += "push r1\n";
+    ret += tab_str;
+    return ret;
+}
+
+std::string LunaScript::compiler::back::CodeGenerator::genLiteral(const uint8_t reg,const ASTLiteral *node)
+{
+    std::string ret;
+    if (isIDaNumeric(node->data_type))
+    {
+        ret += "mov r";
+        ret += std::to_string(reg);
+        ret += " const ";
+        ret += node->value;
+        ret += "\n";
     }
     else
     {
         error();
     }
-    ret += "pop r1\n";
-    ret += tab_str;
-    ret += "pop r2\n";
-    ret += tab_str;
-    switch (node->op)
-    {
-    case OperatorType::ADD:
-        ret += "add r1 r2\n";
-        ret += tab_str;
-        break;
-    case OperatorType::SUB:
-        ret += "sub r1 r2\n";
-        ret += tab_str;
-        break;
-    case OperatorType::DIV:
-        ret += "div r1 r2\n";
-        ret += tab_str;
-        break;
-    case OperatorType::MUL:
-        ret += "mul r1 r2\n";
-        ret += tab_str;
-        break;
-    case OperatorType::AND:
-        ret += "and r1 r2\n";
-        ret += tab_str;
-        break;
-    case OperatorType::OR:
-        ret += "or r1 r2\n";
-        ret += tab_str;
-        break;
-    case OperatorType::XOR:
-        ret += "xor r1 r2\n";
-        ret += tab_str;
-        break;
-    case OperatorType::MOD:
-        ret += "mod r1 r2\n";
-        ret += tab_str;
-        break;
-    case OperatorType::NOT_DETERMINED:
-        break;
-    }
-    ret += "push r1\n";
-    ret += tab_str;
     return ret;
 }
 

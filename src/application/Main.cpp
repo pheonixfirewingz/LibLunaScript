@@ -7,37 +7,32 @@
 #include <liblunascript/Lsvm.h>
 #include <string>
 
-struct ByteCode
-{
-    uint64_t op : 5;
-    uint64_t reg : 3;
-    uint64_t is_reg : 1;
-    uint64_t is_constant : 1;
-    uint64_t reg_or_memory_dest : 53;
-    uint64_t reserved_0 : 1;
-};
-
-union Data {
-    uint64_t value;
-    ByteCode op;
-};
-
 losResult compile(const std::string &filename, const std::string &src, char **output, data_size_t *output_size,
                   bool ast_debug, bool gen_debug) noexcept
 {
     losResult res;
     Compiler compiler;
-    if ((res = compile(&compiler, src.c_str(), src.size(), filename.c_str(), filename.size())) != LOS_SUCCESS)
-    {
-        if (res == LOS_ERROR_COULD_NOT_INIT)
-            return res;
+    if ((res = compile(&compiler, src.c_str(), src.size(), filename.c_str(), filename.size())) != LOS_SUCCESS){
+        if(res == LOS_ERROR_MALFORMED_DATA)
+        {
+            while (hasErrorOnStack(compiler))
+            {
+                char* buffer;
+                data_size_t size;
+                getErrorOffStack(compiler, &buffer, &size);
+                puts(buffer);
+            }
+            
+        }
+        return res;
     }
-    if (ast_debug || gen_debug)
+    if (ast_debug)
     {
         char *json_str;
         data_size_t json_str_size;
         astToString(compiler, &json_str, &json_str_size);
-        fileWrite(createP("", "test", ".ast.json"), json_str, json_str_size);
+        puts(json_str);
+        free(json_str);
     }
     if (!ast_debug)
         toByteCode(compiler, output, output_size);
@@ -58,6 +53,7 @@ int main(int, char **)
 {
     bool ast_debug = false;
     bool gen_debug = true;
+    bool run_debug = true;
     // std::cout << "Debug Mode? (1)true or (0)false: ";
     // std::cin >> debug;
     libOSInit();
@@ -77,7 +73,9 @@ int main(int, char **)
         return 0;
 
     if (gen_debug)
-        puts(std::string(std::string("\x1B[94mLunaScriptCodeGen:\x1B[33m\n") += std::string(byte_code, 0, byte_code_size)).c_str());
+        puts(std::string(std::string("\x1B[94mLunaScriptCodeGen:\x1B[33m\n") +=
+                         std::string(byte_code, 0, byte_code_size))
+                 .c_str());
 
     if ((res = assemble(std::string(byte_code, 0, byte_code_size), &ops)) != LOS_SUCCESS)
         return res;
@@ -87,11 +85,14 @@ int main(int, char **)
         if ((res = fileWrite<uint64_t>(createP("", "test", ".lsobj"), ops.data(), ops.size())) != LOS_SUCCESS)
             return res;
     }
+
+    if(!run_debug)
+        return 0;
     VMData data{.vmCallbacks = {{VMFunctionName("vmExit").hash,
                                  [](std::stack<vm_data_t> *stack) {
-                                     uint64_t typed_reg = std::get<uint64_t>(stack->top());
+                                     float64_t typed_reg = std::get<float64_t>(stack->top());
                                      stack->pop();
-                                     printf("\x1B[94mLunaScript\x1B[33m - EndCode: %llu\033[0m\t\t\n", typed_reg);
+                                     printf("\x1B[94mLunaScript\x1B[33m - EndCode: %f\033[0m\t\t\n", typed_reg);
                                      return nullptr;
                                  }}},
                 .vmErrorCallback = [](const char *msg) {

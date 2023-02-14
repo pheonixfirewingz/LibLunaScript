@@ -151,6 +151,9 @@ class LunaScriptVirtualMachine
                 }
                 else
                     pic++;
+                //temp break; 
+                if(pic >= ops.size())
+                    pic = UINT64_MAX;
                 if (new_pic == UINT64_MAX)
                 {
                     if (!stack->empty())

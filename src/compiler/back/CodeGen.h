@@ -10,6 +10,22 @@ class CodeGenerator
     const ASTRoot *root;
     void error();
 
+    struct BinaryInfo
+    {
+        const uint16_t precedence;
+        const OperatorType op;
+        const ASTLiteral *left;
+        const ASTLiteral *right;
+        BinaryInfo(const uint16_t precedence_in, const OperatorType op_in, const ASTLiteral *left_in,
+                   const ASTLiteral *right_in)
+            : precedence(precedence_in)
+            , op(op_in)
+            , left(left_in)
+            , right(right_in)
+        {
+        }
+    };
+
     bool isIDaNumeric(const DataType &id) noexcept
     {
         switch (id)
@@ -35,6 +51,7 @@ class CodeGenerator
 
     std::string genFunction(const ASTFuncDef *);
     std::string genBinary(const ASTBinaryExpression *);
+    std::string genLiteral(const uint8_t,const ASTLiteral *);
 
   public:
     explicit CodeGenerator(const ASTRoot *root)
