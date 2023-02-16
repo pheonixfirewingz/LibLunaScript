@@ -26,11 +26,11 @@ losResult fileRead(const std::string path, char **buf, data_size_t *buf_size) no
 }
 
 template <typename T>
-losResult fileWrite(const std::string path, const T *buf,const data_size_t buf_size,bool create = true) noexcept
+losResult fileWrite(const std::string path, const T *buf,const data_size_t buf_size) noexcept
 {
     losFileHandle handle;
     losFileOpenInfo file;
-    if (create)
+    if (losDoseFileExist(path.c_str()) != LOS_SUCCESS)
         file.fileBits = LOS_FILE_BIT_WRITE | LOS_FILE_BIT_CREATE;
     else
         file.fileBits = LOS_FILE_BIT_WRITE;

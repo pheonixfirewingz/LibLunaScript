@@ -2,7 +2,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_CXX_EXTENSIONS O)
 
-set_property ( TARGET libos PROPERTY IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/libs/binarys/liblibos.so )
+set_property ( TARGET libos PROPERTY IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/libs/binarys/libos.so )
 
 
 add_library ( liblunascript SHARED ${compiler_source} )
