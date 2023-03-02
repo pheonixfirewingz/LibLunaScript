@@ -6,8 +6,8 @@ namespace LunaScript::compiler::back
 using namespace LunaScript::compiler::ast;
 class CodeGenerator
 {
-    constexpr static const char *tab_str = "    ";
     const ASTRoot *root;
+    std::string ret;
     void error();
 
     struct BinaryInfo
@@ -49,9 +49,9 @@ class CodeGenerator
         }
     }
 
-    std::string genFunction(const ASTFuncDef *);
-    std::string genBinary(const ASTBinaryExpression *);
-    std::string genLiteral(const uint8_t,const ASTLiteral *);
+    void genFunction(const ASTFuncDef *);
+    void genBinary(const ASTBinaryExpression *);
+    std::string genLiteral(const uint8_t,const ASTLiteral *,bool global = false);
 
   public:
     explicit CodeGenerator(const ASTRoot *root)

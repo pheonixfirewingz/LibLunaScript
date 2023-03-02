@@ -1,119 +1,111 @@
 #include "Cmake.h"
 #include "IO.hpp"
+#include <algorithm>
 #include <argparse/argparse.hpp>
 #include <cstdio>
-#include <liblunascript/Assembler.h>
 #include <liblunascript/Compiler.h>
-#include <liblunascript/Lsvm.h>
 #include <string>
 
-losResult compile(const std::string &filename, const std::string &src, char **output, data_size_t *output_size,
-                  bool ast_debug, bool gen_debug) noexcept
+#if FUZZING == 1
+extern "C++" int LLVMFuzzerTestOneInputI(const uint8_t *Data, size_t Size)
 {
-    losResult res;
-    Compiler compiler;
-    if ((res = compile(&compiler, src.c_str(), src.size(), filename.c_str(), filename.size())) != LOS_SUCCESS){
-        if(res == LOS_ERROR_MALFORMED_DATA)
-        {
-            while (hasErrorOnStack(compiler))
-            {
-                char* buffer;
-                data_size_t size;
-                getErrorOffStack(compiler, &buffer, &size);
-                puts(buffer);
-            }
-            
-        }
-        return res;
-    }
-    if (ast_debug)
+    LunaScriptCompiler compile(std::string((const char *)Data, 0, Size), "test");
+    if (compile.didScriptCompile() != LOS_SUCCESS)
+        return -1;
+    return 0; // Values other than 0 and -1 are reserved for future use.
+}
+
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
+{
+    return LLVMFuzzerTestOneInputI(Data, Size);
+}
+#else
+static const char *const words[] = {"Const","Add","Sub","Div","Mul","Jmp","Cmp","Ncmp","Push","Pop","Store","Load","Call","Ret","Mov","Skip"};
+
+void replace_all(std::string &inout, std::string_view what, std::string_view with)
+{
+    std::size_t count{};
+    for (std::string::size_type pos{}; inout.npos != (pos = inout.find(what.data(), pos, what.length()));
+         pos += with.length(), ++count)
+        inout.replace(pos, what.length(), with.data(), with.length());
+}
+
+char tolower(char in) {
+    if (in <= 'Z' && in >= 'A')
+        return in - ('Z' - 'z');
+    return in;
+}
+
+std::string colourText(std::string text)
+{
+    for(uint16_t i = 0; i < sizeof(words) / sizeof(const char*);i++)
     {
-        char *json_str;
-        data_size_t json_str_size;
-        astToString(compiler, &json_str, &json_str_size);
-        puts(json_str);
-        free(json_str);
-    }
-    if (!ast_debug)
-        toByteCode(compiler, output, output_size);
-    freeCompiler(compiler);
-    return LOS_SUCCESS;
+        std::string word(words[i]);
+        std::string e("\x1B[94m");
+        if(word.find("Const") == std::string::npos)
+            e += "    ";
+        e += word;
+        e += "\x1B[00m";
+        std::string t;
+        t += tolower(word[0]);
+        t += std::string(word.c_str(),1,word.size());
+        replace_all(text,t,e);
+        replace_all(text,word,t);
+    }  
+    return text;
 }
 
-losResult assemble(const std::string &src, std::ReadOnlyVector<uint64_t> *ops) noexcept
+std::string indentText(std::string text)
 {
-    ops->copy(assemble(src.c_str(), src.size()));
-    if (ops->empty())
-        return LOS_ERROR_MALFORMED_DATA;
-    return LOS_SUCCESS;
+    for(uint16_t i = 0; i < sizeof(words) / sizeof(const char*);i++)
+    {
+        std::string word(words[i]);
+        std::string e("");
+        if(word.find("Const") == std::string::npos)
+            e += "    ";
+        e += word;
+        std::string t;
+        t += tolower(word[0]);
+        t += std::string(word.c_str(),1,word.size());
+        replace_all(text,t,e);
+        replace_all(text,word,t);
+    }  
+    return text;
 }
 
-// int main(int argc, char **argv)
 int main(int, char **)
 {
-    bool ast_debug = false;
     bool gen_debug = true;
-    bool run_debug = true;
-    // std::cout << "Debug Mode? (1)true or (0)false: ";
-    // std::cin >> debug;
     libOSInit();
     losResult res;
     setRoot(PROJECT_SOURCE_DIR);
-    char *read_str;
-    data_size_t read_str_size = 0;
-    if ((res = fileRead(createP("", "test", ".lls"), &read_str, &read_str_size)) != LOS_SUCCESS)
+    char *src;
+    data_size_t src_size = 0;
+    const char *name = "test";
+    if ((res = fileRead(createP("", name, ".lls"), &src, &src_size)) != LOS_SUCCESS)
         return res;
-    std::ReadOnlyVector<uint64_t> ops = {};
-    char *byte_code;
-    data_size_t byte_code_size;
-    if ((res = compile("test", std::string(read_str, 0, read_str_size), &byte_code, &byte_code_size, ast_debug,
-                       gen_debug)) != LOS_SUCCESS)
-        return res;
-    if (ast_debug)
-        return 0;
-
-    if (gen_debug)
-        puts(std::string(std::string("\x1B[94mLunaScriptCodeGen:\x1B[33m\n") +=
-                         std::string(byte_code, 0, byte_code_size))
-                 .c_str());
-
-    if ((res = assemble(std::string(byte_code, 0, byte_code_size), &ops)) != LOS_SUCCESS)
-        return res;
+    LunaScriptCompiler compile(std::string(src, 0, src_size), name);
+    if (compile.didScriptCompile() != LOS_SUCCESS)
+    {
+        puts(compile.getErrors().c_str());
+        return compile.didScriptCompile();
+    }
+    puts(std::string("\x1B[94mLunaScriptCodeAST:\x1B[33m\n").c_str());
+    puts(compile.getJsonAST().c_str());
 
     if (!gen_debug)
     {
-        if ((res = fileWrite<uint64_t>(createP("", "test", ".lsobj"), ops.data(), ops.size())) != LOS_SUCCESS)
+        auto bytecode = indentText(compile.getByteCode());
+
+        if ((res = fileWrite<char>(createP("", "test", ".lsasm"), bytecode.c_str(), bytecode.size())) != LOS_SUCCESS)
             return res;
     }
-
-    if(!run_debug)
-        return 0;
-    VMData data{.vmCallbacks = {{VMFunctionName("vmExit").hash,
-                                 [](std::stack<vm_data_t> *stack) {
-                                     float64_t typed_reg = std::get<float64_t>(stack->top());
-                                     stack->pop();
-                                     printf("\x1B[94mLunaScript\x1B[33m - EndCode: %f\033[0m\t\t\n", typed_reg);
-                                     return nullptr;
-                                 }}},
-                .vmErrorCallback = [](const char *msg) {
-                    printf("LunaScript - ERROR: %s\n", msg);
-                    std::exit(1);
-                }};
-    run(&data, ops, gen_debug);
+    else
+    {
+        puts(std::string("\n\n\x1B[94mLunaScriptCodeGen:\x1B[00m\n").c_str());
+        puts(colourText(compile.getByteCode()).c_str());
+    }
     libOSCleanUp();
     return 0;
-}
-#if FUZZING == 1
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
-{
-    enableSoftErrors();
-    std::string x((char *)Data, 0, Size);
-    const ASTRoot *v = parse(std::move(x));
-    delete v;
-    int ret = hasErrors() ? 0 : -1;
-    if (ret == -1)
-        puts("did error correctly");
-    disableSoftErrors();
-    return ret; // Values other than 0 and -1 are reserved for future use.
 }
 #endif

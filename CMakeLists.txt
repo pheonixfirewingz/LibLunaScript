@@ -4,6 +4,7 @@ set ( CMAKE_CXX_STANDARD_REQUIRED ON )
 
 # options
 set ( DEBUG_MODE ON )
+set ( STATIC_BUILD OFF )
 set ( FUZZING OFF )
 set ( COMPILER_TESTING OFF )
 # options end
@@ -15,12 +16,6 @@ set(compiler_source
     ${PROJECT_SOURCE_DIR}/src/compiler/front/Parser.cpp
     ${PROJECT_SOURCE_DIR}/src/compiler/back/CodeGen.cpp
     ${PROJECT_SOURCE_DIR}/src/compiler/front/Json.cpp
-
-    ${PROJECT_SOURCE_DIR}/src/assembler/AssemblerAPI.cpp
-    ${PROJECT_SOURCE_DIR}/src/assembler/Lexer.cpp
-
-    ${PROJECT_SOURCE_DIR}/src/lsvm/VmAPI.cpp
-    ${PROJECT_SOURCE_DIR}/src/lsvm/VirtualMachine.cpp
 )
 
 set ( app_source 
@@ -68,3 +63,17 @@ if(MSVC AND ${DEBUG_MODE})
     target_compile_options(LunaScript PRIVATE /Od /W4 /WX /RTC1 /Z7  /EHsc /sdl /JMC /external:anglebrackets /external:W0)
     target_link_options(LunaScript PRIVATE /DEBUG:FULL)
 endif ()
+
+if(NOT MSVC AND ${FUZZING})
+    if ( NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU") )
+        target_compile_options ( LunaScript PRIVATE -fsanitize=fuzzer,undefined )
+        target_link_options ( LunaScript PRIVATE -fsanitize=fuzzer,undefined )
+    endif()
+endif()
+
+if(NOT MSVC AND NOT ${FUZZING})
+    if ( NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU") )
+        target_compile_options ( LunaScript PRIVATE -fsanitize=address,undefined )
+        target_link_options ( LunaScript PRIVATE -fsanitize=address,undefined )
+    endif()
+endif()

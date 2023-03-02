@@ -4,20 +4,29 @@
 
 void LunaScript::compiler::back::CodeGenerator::error()
 {
-    puts("Unimplemented feature\n");
+    printf("ASM GENERATED:\n%s\n\n%s\n", ret.c_str(), "Unimplemented feature");
     std::exit(1);
 }
 
-std::string LunaScript::compiler::back::CodeGenerator::genFunction(const ASTFuncDef *func)
+void LunaScript::compiler::back::CodeGenerator::genFunction(const ASTFuncDef *func)
 {
-    std::string ret(func->name);
+    ret += func->name;
     [[unlikely]] if (func->name == "main") ret = "script_main";
     ret += ":\n";
     for (auto &data : func->body->list)
     {
-        ret += tab_str;
         switch (data->type)
         {
+        case ExpressionType::VAR_DEFINED: {
+            if (data->list[0]->getType() == NodeType::BINARY)
+                genBinary(static_cast<const ASTBinaryExpression *>(data->list[0]));
+            else
+            {
+                ret += genLiteral(0, static_cast<const ASTLiteral *>(data->list[0]));
+                ret += "push r1";
+            }
+        }
+            continue;
         case ExpressionType::RETURN: {
             if (data->list[0]->getType() == NodeType::LITERAL)
             {
@@ -31,11 +40,10 @@ std::string LunaScript::compiler::back::CodeGenerator::genFunction(const ASTFunc
                     ret += "push const ";
                     ret += std::to_string(std::stoul(value->value, 0, 16));
                     ret += "\n";
-                    ret += tab_str;
                 }
             }
             else if (data->list[0]->getType() == NodeType::BINARY)
-                ret += genBinary(static_cast<const ASTBinaryExpression *>(data->list[0]));
+                genBinary(static_cast<const ASTBinaryExpression *>(data->list[0]));
         }
             [[fallthrough]];
         case ExpressionType::NO_RETURN: {
@@ -48,12 +56,10 @@ std::string LunaScript::compiler::back::CodeGenerator::genFunction(const ASTFunc
         break;
         }
     }
-    return ret;
 }
 
-std::string LunaScript::compiler::back::CodeGenerator::genBinary(const ASTBinaryExpression *node)
+void LunaScript::compiler::back::CodeGenerator::genBinary(const ASTBinaryExpression *node)
 {
-    std::string ret;
     std::vector<const BinaryInfo *> infos;
     const ASTBinaryExpression *current = node;
     for (; current->right->getType() == NodeType::BINARY;)
@@ -65,56 +71,45 @@ std::string LunaScript::compiler::back::CodeGenerator::genBinary(const ASTBinary
                                    static_cast<const ASTLiteral *>(current->right)));
     std::sort(infos.begin(), infos.end(),
               [](const BinaryInfo *lhs, const BinaryInfo *rhs) { return lhs->precedence > rhs->precedence; });
-    
+
     std::string block;
     std::string data;
     for (auto &info : infos)
     {
-        if(info->right != nullptr)
+        if (info->right != nullptr)
         {
-            data += genLiteral(1,info->left);
-            data += tab_str;
-            block += genLiteral(2,info->right);
-            block += tab_str;
+            data += genLiteral(1, info->left);
+            block += genLiteral(2, info->right);
         }
         else
         {
-            block += genLiteral(2,info->left);
-            block += tab_str;
+            block += genLiteral(2, info->left);
         }
         switch (info->op)
         {
         case OperatorType::ADD:
             block += "add r1 r2\n";
-            block += tab_str;
             break;
         case OperatorType::SUB:
             block += "sub r1 r2\n";
-            block += tab_str;
             break;
         case OperatorType::DIV:
             block += "div r1 r2\n";
-            block += tab_str;
             break;
         case OperatorType::MUL:
             block += "mul r1 r2\n";
-            block += tab_str;
             break;
         case OperatorType::AND:
             block += "and r1 r2\n";
-            block += tab_str;
             break;
         case OperatorType::OR:
             block += "or r1 r2\n";
-            block += tab_str;
             break;
         case OperatorType::XOR:
             block += "xor r1 r2\n";
-            block += tab_str;
             break;
         case OperatorType::MOD:
             block += "mod r1 r2\n";
-            block += tab_str;
             break;
         case OperatorType::NOT_DETERMINED:
             break;
@@ -123,37 +118,57 @@ std::string LunaScript::compiler::back::CodeGenerator::genBinary(const ASTBinary
     ret += data;
     ret += block;
     ret += "push r1\n";
-    ret += tab_str;
-    return ret;
 }
 
-std::string LunaScript::compiler::back::CodeGenerator::genLiteral(const uint8_t reg,const ASTLiteral *node)
+std::string LunaScript::compiler::back::CodeGenerator::genLiteral(const uint8_t reg, const ASTLiteral *node,
+                                                                  bool global)
 {
-    std::string ret;
-    if (isIDaNumeric(node->data_type))
+    std::string data;
+    if (global)
     {
-        ret += "mov r";
-        ret += std::to_string(reg);
-        ret += " const ";
-        ret += node->value;
-        ret += "\n";
+        if (isIDaNumeric(node->data_type))
+        {
+            data += "store ";
+            data += "const ";
+            data += node->value;
+            data += "\n";
+        }
+        else if (!isIDaNumeric(node->data_type))
+        {
+        }
+        else
+        {
+            error();
+        }
     }
     else
     {
-        error();
+        if (isIDaNumeric(node->data_type))
+        {
+            data += "mov r";
+            data += std::to_string(reg);
+            data += " const ";
+            data += node->value;
+            data += "\n";
+        }
+        else if (!isIDaNumeric(node->data_type))
+        {
+        }
+        else
+        {
+            error();
+        }
     }
-    return ret;
+    return data;
 }
 
 std::string LunaScript::compiler::back::CodeGenerator::generate()
 {
-    std::string code;
-
     for (auto &data : root->children)
     {
         if (data->getType() == NodeType::FUNC_DEF)
-            code += genFunction((ASTFuncDef *)data);
+            genFunction((ASTFuncDef *)data);
     }
 
-    return code;
+    return ret;
 }

@@ -1,4 +1,10 @@
 public main()
 {
-    ret 8 * 5 / 10 + 6
+    uint64 v = 8 * 5
+    ret v / 10 + 6
+}
+
+func test() -> int32
+{
+    ret 0
 }

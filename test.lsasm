@@ -1,0 +1,14 @@
+script_main:
+    mov r1 const 8
+    mov r2 const 5
+    mul r1 r2
+    push r1
+    mov r1 const 10
+    div r1 r2
+    mov r2 const 6
+    add r1 r2
+    push r1
+    ret
+test:
+    push const 0
+    ret

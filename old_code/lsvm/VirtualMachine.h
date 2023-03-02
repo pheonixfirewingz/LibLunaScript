@@ -26,15 +26,6 @@ class LunaScriptVirtualMachine
     bool set_pic = false;
     const bool debug_mode;
 
-    union OP_DATA {
-        uint64_t value;
-        ByteCode op;
-        explicit OP_DATA(uint64_t value)
-            : value(value)
-        {
-        }
-    };
-
 #define push_(value) stack->push(value)
 
     vm_data_t pop() noexcept
