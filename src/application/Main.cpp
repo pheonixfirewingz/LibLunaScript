@@ -20,7 +20,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
     return LLVMFuzzerTestOneInputI(Data, Size);
 }
 #else
-static const char *const words[] = {"Const","Add","Sub","Div","Mul","Jmp","Cmp","Ncmp","Push","Pop","Store","Load","Call","Ret","Mov","Skip"};
 
 void replace_all(std::string &inout, std::string_view what, std::string_view with)
 {
@@ -36,8 +35,29 @@ char tolower(char in) {
     return in;
 }
 
+
+std::string colourSrcText(std::string text)
+{
+    static const char *const src_words[] = {"Const","Uint8","Uint16","Uint32","Uint64","Int8","Int16","Int32","Int64","Float32","Float64","Ret","Func","Public"};
+    for(uint16_t i = 0; i < sizeof(src_words) / sizeof(const char*);i++)
+    {
+        std::string word(src_words[i]);
+        std::string e("\x1B[94m");
+        e += word;
+        e += "\x1B[00m";
+        std::string t;
+        t += tolower(word[0]);
+        t += std::string(word.c_str(),1,word.size());
+        replace_all(text,t,e);
+        replace_all(text,word,t);
+    }  
+    return text;
+}
+
+static const char *const words[] = {"Const","Add","Sub","Div","Mul","Jmp","Cmp","Ncmp","Push","Pop","Store","Load","Call","Ret","Mov","Skip"};
 std::string colourText(std::string text)
 {
+    
     for(uint16_t i = 0; i < sizeof(words) / sizeof(const char*);i++)
     {
         std::string word(words[i]);
@@ -75,7 +95,6 @@ std::string indentText(std::string text)
 
 int main(int, char **)
 {
-    bool gen_debug = true;
     libOSInit();
     losResult res;
     setRoot(PROJECT_SOURCE_DIR);
@@ -84,27 +103,20 @@ int main(int, char **)
     const char *name = "test";
     if ((res = fileRead(createP("", name, ".lls"), &src, &src_size)) != LOS_SUCCESS)
         return res;
+    puts(std::string("\x1B[32mSrc:\x1B[33m\n").c_str());
+    puts(colourSrcText(std::string(src,0,src_size)).c_str());
+    puts("\n");
+
     LunaScriptCompiler compile(std::string(src, 0, src_size), name);
     if (compile.didScriptCompile() != LOS_SUCCESS)
     {
         puts(compile.getErrors().c_str());
         return compile.didScriptCompile();
     }
-    puts(std::string("\x1B[94mLunaScriptCodeAST:\x1B[33m\n").c_str());
+    puts(std::string("\x1B[32mAst:\x1B[33m\n").c_str());
     puts(compile.getJsonAST().c_str());
-
-    if (!gen_debug)
-    {
-        auto bytecode = indentText(compile.getByteCode());
-
-        if ((res = fileWrite<char>(createP("", "test", ".lsasm"), bytecode.c_str(), bytecode.size())) != LOS_SUCCESS)
-            return res;
-    }
-    else
-    {
-        puts(std::string("\n\n\x1B[94mLunaScriptCodeGen:\x1B[00m\n").c_str());
-        puts(colourText(compile.getByteCode()).c_str());
-    }
+    puts(std::string("\n\n\x1B[32mCodeGen:\x1B[00m\n").c_str());
+    puts(colourText(compile.getByteCode()).c_str());
     libOSCleanUp();
     return 0;
 }
