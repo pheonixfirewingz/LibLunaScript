@@ -9,7 +9,7 @@
             "parameters": {
                 "type": "Expression",
                 "id": "ParameterList",
-                "declarations": []
+                "Parameters": []
             },
             "body": {
                 "type": "ExecutionBlock",
@@ -17,13 +17,12 @@
                     {
                         "type": "Expression",
                         "id": "ReturnType",
-                        "declarations": [
-                            {
-                                "type": "Literal",
-                                "data_type": "any uint",
-                                "value": "1"
-                            }
-                        ]
+                        "declaration": {
+                            "type": "Expression",
+                            "id": "Literal",
+                            "data_type": "any uint",
+                            "value": "1"
+                        }
                     }
                 ]
             }
@@ -36,7 +35,7 @@
             "parameters": {
                 "type": "Expression",
                 "id": "ParameterList",
-                "declarations": []
+                "Parameters": []
             },
             "body": {
                 "type": "ExecutionBlock",
@@ -44,18 +43,10 @@
                     {
                         "type": "Expression",
                         "id": "ReturnType",
-                        "declarations": [
-                            {
-                                "type": "Expression",
-                                "id": "FunctionCall",
-                                "name": "getOne",
-                                "parameters": {
-                                    "type": "Expression",
-                                    "id": "ParameterList",
-                                    "declarations": []
-                                }
-                            }
-                        ]
+                        "declaration": {
+                            "type": "Expression",
+                            "id": "FunctionCall"
+                        }
                     }
                 ]
             }

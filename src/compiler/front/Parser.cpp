@@ -95,7 +95,8 @@ const ASTBinaryExpression *Parser::parseBinaryExpr(const uint8_t precedence_infl
     if (isBinaryExpr(lexer[std::min((uint32_t)lexer.size() - 1, fake_i)]))
     {
         const ASTBinaryExpression *r_expr = parseBinaryExpr(1 + precedence_inflator, lexer);
-        [[unlikely]] if (!r_expr) r_expr = new ASTBinaryExpression();
+        [[unlikely]] if (!r_expr)
+            r_expr = new ASTBinaryExpression();
         expr->right = std::move(r_expr);
     }
     else
@@ -106,7 +107,6 @@ const ASTBinaryExpression *Parser::parseBinaryExpr(const uint8_t precedence_infl
             return expr;
         }
         ASTLiteral *lit_2 = parseLiteral(lexer);
-        ;
         if (lit_2->value.find(".") != std::string::npos)
             lit_2->data_type = DataType::ANY_FLOAT;
         else if (lexer[(int64_t)getIndexGuard(lexer) - 1].token == LexToken::IDENTIFIER &&
@@ -121,8 +121,8 @@ const ASTBinaryExpression *Parser::parseBinaryExpr(const uint8_t precedence_infl
 
 const ASTExpression *Parser::parseVar(const std::vector<lexToken> &lexer, bool is_global)
 {
-    ASTExpression *node = new ASTExpression();
-    node->type = ExpressionType::VAR_DEFINED;
+    ASTLiteral *node = new ASTLiteral();
+    node->global = is_global;
     [[unlikely]] if (!isDataType(lexer[getIndexGuard(lexer)]))
     {
         error(lexer[getIndexGuard(lexer)], "this is not a supported data type");
@@ -132,20 +132,18 @@ const ASTExpression *Parser::parseVar(const std::vector<lexToken> &lexer, bool i
     node->data_type = data_type;
     [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
         error(lexer[getIndexGuard(lexer)], "this is not a valid param name");
-    node->extra_data = lexer[getIndexGuard(lexer, true)].str_token;
+    node->name = lexer[getIndexGuard(lexer, true)].str_token;
     if (lexer[getIndexGuard(lexer)].token != LexToken::EQUAL)
     {
         if (isInteger(lexer[getIndexGuard(lexer)]))
             error(lexer[getIndexGuard(lexer)], "you missing the equals(=) to define value of the variable");
-        ASTLiteral *literal = new ASTLiteral();
-        literal->data_type = data_type;
-        if (literal->data_type >= DataType::INT8 && literal->data_type <= DataType::UINT64)
-            literal->value = "0";
-        else if (literal->data_type >= DataType::FLOAT32 && literal->data_type <= DataType::FLOAT64)
-            literal->value = "0.0";
+        node->data_type = data_type;
+        if (node->data_type >= DataType::INT8 && node->data_type <= DataType::UINT64)
+            node->value = "0";
+        else if (node->data_type >= DataType::FLOAT32 && node->data_type <= DataType::FLOAT64)
+            node->value = "0.0";
         else
-            literal->value = "";
-        node->list.emplace_back(std::move(literal));
+            node->value = "";
     }
     else
     {
@@ -155,8 +153,7 @@ const ASTExpression *Parser::parseVar(const std::vector<lexToken> &lexer, bool i
             [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
                 error(lexer[getIndexGuard(lexer)], "this is not a valid function name");
             std::string name = lexer[getIndexGuard(lexer, true)].str_token;
-            const ASTFuncCall *func_call = new ASTFuncCall(name, std::move(parseArgs(lexer)));
-            node->list.emplace_back(func_call);
+            node->child = new ASTFuncCall(name, std::move(parseArgs(lexer)));
         }
         if (!isInteger(lexer[getIndexGuard(lexer)]) && !isValidName(lexer[getIndexGuard(lexer)]))
         {
@@ -168,26 +165,20 @@ const ASTExpression *Parser::parseVar(const std::vector<lexToken> &lexer, bool i
         if (lexer[std::min((uint32_t)lexer.size() - 1, fake_i)].token == LexToken::DOT)
             fake_i += 2;
         if (isBinaryExpr(lexer[std::min((uint32_t)lexer.size() - 1, fake_i)]))
-        {
-            const ASTBinaryExpression *expr = parseBinaryExpr(0, lexer);
-            [[unlikely]] if (!expr) expr = new ASTBinaryExpression();
-            node->list.emplace_back(std::move(expr));
-        }
+            node->child = parseBinaryExpr(0, lexer);
         else
         {
-            ASTLiteral *literal = parseLiteral(lexer);
-            [[unlikely]] if (!literal) literal = new ASTLiteral();
-            literal->data_type = std::move(data_type);
-            node->list.emplace_back(std::move(literal));
+            const ASTLiteral *literal = parseLiteral(lexer);
+            node->value = literal->value;
+            delete literal;
         }
     }
     return std::move(node);
 }
 
-const ASTExpression *Parser::parseArgs(const std::vector<lexToken> &lexer)
+const ASTParamListExpression *Parser::parseArgs(const std::vector<lexToken> &lexer)
 {
-    ASTExpression *expression = new ASTExpression();
-    expression->type = ExpressionType::PRAM_LIST;
+    std::vector<const ASTExpression *> prams;
     if (lexer[getIndexGuard(lexer)].token == LexToken::L_CURLY)
         (void)getIndexGuard(lexer, true);
     if (lexer[getIndexGuard(lexer)].token != LexToken::R_CURLY)
@@ -207,7 +198,7 @@ const ASTExpression *Parser::parseArgs(const std::vector<lexToken> &lexer)
             [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
                 error(lexer[getIndexGuard(lexer)], "this is not a valid param name");
             literal->value = lexer[getIndexGuard(lexer, true)].str_token;
-            expression->list.emplace_back(std::move(literal));
+            prams.emplace_back(std::move(literal));
             if (lexer[getIndexGuard(lexer)].token == LexToken::COMMA)
             {
                 (void)getIndexGuard(lexer, true);
@@ -221,7 +212,7 @@ const ASTExpression *Parser::parseArgs(const std::vector<lexToken> &lexer)
     }
     else
         (void)getIndexGuard(lexer, true);
-    return std::move(expression);
+    return new ASTParamListExpression(std::ReadOnlyVector<const ASTExpression *>::lock(prams));
 }
 
 ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer)
@@ -244,8 +235,7 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer)
             if (lexer[getIndexGuard(lexer)].token == LexToken::RET)
             {
                 (void)getIndexGuard(lexer, true);
-                ASTExpression *node = new ASTExpression();
-                node->type = ExpressionType::RETURN;
+                ASTReturnExpression *node = new ASTReturnExpression();
                 uint32_t fake_i = getIndexGuard(lexer);
                 fake_i++;
                 if (lexer[std::min((uint32_t)lexer.size() - 1, fake_i)].token == LexToken::DOT)
@@ -254,27 +244,24 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer)
                 if (isBinaryExpr(lexer[std::min((uint32_t)lexer.size() - 1, fake_i)]))
                 {
                     const ASTBinaryExpression *expr = parseBinaryExpr(0, lexer);
-                    [[unlikely]] if (!expr) expr = new ASTBinaryExpression();
-                    node->list.emplace_back(std::move(expr));
+                    [[unlikely]] if (!expr)
+                        expr = new ASTBinaryExpression();
+                    node->child = expr;
                 }
                 else if (!isInteger(lexer[getIndexGuard(lexer)]) && !isValidName(lexer[getIndexGuard(lexer)]))
-                {
-                    ASTExpression *expr = new ASTExpression();
-                    expr->type = ExpressionType::NO_RETURN;
-                    node->list.emplace_back(std::move(expr));
-                }
+                    node->child = new ASTNoReturnExpression();
                 else if (isValidFuncCall(lexer))
                 {
                     [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
                         error(lexer[getIndexGuard(lexer)], "this is not a valid function name");
-                    std::string name = lexer[getIndexGuard(lexer, true)].str_token;
-                    const ASTFuncCall *func_call = new ASTFuncCall(name, std::move(parseArgs(lexer)));
-                    node->list.emplace_back(func_call);
+                    node->child =
+                        new ASTFuncCall(lexer[getIndexGuard(lexer, true)].str_token, std::move(parseArgs(lexer)));
                 }
                 else
                 {
                     ASTLiteral *literal = parseLiteral(lexer);
-                    [[unlikely]] if (!literal) literal = new ASTLiteral();
+                    [[unlikely]] if (!literal)
+                        literal = new ASTLiteral();
                     if (lexer[(int64_t)getIndexGuard(lexer) - 2].token == LexToken::DOT)
                         literal->data_type = DataType::ANY_FLOAT;
                     else if (lexer[(int64_t)getIndexGuard(lexer) - 1].token == LexToken::IDENTIFIER &&
@@ -282,7 +269,7 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer)
                         literal->data_type = DataType::NOT_DETERMINED;
                     else
                         literal->data_type = DataType::ANY_UINT;
-                    node->list.emplace_back(std::move(literal));
+                    node->child = std::move(literal);
                 }
                 block->list.emplace_back(std::move(node));
             }
@@ -416,14 +403,10 @@ void Parser::parse(const std::string &&source) noexcept
                 root->children.emplace_back(std::move(node));
 
                 if (node->return_type == DataType::VOID &&
-                    (node->body->list.empty() || node->body->list.back()->type != ExpressionType::RETURN))
-                {
-                    ASTExpression *expr = new ASTExpression();
-                    expr->type = ExpressionType::NO_RETURN;
-                    node->body->list.emplace_back(expr);
-                }
+                    (node->body->list.empty() || node->body->list.back()->getExprType() != ExpressionType::RETURN))
+                    node->body->list.emplace_back(new ASTNoReturnExpression());
                 else if (node->return_type != DataType::VOID &&
-                         (node->body->list.empty() || node->body->list.back()->type != ExpressionType::RETURN))
+                         (node->body->list.empty() || node->body->list.back()->getExprType() != ExpressionType::RETURN))
                     error(lexer[getIndexGuard(lexer)], "a data expected return type must explicitly return a value");
             }
             else if (isDataType(lexer[getIndexGuard(lexer)]))
@@ -436,7 +419,7 @@ void Parser::parse(const std::string &&source) noexcept
     }
     catch (const std::exception &e)
     {
-        if(gf_error_stack)
+        if (gf_error_stack)
             gf_error_stack->push(e.what());
         else
             puts(e.what());

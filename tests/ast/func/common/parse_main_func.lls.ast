@@ -9,7 +9,7 @@
             "parameters": {
                 "type": "Expression",
                 "id": "ParameterList",
-                "declarations": []
+                "Parameters": []
             },
             "body": {
                 "type": "ExecutionBlock",
@@ -17,13 +17,12 @@
                     {
                         "type": "Expression",
                         "id": "ReturnType",
-                        "declarations": [
-                            {
-                                "type": "Literal",
-                                "data_type": "any uint",
-                                "value": "0"
-                            }
-                        ]
+                        "declaration": {
+                            "type": "Expression",
+                            "id": "Literal",
+                            "data_type": "any uint",
+                            "value": "0"
+                        }
                     }
                 ]
             }

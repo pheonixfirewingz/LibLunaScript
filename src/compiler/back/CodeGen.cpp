@@ -11,155 +11,95 @@ void LunaScript::compiler::back::CodeGenerator::error()
 void LunaScript::compiler::back::CodeGenerator::genFunction(const ASTFuncDef *func)
 {
     ret += func->name;
-    [[unlikely]] if (func->name == "main") ret = "script_main";
+    [[unlikely]] if (func->name == "main")
+        ret = "script_main";
     ret += ":\n";
-    for (auto &data : func->body->list)
+
+    for (auto *expr : func->body->list)
     {
-        switch (data->type)
+        switch (expr->getType())
         {
-        case ExpressionType::VAR_DEFINED: {
-            if (data->list[0]->getType() == NodeType::BINARY)
-                genBinary(static_cast<const ASTBinaryExpression *>(data->list[0]));
+        case NodeType::EXPRESSION:
+            genExpression(expr);
+            break;
+        default:
+            error();
+        }
+    }
+    tracker.wipe();
+}
+
+void LunaScript::compiler::back::CodeGenerator::genExpression(const ASTExpression *expr)
+{
+    switch (expr->getExprType())
+    {
+    case ExpressionType::RETURN: {
+        const auto *cast = static_cast<const ASTReturnExpression *>(expr);
+        genExpression(cast->child);
+        ret += "push ";
+        ret += tracker.getReg(tracker.getLastUsedReg());
+        ret += "\nret\n";
+    }
+    break;
+    case ExpressionType::NO_RETURN: {
+    }
+    break;
+    case ExpressionType::VAR_DEFINED: {
+        const auto *cast = static_cast<const ASTLiteral *>(expr);
+        if (cast->global)
+            global_map.insert({std::hash<std::string>{}(std::string(cast->name.c_str())), cast->value});
+        else
+        {
+            if (cast->hasChild())
+                genExpression(cast->child);
             else
             {
-                ret += genLiteral(0, static_cast<const ASTLiteral *>(data->list[0]));
-                ret += "push r1";
+                tracker.setFreeReg(cast->name);
+                ret += "mov ";
+                ret += tracker.getReg(cast->name);
+                ret += " const ";
+                ret += cast->value;
+                ret += "\n";
             }
         }
-            continue;
-        case ExpressionType::RETURN: {
-            if (data->list[0]->getType() == NodeType::LITERAL)
-            {
-                const ASTLiteral *value = (ASTLiteral *)data->list[0];
-                if (value->data_type == DataType::NOT_DETERMINED)
-                {
-                    error();
-                }
-                else
-                {
-                    ret += "push const ";
-                    ret += std::to_string(std::stoul(value->value, 0, 16));
-                    ret += "\n";
-                }
-            }
-            else if (data->list[0]->getType() == NodeType::BINARY)
-                genBinary(static_cast<const ASTBinaryExpression *>(data->list[0]));
-        }
-            [[fallthrough]];
-        case ExpressionType::NO_RETURN: {
-            ret += "ret\n";
-            break;
-        }
-        default: {
-            error();
-        }
-        break;
-        }
     }
-}
-
-void LunaScript::compiler::back::CodeGenerator::genBinary(const ASTBinaryExpression *node)
-{
-    std::vector<const BinaryInfo *> infos;
-    const ASTBinaryExpression *current = node;
-    for (; current->right->getType() == NodeType::BINARY;)
-    {
-        infos.push_back(new BinaryInfo(current->precedence, current->op, current->left, nullptr));
-        current = static_cast<const ASTBinaryExpression *>(current->right);
+    break;
+    case ExpressionType::PRAM_LIST: {
     }
-    infos.push_back(new BinaryInfo(current->precedence, current->op, current->left,
-                                   static_cast<const ASTLiteral *>(current->right)));
-    std::sort(infos.begin(), infos.end(),
-              [](const BinaryInfo *lhs, const BinaryInfo *rhs) { return lhs->precedence > rhs->precedence; });
-
-    std::string block;
-    std::string data;
-    for (auto &info : infos)
-    {
-        if (info->right != nullptr)
-        {
-            data += genLiteral(1, info->left);
-            block += genLiteral(2, info->right);
-        }
-        else
-        {
-            block += genLiteral(2, info->left);
-        }
-        switch (info->op)
-        {
-        case OperatorType::ADD:
-            block += "add r1 r2\n";
-            break;
-        case OperatorType::SUB:
-            block += "sub r1 r2\n";
-            break;
-        case OperatorType::DIV:
-            block += "div r1 r2\n";
-            break;
-        case OperatorType::MUL:
-            block += "mul r1 r2\n";
-            break;
-        case OperatorType::AND:
-            block += "and r1 r2\n";
-            break;
-        case OperatorType::OR:
-            block += "or r1 r2\n";
-            break;
-        case OperatorType::XOR:
-            block += "xor r1 r2\n";
-            break;
-        case OperatorType::MOD:
-            block += "mod r1 r2\n";
-            break;
-        case OperatorType::NOT_DETERMINED:
-            break;
-        }
+    break;
+    case ExpressionType::FUNC_CALL: {
     }
-    ret += data;
-    ret += block;
-    ret += "push r1\n";
-}
-
-std::string LunaScript::compiler::back::CodeGenerator::genLiteral(const uint8_t reg, const ASTLiteral *node,
-                                                                  bool global)
-{
-    std::string data;
-    if (global)
-    {
-        if (isIDaNumeric(node->data_type))
+    break;
+    case ExpressionType::BINARY: {
+        std::vector<const BinaryInfo *> infos;
+        const ASTExpression *current = expr;
+        for (; current->getExprType() == ExpressionType::BINARY;)
         {
-            data += "store ";
-            data += "const ";
-            data += node->value;
-            data += "\n";
+            const ASTBinaryExpression *cast = static_cast<const ASTBinaryExpression *>(current);
+            infos.push_back(new BinaryInfo(cast->precedence, cast->op, cast->left, nullptr));
+            current = static_cast<const ASTExpression *>(cast->right);
         }
-        else if (!isIDaNumeric(node->data_type))
-        {
-        }
-        else
-        {
-            error();
-        }
+        infos.push_back(new BinaryInfo(static_cast<const ASTBinaryExpression *>(current)->precedence,
+                                       static_cast<const ASTBinaryExpression *>(current)->op,
+                                       static_cast<const ASTBinaryExpression *>(current)->left,
+                                       static_cast<const ASTLiteral *>(static_cast<const ASTBinaryExpression *>(current)->right)));
+        std::sort(infos.begin(), infos.end(),
+                  [](const BinaryInfo *lhs, const BinaryInfo *rhs) { return lhs->precedence > rhs->precedence; });
     }
-    else
-    {
-        if (isIDaNumeric(node->data_type))
-        {
-            data += "mov r";
-            data += std::to_string(reg);
-            data += " const ";
-            data += node->value;
-            data += "\n";
-        }
-        else if (!isIDaNumeric(node->data_type))
-        {
-        }
-        else
-        {
-            error();
-        }
+    break;
+    case ExpressionType::LITERAL: {
+        const auto *cast = static_cast<const ASTLiteral *>(expr);
+        tracker.setFreeReg(cast->name);
+        ret += "mov ";
+        ret += tracker.getReg(cast->name);
+        ret += " const ";
+        ret += cast->value;
+        ret += "\n";
     }
-    return data;
+    break;
+    default:
+        error();
+    }
 }
 
 std::string LunaScript::compiler::back::CodeGenerator::generate()

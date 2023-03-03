@@ -29,6 +29,7 @@
         freeCompiler(compiler);                                                                                 \
         libOSCleanUp();                                                                                         \
     }
+// fileWrite<char>(createP(std::string("tests/ast/") + extend, #test_name, ".lls.ast"), err_str, err_size);
 
 #define BAD_COMPILER_TEST(group, extend, test_name)                                                        \
     TEST(group, test_name)                                                                                 \
@@ -151,3 +152,8 @@ BAD_COMPILER_TEST(AST, "func/bad_syntax/", func_bad_syntax_7)
 BAD_COMPILER_TEST(AST, "func/bad_syntax/", func_bad_syntax_8)
 BAD_COMPILER_TEST(AST, "func/bad_syntax/", func_bad_syntax_9)
 BAD_COMPILER_TEST(AST, "func/bad_syntax/", func_bad_syntax_10)
+
+TEST(AST, Pause)
+{
+    system("pause");
+};

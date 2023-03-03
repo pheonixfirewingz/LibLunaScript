@@ -9,15 +9,14 @@
             "parameters": {
                 "type": "Expression",
                 "id": "ParameterList",
-                "declarations": []
+                "Parameters": []
             },
             "body": {
                 "type": "ExecutionBlock",
                 "execution": [
                     {
                         "type": "Expression",
-                        "id": "NoDataReturn",
-                        "declarations": []
+                        "id": "NoDataReturn"
                     }
                 ]
             }

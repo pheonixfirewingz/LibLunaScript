@@ -28,10 +28,6 @@ const char *idToString(const NodeType &id) noexcept
         return "FunctionDef";
     case NodeType::EXPRESSION:
         return "Expression";
-    case NodeType::BINARY:
-        return "BinaryExpression";
-    case NodeType::LITERAL:
-        return "Literal";
     case NodeType::BLOCK:
         return "ExecutionBlock";
     default:
@@ -73,25 +69,6 @@ const char *idToStringT(const DataType &id) noexcept
         return "any uint";
     case DataType::ANY_INT:
         return "any int";
-    default:
-        return "unknown";
-    }
-}
-
-const char *idToStringE(const ExpressionType &id) noexcept
-{
-    switch (id)
-    {
-    case ExpressionType::RETURN:
-        return "ReturnType";
-    case ExpressionType::NO_RETURN:
-        return "NoDataReturn";
-    case ExpressionType::VAR_DEFINED:
-        return "VariableDefinition";
-    case ExpressionType::PRAM_LIST:
-        return "ParameterList";
-    case ExpressionType::FUNC_CALL:
-        return "FunctionCall";
     default:
         return "unknown";
     }
@@ -162,53 +139,80 @@ template<typename T> void writeBranch(T *writer, const ASTNode *node)
     case NodeType::EXPRESSION: {
         const ASTExpression *real_node = static_cast<const ASTExpression *>(node);
         writer->Key("id");
-        writer->String(idToStringE(real_node->type));
-        if (real_node->data_type != DataType::NOT_DETERMINED)
+        switch (real_node->getExprType())
         {
+        case ExpressionType::RETURN: {
+            writer->String("ReturnType");
+            writer->Key("declaration");
+            const auto *cast = static_cast<const ASTReturnExpression *>(real_node);
+            writeBranch(writer,static_cast<const ASTNode *> (cast->child));
+        }
+        break;
+        case ExpressionType::NO_RETURN:
+            writer->String("NoDataReturn");
+            break;
+        case ExpressionType::VAR_DEFINED: {
+            writer->String("VariableDefinition");
+            const auto *cast = static_cast<const ASTLiteral *>(real_node);
             writer->Key("data_type");
-            writer->String(idToStringT(real_node->data_type));
-        }
-        if (!real_node->extra_data.empty())
-        {
+            writer->String(idToStringT(cast->data_type));
             writer->Key("name");
-            writer->String(real_node->extra_data.c_str());
+            writer->String(cast->name.c_str());
+            if (cast->hasChild())
+            {
+                writer->Key("declaration");
+                writeBranch(writer, static_cast<const ASTNode *>(cast->child));
+            }
+            else
+            {
+                writer->Key("value");
+                writer->String(cast->value.c_str());
+            }
         }
-        if (real_node->type == ExpressionType::FUNC_CALL)
-        {
-            const ASTFuncCall *func_node = static_cast<const ASTFuncCall *>(real_node);
-            writer->Key("parameters");
-            writeBranch(writer, func_node->args);
+        break;
+        case ExpressionType::LITERAL: {
+            writer->String("Literal");
+            const auto *cast = static_cast<const ASTLiteral *>(real_node);
+            writer->Key("data_type");
+            writer->String(idToStringT(cast->data_type));
+            writer->Key("value");
+            writer->String(cast->value.c_str());
         }
-        else
-        {
-            writer->Key("declarations");
+        break;
+        case ExpressionType::PRAM_LIST: {
+            const auto *cast = static_cast<const ASTParamListExpression *>(real_node);
+            writer->String("ParameterList");
+            writer->Key("Parameters");
             writer->StartArray();
-            for (const ASTNode *child : real_node->list)
-                writeBranch(writer, child);
+            for (const ASTNode *pram : cast->prams)
+                writeBranch(writer, pram);
             writer->EndArray();
         }
         break;
-    }
-    case NodeType::LITERAL: {
-        const ASTLiteral *real_node = static_cast<const ASTLiteral *>(node);
-        writer->Key("data_type");
-        writer->String(idToStringT(real_node->data_type));
-        writer->Key("value");
-        writer->String(real_node->value.c_str());
+        case ExpressionType::FUNC_CALL: {
+            writer->String("FunctionCall");
+        }
         break;
-    }
-    case NodeType::BINARY: {
-        const ASTBinaryExpression *real_node = static_cast<const ASTBinaryExpression *>(node);
-        writer->Key("precedence");
-        writer->Uint(real_node->precedence);
-        writer->Key("op");
-        writer->String(idToStringO(real_node->op));
-        writer->Key("right");
-        writeBranch(writer, real_node->right);
-        writer->Key("left");
-        writeBranch(writer, real_node->left);
+        case ExpressionType::BINARY: {
+            writer->String("BinaryOperation");
+            const ASTBinaryExpression *real_node = static_cast<const ASTBinaryExpression *>(node);
+            writer->Key("precedence");
+            writer->Uint(real_node->precedence);
+            writer->Key("op");
+            writer->String(idToStringO(real_node->op));
+            writer->Key("right");
+            writeBranch(writer, real_node->right);
+            writer->Key("left");
+            writeBranch(writer, real_node->left);
+        }
         break;
+        default: {
+            writer->String("unknown");
+        }
+        break;
+        }
     }
+    break;
     case NodeType::BLOCK: {
         const ASTBlock *real_node = static_cast<const ASTBlock *>(node);
         writer->Key("execution");

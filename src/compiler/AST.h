@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <extend_std/Vector.h>
 
 namespace LunaScript::compiler::ast
 {
@@ -10,9 +11,7 @@ enum class NodeType
     ROOT,
     BLOCK,
     FUNC_DEF,
-    EXPRESSION,
-    BINARY,
-    LITERAL
+    EXPRESSION
 };
 
 enum class ExpressionType
@@ -21,7 +20,9 @@ enum class ExpressionType
     NO_RETURN,
     VAR_DEFINED,
     PRAM_LIST,
-    FUNC_CALL
+    FUNC_CALL,
+    BINARY,
+    LITERAL
 };
 
 enum class DataType
@@ -40,7 +41,7 @@ enum class DataType
     FLOAT64,
     ANY_FLOAT,
     ANY_UINT,
-    ANY_INT,
+    ANY_INT
 };
 
 enum class OperatorType
@@ -73,7 +74,7 @@ struct ASTRoot : public ASTNode
     }
 
     ASTRoot(const std::string name) noexcept
-        : name(std::move(name))
+        : name(name)
     {
     }
 
@@ -85,25 +86,13 @@ struct ASTRoot : public ASTNode
 
 struct ASTExpression : public ASTNode
 {
-    std::vector<const ASTNode *> list;
-    ExpressionType type;
-    DataType data_type = DataType::NOT_DETERMINED;
-    std::string extra_data = "";
+    virtual ExpressionType getExprType() const noexcept = 0;
     NodeType getType() const noexcept override
     {
         return NodeType::EXPRESSION;
     }
     ASTExpression() = default;
-    ASTExpression(std::string name_in, ExpressionType type_in)
-        : type(type_in)
-        , extra_data(name_in)
-    {
-    }
-
-    virtual ~ASTExpression()
-    {
-        list.clear();
-    }
+    virtual ~ASTExpression() = default;
 };
 
 struct ASTBlock : public ASTNode
@@ -122,15 +111,16 @@ struct ASTBlock : public ASTNode
 struct ASTFuncCall : public ASTExpression
 {
     const ASTExpression *args;
+    std::string func_name = "";
     explicit ASTFuncCall(std::string name_in, const ASTExpression *args_in)
-        : ASTExpression(name_in, ExpressionType::FUNC_CALL)
+        : func_name(name_in)
         , args(args_in)
     {
     }
 
-    NodeType getType() const noexcept override
+    virtual ExpressionType getExprType() const noexcept override
     {
-        return ASTExpression::getType();
+        return ExpressionType::FUNC_CALL;
     }
 
     virtual ~ASTFuncCall()
@@ -165,28 +155,76 @@ struct ASTFuncDef : public ASTNode
     }
 };
 
-struct ASTLiteral : public ASTNode
+struct ASTNoReturnExpression : public ASTExpression
 {
+    virtual ExpressionType getExprType() const noexcept override
+    {
+        return ExpressionType::NO_RETURN;
+    }
+};
+
+struct ASTParamListExpression : public ASTExpression
+{
+    const std::ReadOnlyVector<const ASTExpression *> prams;
+    ASTParamListExpression(const std::ReadOnlyVector<const ASTExpression *> prams_in)
+        : prams(prams_in)
+    {
+    }
+    virtual ExpressionType getExprType() const noexcept override
+    {
+        return ExpressionType::PRAM_LIST;
+    }
+};
+
+struct ASTReturnExpression : public ASTExpression
+{
+    DataType return_type = DataType::NOT_DETERMINED;
+    const ASTExpression *child = nullptr;
+    virtual ExpressionType getExprType() const noexcept override
+    {
+        return ExpressionType::RETURN;
+    }
+
+    ~ASTReturnExpression()
+    {
+        if (child)
+            delete child;
+    }
+};
+
+struct ASTLiteral : public ASTExpression
+{
+    bool global = false;
+    std::string name = "";
     std::string value = "";
     DataType data_type = DataType::NOT_DETERMINED;
-    NodeType getType() const noexcept override
+    const ASTExpression* child = nullptr;
+
+    bool hasChild() const noexcept
     {
-        return NodeType::LITERAL;
+        return child != nullptr;
+    }
+
+    virtual ExpressionType getExprType() const noexcept override
+    {
+        return name.empty() ? ExpressionType::LITERAL : ExpressionType::VAR_DEFINED;
     }
 
     virtual ~ASTLiteral() = default;
 };
 
-struct ASTBinaryExpression : public ASTNode
+struct ASTBinaryExpression : public ASTExpression
 {
     uint16_t precedence = 0;
-    const ASTNode *right = nullptr;
+    const ASTExpression *right = nullptr;
     const ASTLiteral *left = nullptr;
     OperatorType op = OperatorType::NOT_DETERMINED;
-    NodeType getType() const noexcept override
+    
+    virtual ExpressionType getExprType() const noexcept override
     {
-        return NodeType::BINARY;
+        return ExpressionType::BINARY;
     }
+
     virtual ~ASTBinaryExpression()
     {
         if (left)

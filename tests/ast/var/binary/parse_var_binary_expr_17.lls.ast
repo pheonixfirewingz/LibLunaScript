@@ -6,53 +6,60 @@
             "id": "VariableDefinition",
             "data_type": "float64",
             "name": "x",
-            "declarations": [
-                {
-                    "type": "BinaryExpression",
-                    "precedence": 5,
-                    "op": "+",
+            "declaration": {
+                "type": "Expression",
+                "id": "BinaryOperation",
+                "precedence": 10,
+                "op": "+",
+                "right": {
+                    "type": "Expression",
+                    "id": "BinaryOperation",
+                    "precedence": 21,
+                    "op": "-",
                     "right": {
-                        "type": "BinaryExpression",
-                        "precedence": 6,
-                        "op": "-",
+                        "type": "Expression",
+                        "id": "BinaryOperation",
+                        "precedence": 42,
+                        "op": "/",
                         "right": {
-                            "type": "BinaryExpression",
-                            "precedence": 8,
-                            "op": "/",
+                            "type": "Expression",
+                            "id": "BinaryOperation",
+                            "precedence": 63,
+                            "op": "and",
                             "right": {
-                                "type": "BinaryExpression",
-                                "precedence": 4,
-                                "op": "and",
-                                "right": {
-                                    "type": "Literal",
-                                    "data_type": "any float",
-                                    "value": "8.0"
-                                },
-                                "left": {
-                                    "type": "Literal",
-                                    "data_type": "any float",
-                                    "value": "6.0"
-                                }
+                                "type": "Expression",
+                                "id": "Literal",
+                                "data_type": "any float",
+                                "value": "8.0"
                             },
                             "left": {
-                                "type": "Literal",
+                                "type": "Expression",
+                                "id": "Literal",
                                 "data_type": "any float",
-                                "value": "100.0"
+                                "value": "6.0"
                             }
                         },
                         "left": {
-                            "type": "Literal",
+                            "type": "Expression",
+                            "id": "Literal",
                             "data_type": "any float",
-                            "value": "35.0"
+                            "value": "100.0"
                         }
                     },
                     "left": {
-                        "type": "Literal",
+                        "type": "Expression",
+                        "id": "Literal",
                         "data_type": "any float",
-                        "value": "20.0"
+                        "value": "35.0"
                     }
+                },
+                "left": {
+                    "type": "Expression",
+                    "id": "Literal",
+                    "data_type": "any float",
+                    "value": "20.0"
                 }
-            ]
+            }
         }
     ],
     "module": "parse_var_binary_expr_17"

@@ -57,7 +57,6 @@ std::string colourSrcText(std::string text)
 static const char *const words[] = {"Const","Add","Sub","Div","Mul","Jmp","Cmp","Ncmp","Push","Pop","Store","Load","Call","Ret","Mov","Skip"};
 std::string colourText(std::string text)
 {
-    
     for(uint16_t i = 0; i < sizeof(words) / sizeof(const char*);i++)
     {
         std::string word(words[i]);
@@ -108,9 +107,13 @@ int main(int, char **)
     puts("\n");
 
     LunaScriptCompiler compile(std::string(src, 0, src_size), name);
+    delete src;
     if (compile.didScriptCompile() != LOS_SUCCESS)
     {
         puts(compile.getErrors().c_str());
+#    if WIN32
+        system("pause");
+#    endif
         return compile.didScriptCompile();
     }
     puts(std::string("\x1B[32mAst:\x1B[33m\n").c_str());
@@ -118,6 +121,9 @@ int main(int, char **)
     puts(std::string("\n\n\x1B[32mCodeGen:\x1B[00m\n").c_str());
     puts(colourText(compile.getByteCode()).c_str());
     libOSCleanUp();
+    #if WIN32
+    system("pause");
+    #endif
     return 0;
 }
 #endif

@@ -6,13 +6,7 @@
             "id": "VariableDefinition",
             "data_type": "int8",
             "name": "x",
-            "declarations": [
-                {
-                    "type": "Literal",
-                    "data_type": "int8",
-                    "value": "0"
-                }
-            ]
+            "value": "0"
         }
     ],
     "module": "parse_var_int8_no_value"

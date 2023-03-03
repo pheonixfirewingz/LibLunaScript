@@ -6,13 +6,7 @@
             "id": "VariableDefinition",
             "data_type": "int64",
             "name": "x",
-            "declarations": [
-                {
-                    "type": "Literal",
-                    "data_type": "int64",
-                    "value": "20"
-                }
-            ]
+            "value": "20"
         }
     ],
     "module": "parse_var_int64_with_value"

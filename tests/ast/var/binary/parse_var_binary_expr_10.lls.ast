@@ -6,23 +6,24 @@
             "id": "VariableDefinition",
             "data_type": "int64",
             "name": "x",
-            "declarations": [
-                {
-                    "type": "BinaryExpression",
-                    "precedence": 1,
-                    "op": "or",
-                    "right": {
-                        "type": "Literal",
-                        "data_type": "any uint",
-                        "value": "35"
-                    },
-                    "left": {
-                        "type": "Literal",
-                        "data_type": "any uint",
-                        "value": "20"
-                    }
+            "declaration": {
+                "type": "Expression",
+                "id": "BinaryOperation",
+                "precedence": 70,
+                "op": "or",
+                "right": {
+                    "type": "Expression",
+                    "id": "Literal",
+                    "data_type": "any uint",
+                    "value": "35"
+                },
+                "left": {
+                    "type": "Expression",
+                    "id": "Literal",
+                    "data_type": "any uint",
+                    "value": "20"
                 }
-            ]
+            }
         }
     ],
     "module": "parse_var_binary_expr_10"

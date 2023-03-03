@@ -1,6 +1,7 @@
 #pragma once
 #include "../AST.h"
 #include <extend_std/LookUpTable.h>
+#include <extend_std/Vector.h>
 #include <libos/Defines.h>
 #include <regex>
 #include <stack>
@@ -362,7 +363,7 @@ class Parser
     const ASTBinaryExpression *parseBinaryExpr(const uint8_t precedence_inflator,
                                                const std::vector<lexToken> &lexer);
     const ASTExpression *parseVar(const std::vector<lexToken> &lexer, bool is_global = false);
-    const ASTExpression *parseArgs(const std::vector<lexToken> &lexer);
+    const ASTParamListExpression *parseArgs(const std::vector<lexToken> &lexer);
     ASTBlock *parseBlock(const std::vector<lexToken> &lexer);
     void parse(const std::string &&source) noexcept;
 

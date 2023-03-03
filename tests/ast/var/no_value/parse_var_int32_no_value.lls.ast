@@ -6,13 +6,7 @@
             "id": "VariableDefinition",
             "data_type": "int32",
             "name": "x",
-            "declarations": [
-                {
-                    "type": "Literal",
-                    "data_type": "int32",
-                    "value": "0"
-                }
-            ]
+            "value": "0"
         }
     ],
     "module": "parse_var_int32_no_value"
