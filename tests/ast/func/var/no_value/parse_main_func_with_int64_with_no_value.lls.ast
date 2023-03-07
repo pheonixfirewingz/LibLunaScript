@@ -1,39 +1,41 @@
 {
-    "type": "Program",
-    "body": [
+    "type": "program",
+    "modules": [
         {
-            "type": "FunctionDef",
-            "is_public": false,
-            "name": "main",
-            "return_type": "int32",
-            "parameters": {
-                "type": "Expression",
-                "id": "ParameterList",
-                "Parameters": []
-            },
-            "body": {
-                "type": "ExecutionBlock",
-                "execution": [
-                    {
-                        "type": "Expression",
-                        "id": "VariableDefinition",
-                        "data_type": "int64",
-                        "name": "x",
-                        "value": "0"
+            "type": "module",
+            "name": "parse_main_func_with_int64_with_no_value",
+            "data": [
+                {
+                    "type": "function_definition",
+                    "is_public": false,
+                    "name": "main",
+                    "return_type": "int32",
+                    "parameters": {
+                        "type": "parameter_list",
+                        "parameters": []
                     },
-                    {
-                        "type": "Expression",
-                        "id": "ReturnType",
-                        "declaration": {
-                            "type": "Expression",
-                            "id": "Literal",
-                            "data_type": "any uint",
-                            "value": "0"
-                        }
+                    "body": {
+                        "type": "execution_block",
+                        "execution": [
+                            {
+                                "type": "variable_definition",
+                                "data_type": "int64",
+                                "is_global": false,
+                                "name": "x",
+                                "value": "0"
+                            },
+                            {
+                                "type": "data_return",
+                                "declaration": {
+                                    "type": "literal",
+                                    "data_type": "any_uint",
+                                    "value": "0"
+                                }
+                            }
+                        ]
                     }
-                ]
-            }
+                }
+            ]
         }
-    ],
-    "module": "parse_main_func_with_int64_with_no_value"
+    ]
 }

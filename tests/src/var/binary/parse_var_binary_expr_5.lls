@@ -1,1 +1,2 @@
+module parse_var_binary_expr_5
 float64 x = 20.0 * 35.0

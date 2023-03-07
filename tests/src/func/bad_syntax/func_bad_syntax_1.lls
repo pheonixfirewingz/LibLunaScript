@@ -1,3 +1,4 @@
+module func_bad_syntax_1
 public main( -> int32
 {
     

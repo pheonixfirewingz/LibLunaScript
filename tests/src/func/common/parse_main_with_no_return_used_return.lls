@@ -1,3 +1,4 @@
+module parse_main_with_no_return_used_return
 public main()
 {
     ret

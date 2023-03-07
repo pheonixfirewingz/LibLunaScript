@@ -1,7 +1,7 @@
 #pragma once
+#include <extend_std/Vector.h>
 #include <string>
 #include <vector>
-#include <extend_std/Vector.h>
 
 namespace LunaScript::compiler::ast
 {
@@ -9,13 +9,9 @@ namespace LunaScript::compiler::ast
 enum class NodeType
 {
     ROOT,
+    MODULE,
     BLOCK,
     FUNC_DEF,
-    EXPRESSION
-};
-
-enum class ExpressionType
-{
     RETURN,
     NO_RETURN,
     VAR_DEFINED,
@@ -64,40 +60,41 @@ struct ASTNode
     virtual ~ASTNode() = default;
 };
 
-struct ASTRoot : public ASTNode
+struct ASTModule: public ASTNode
 {
-    std::string name;
+    const std::string name;
     std::vector<const ASTNode *> children;
+
+    explicit ASTModule(const std::string module_name) : name(module_name) {}
+
     NodeType getType() const noexcept override
     {
-        return NodeType::ROOT;
+        return NodeType::MODULE;
     }
 
-    ASTRoot(const std::string name) noexcept
-        : name(name)
-    {
-    }
-
-    virtual ~ASTRoot()
+    virtual ~ASTModule()
     {
         children.clear();
     }
 };
 
-struct ASTExpression : public ASTNode
+struct ASTRoot : public ASTNode
 {
-    virtual ExpressionType getExprType() const noexcept = 0;
+    std::vector<const ASTModule *> modules;
     NodeType getType() const noexcept override
     {
-        return NodeType::EXPRESSION;
+        return NodeType::ROOT;
     }
-    ASTExpression() = default;
-    virtual ~ASTExpression() = default;
+
+    virtual ~ASTRoot()
+    {
+        modules.clear();
+    }
 };
 
 struct ASTBlock : public ASTNode
 {
-    std::vector<const ASTExpression *> list;
+    std::vector<const ASTNode *> list;
     NodeType getType() const noexcept override
     {
         return NodeType::BLOCK;
@@ -108,19 +105,32 @@ struct ASTBlock : public ASTNode
     }
 };
 
-struct ASTFuncCall : public ASTExpression
+struct ASTParamListExpression : public ASTNode
 {
-    const ASTExpression *args;
+    const std::ReadOnlyVector<const ASTNode *> prams;
+    ASTParamListExpression(const std::ReadOnlyVector<const ASTNode *> prams_in)
+        : prams(prams_in)
+    {
+    }
+    NodeType getType() const noexcept override
+    {
+        return NodeType::PRAM_LIST;
+    }
+};
+
+struct ASTFuncCall : public ASTNode
+{
+    const ASTParamListExpression *args;
     std::string func_name = "";
-    explicit ASTFuncCall(std::string name_in, const ASTExpression *args_in)
-        : func_name(name_in)
-        , args(args_in)
+    explicit ASTFuncCall(std::string name_in, const ASTParamListExpression *args_in)
+        : args(args_in)
+        , func_name(name_in)
     {
     }
 
-    virtual ExpressionType getExprType() const noexcept override
+    virtual NodeType getType() const noexcept override
     {
-        return ExpressionType::FUNC_CALL;
+        return NodeType::FUNC_CALL;
     }
 
     virtual ~ASTFuncCall()
@@ -134,7 +144,7 @@ struct ASTFuncDef : public ASTNode
 {
     const std::string name = "";
     const bool is_public;
-    const ASTExpression *args;
+    const ASTParamListExpression *args;
     ASTBlock *body = nullptr;
     DataType return_type = DataType::NOT_DETERMINED;
     NodeType getType() const noexcept override
@@ -155,34 +165,21 @@ struct ASTFuncDef : public ASTNode
     }
 };
 
-struct ASTNoReturnExpression : public ASTExpression
+struct ASTNoReturnExpression : public ASTNode
 {
-    virtual ExpressionType getExprType() const noexcept override
+    NodeType getType() const noexcept override
     {
-        return ExpressionType::NO_RETURN;
+        return NodeType::NO_RETURN;
     }
 };
 
-struct ASTParamListExpression : public ASTExpression
-{
-    const std::ReadOnlyVector<const ASTExpression *> prams;
-    ASTParamListExpression(const std::ReadOnlyVector<const ASTExpression *> prams_in)
-        : prams(prams_in)
-    {
-    }
-    virtual ExpressionType getExprType() const noexcept override
-    {
-        return ExpressionType::PRAM_LIST;
-    }
-};
-
-struct ASTReturnExpression : public ASTExpression
+struct ASTReturnExpression : public ASTNode
 {
     DataType return_type = DataType::NOT_DETERMINED;
-    const ASTExpression *child = nullptr;
-    virtual ExpressionType getExprType() const noexcept override
+    const ASTNode *child = nullptr;
+    NodeType getType() const noexcept override
     {
-        return ExpressionType::RETURN;
+        return NodeType::RETURN;
     }
 
     ~ASTReturnExpression()
@@ -192,37 +189,45 @@ struct ASTReturnExpression : public ASTExpression
     }
 };
 
-struct ASTLiteral : public ASTExpression
+struct ASTVarDef : public ASTNode
 {
     bool global = false;
     std::string name = "";
     std::string value = "";
     DataType data_type = DataType::NOT_DETERMINED;
-    const ASTExpression* child = nullptr;
+    const ASTNode *child = nullptr;
 
     bool hasChild() const noexcept
     {
         return child != nullptr;
     }
 
-    virtual ExpressionType getExprType() const noexcept override
+    NodeType getType() const noexcept override
     {
-        return name.empty() ? ExpressionType::LITERAL : ExpressionType::VAR_DEFINED;
+        return NodeType::VAR_DEFINED;
     }
-
-    virtual ~ASTLiteral() = default;
 };
 
-struct ASTBinaryExpression : public ASTExpression
+struct ASTLiteral : public ASTNode
+{
+    std::string value = "";
+    DataType data_type = DataType::NOT_DETERMINED;
+    NodeType getType() const noexcept override
+    {
+        return NodeType::LITERAL;
+    }
+};
+
+struct ASTBinaryExpression : public ASTNode
 {
     uint16_t precedence = 0;
-    const ASTExpression *right = nullptr;
-    const ASTLiteral *left = nullptr;
+    const ASTNode *right = nullptr;
+    const ASTNode *left = nullptr;
     OperatorType op = OperatorType::NOT_DETERMINED;
-    
-    virtual ExpressionType getExprType() const noexcept override
+
+    NodeType getType() const noexcept override
     {
-        return ExpressionType::BINARY;
+        return NodeType::BINARY;
     }
 
     virtual ~ASTBinaryExpression()

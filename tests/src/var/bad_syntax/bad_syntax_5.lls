@@ -1,1 +1,2 @@
+module bad_syntax_5
 float64 x = 

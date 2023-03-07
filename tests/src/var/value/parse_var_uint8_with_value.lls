@@ -1,1 +1,2 @@
+module parse_var_uint8_with_value
 uint8 x = 20

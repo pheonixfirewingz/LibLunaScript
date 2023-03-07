@@ -1,1 +1,2 @@
+module parse_var_float64_no_value
 float64 x

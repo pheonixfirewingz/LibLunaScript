@@ -1,2 +1,3 @@
+module func_bad_syntax_8
 public main() -> int32
 }

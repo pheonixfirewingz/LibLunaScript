@@ -1,1 +1,2 @@
+module parse_var_uint32_with_value
 uint32 x = 20

@@ -1,1 +1,2 @@
+module bad_syntax_3
 float64 x - 20.0

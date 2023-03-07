@@ -1,1 +1,2 @@
+module parse_var_binary_expr_18
 int64 x = 20 + 35 - 100 / 6 and 8

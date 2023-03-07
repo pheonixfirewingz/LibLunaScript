@@ -1,66 +1,62 @@
 {
-    "type": "Program",
-    "body": [
+    "type": "program",
+    "modules": [
         {
-            "type": "Expression",
-            "id": "VariableDefinition",
-            "data_type": "int64",
-            "name": "x",
-            "declaration": {
-                "type": "Expression",
-                "id": "BinaryOperation",
-                "precedence": 10,
-                "op": "+",
-                "right": {
-                    "type": "Expression",
-                    "id": "BinaryOperation",
-                    "precedence": 21,
-                    "op": "-",
-                    "right": {
-                        "type": "Expression",
-                        "id": "BinaryOperation",
-                        "precedence": 42,
-                        "op": "/",
+            "type": "module",
+            "name": "parse_var_binary_expr_18",
+            "data": [
+                {
+                    "type": "variable_definition",
+                    "data_type": "int64",
+                    "is_global": false,
+                    "name": "x",
+                    "declaration": {
+                        "type": "binary_operation",
+                        "precedence": 10,
+                        "op": "+",
                         "right": {
-                            "type": "Expression",
-                            "id": "BinaryOperation",
-                            "precedence": 63,
-                            "op": "and",
+                            "type": "binary_operation",
+                            "precedence": 21,
+                            "op": "-",
                             "right": {
-                                "type": "Expression",
-                                "id": "Literal",
-                                "data_type": "any uint",
-                                "value": "8"
+                                "type": "binary_operation",
+                                "precedence": 42,
+                                "op": "/",
+                                "right": {
+                                    "type": "binary_operation",
+                                    "precedence": 63,
+                                    "op": "and",
+                                    "right": {
+                                        "type": "literal",
+                                        "data_type": "any_uint",
+                                        "value": "8"
+                                    },
+                                    "left": {
+                                        "type": "literal",
+                                        "data_type": "any_uint",
+                                        "value": "6"
+                                    }
+                                },
+                                "left": {
+                                    "type": "literal",
+                                    "data_type": "any_uint",
+                                    "value": "100"
+                                }
                             },
                             "left": {
-                                "type": "Expression",
-                                "id": "Literal",
-                                "data_type": "any uint",
-                                "value": "6"
+                                "type": "literal",
+                                "data_type": "any_uint",
+                                "value": "35"
                             }
                         },
                         "left": {
-                            "type": "Expression",
-                            "id": "Literal",
-                            "data_type": "any uint",
-                            "value": "100"
+                            "type": "literal",
+                            "data_type": "any_uint",
+                            "value": "20"
                         }
-                    },
-                    "left": {
-                        "type": "Expression",
-                        "id": "Literal",
-                        "data_type": "any uint",
-                        "value": "35"
                     }
-                },
-                "left": {
-                    "type": "Expression",
-                    "id": "Literal",
-                    "data_type": "any uint",
-                    "value": "20"
                 }
-            }
+            ]
         }
-    ],
-    "module": "parse_var_binary_expr_18"
+    ]
 }

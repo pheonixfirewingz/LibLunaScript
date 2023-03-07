@@ -1,56 +1,55 @@
 {
-    "type": "Program",
-    "body": [
+    "type": "program",
+    "modules": [
         {
-            "type": "FunctionDef",
-            "is_public": false,
-            "name": "main",
-            "return_type": "int32",
-            "parameters": {
-                "type": "Expression",
-                "id": "ParameterList",
-                "Parameters": []
-            },
-            "body": {
-                "type": "ExecutionBlock",
-                "execution": [
-                    {
-                        "type": "Expression",
-                        "id": "VariableDefinition",
-                        "data_type": "int32",
-                        "name": "x",
-                        "declaration": {
-                            "type": "Expression",
-                            "id": "BinaryOperation",
-                            "precedence": 10,
-                            "op": "+",
-                            "right": {
-                                "type": "Expression",
-                                "id": "Literal",
-                                "data_type": "any uint",
-                                "value": "40"
-                            },
-                            "left": {
-                                "type": "Expression",
-                                "id": "Literal",
-                                "data_type": "any uint",
-                                "value": "10"
-                            }
-                        }
+            "type": "module",
+            "name": "parse_main_func_with_binary_expr_1",
+            "data": [
+                {
+                    "type": "function_definition",
+                    "is_public": false,
+                    "name": "main",
+                    "return_type": "int32",
+                    "parameters": {
+                        "type": "parameter_list",
+                        "parameters": []
                     },
-                    {
-                        "type": "Expression",
-                        "id": "ReturnType",
-                        "declaration": {
-                            "type": "Expression",
-                            "id": "Literal",
-                            "data_type": "any uint",
-                            "value": "0"
-                        }
+                    "body": {
+                        "type": "execution_block",
+                        "execution": [
+                            {
+                                "type": "variable_definition",
+                                "data_type": "int32",
+                                "is_global": false,
+                                "name": "x",
+                                "declaration": {
+                                    "type": "binary_operation",
+                                    "precedence": 10,
+                                    "op": "+",
+                                    "right": {
+                                        "type": "literal",
+                                        "data_type": "any_uint",
+                                        "value": "40"
+                                    },
+                                    "left": {
+                                        "type": "literal",
+                                        "data_type": "any_uint",
+                                        "value": "10"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "data_return",
+                                "declaration": {
+                                    "type": "literal",
+                                    "data_type": "any_uint",
+                                    "value": "0"
+                                }
+                            }
+                        ]
                     }
-                ]
-            }
+                }
+            ]
         }
-    ],
-    "module": "parse_main_func_with_binary_expr_1"
+    ]
 }

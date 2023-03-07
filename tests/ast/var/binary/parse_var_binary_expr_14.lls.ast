@@ -1,30 +1,32 @@
 {
-    "type": "Program",
-    "body": [
+    "type": "program",
+    "modules": [
         {
-            "type": "Expression",
-            "id": "VariableDefinition",
-            "data_type": "int64",
-            "name": "x",
-            "declaration": {
-                "type": "Expression",
-                "id": "BinaryOperation",
-                "precedence": 60,
-                "op": "and",
-                "right": {
-                    "type": "Expression",
-                    "id": "Literal",
-                    "data_type": "any uint",
-                    "value": "35"
-                },
-                "left": {
-                    "type": "Expression",
-                    "id": "Literal",
-                    "data_type": "any uint",
-                    "value": "20"
+            "type": "module",
+            "name": "parse_var_binary_expr_14",
+            "data": [
+                {
+                    "type": "variable_definition",
+                    "data_type": "int64",
+                    "is_global": false,
+                    "name": "x",
+                    "declaration": {
+                        "type": "binary_operation",
+                        "precedence": 60,
+                        "op": "and",
+                        "right": {
+                            "type": "literal",
+                            "data_type": "any_uint",
+                            "value": "35"
+                        },
+                        "left": {
+                            "type": "literal",
+                            "data_type": "any_uint",
+                            "value": "20"
+                        }
+                    }
                 }
-            }
+            ]
         }
-    ],
-    "module": "parse_var_binary_expr_14"
+    ]
 }

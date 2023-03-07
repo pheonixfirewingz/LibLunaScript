@@ -1,1 +1,2 @@
+module parse_var_float32_no_value
 float32 x

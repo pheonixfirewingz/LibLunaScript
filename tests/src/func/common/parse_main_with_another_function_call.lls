@@ -1,3 +1,4 @@
+module parse_main_with_another_function_call
 func getOne() -> int8
 {
     ret 1

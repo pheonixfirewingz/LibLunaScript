@@ -1,5 +1,6 @@
 #include "Parser.h"
 #include <algorithm>
+#include <libos/FileIO.h>
 namespace LunaScript::compiler::front
 {
 static const std::ReadOnlyLookupTable<data_size_t, Parser::LexToken> lookup = {
@@ -36,6 +37,9 @@ static const std::ReadOnlyLookupTable<data_size_t, Parser::LexToken> lookup = {
     {std::hash<std::string>{}("\""), Parser::LexToken::QUOTE},
     {std::hash<std::string>{}("\'"), Parser::LexToken::SINGLE_LETTER_QUOTE},
     {std::hash<std::string>{}("xor"), Parser::LexToken::XOR},
+    {std::hash<std::string>{}("global"), Parser::LexToken::GLOBAL},
+    {std::hash<std::string>{}("import"), Parser::LexToken::IMPORT},
+    {std::hash<std::string>{}("module"), Parser::LexToken::MODULE_NAME},
 };
 
 static const std::ReadOnlyLookupTable<data_size_t, bool> reject = {
@@ -95,8 +99,7 @@ const ASTBinaryExpression *Parser::parseBinaryExpr(const uint8_t precedence_infl
     if (isBinaryExpr(lexer[std::min((uint32_t)lexer.size() - 1, fake_i)]))
     {
         const ASTBinaryExpression *r_expr = parseBinaryExpr(1 + precedence_inflator, lexer);
-        [[unlikely]] if (!r_expr)
-            r_expr = new ASTBinaryExpression();
+        [[unlikely]] if (!r_expr) r_expr = new ASTBinaryExpression();
         expr->right = std::move(r_expr);
     }
     else
@@ -119,9 +122,9 @@ const ASTBinaryExpression *Parser::parseBinaryExpr(const uint8_t precedence_infl
     return expr;
 }
 
-const ASTExpression *Parser::parseVar(const std::vector<lexToken> &lexer, bool is_global)
+const ASTVarDef *Parser::parseVar(const std::vector<lexToken> &lexer, bool is_global)
 {
-    ASTLiteral *node = new ASTLiteral();
+    ASTVarDef *node = new ASTVarDef();
     node->global = is_global;
     [[unlikely]] if (!isDataType(lexer[getIndexGuard(lexer)]))
     {
@@ -155,22 +158,25 @@ const ASTExpression *Parser::parseVar(const std::vector<lexToken> &lexer, bool i
             std::string name = lexer[getIndexGuard(lexer, true)].str_token;
             node->child = new ASTFuncCall(name, std::move(parseArgs(lexer)));
         }
-        if (!isInteger(lexer[getIndexGuard(lexer)]) && !isValidName(lexer[getIndexGuard(lexer)]))
+        else if (!isInteger(lexer[getIndexGuard(lexer)]) && !isValidName(lexer[getIndexGuard(lexer)]))
         {
             error(lexer[getIndexGuard(lexer)], "no good stating data for variable provided");
             return node;
         }
-        uint32_t fake_i = getIndexGuard(lexer);
-        fake_i++;
-        if (lexer[std::min((uint32_t)lexer.size() - 1, fake_i)].token == LexToken::DOT)
-            fake_i += 2;
-        if (isBinaryExpr(lexer[std::min((uint32_t)lexer.size() - 1, fake_i)]))
-            node->child = parseBinaryExpr(0, lexer);
         else
         {
-            const ASTLiteral *literal = parseLiteral(lexer);
-            node->value = literal->value;
-            delete literal;
+            uint32_t fake_i = getIndexGuard(lexer);
+            fake_i++;
+            if (lexer[std::min((uint32_t)lexer.size() - 1, fake_i)].token == LexToken::DOT)
+                fake_i += 2;
+            if (isBinaryExpr(lexer[std::min((uint32_t)lexer.size() - 1, fake_i)]))
+                node->child = parseBinaryExpr(0, lexer);
+            else
+            {
+                const ASTLiteral *literal = parseLiteral(lexer);
+                node->value = literal->value;
+                delete literal;
+            }
         }
     }
     return std::move(node);
@@ -178,7 +184,7 @@ const ASTExpression *Parser::parseVar(const std::vector<lexToken> &lexer, bool i
 
 const ASTParamListExpression *Parser::parseArgs(const std::vector<lexToken> &lexer)
 {
-    std::vector<const ASTExpression *> prams;
+    std::vector<const ASTNode *> prams;
     if (lexer[getIndexGuard(lexer)].token == LexToken::L_CURLY)
         (void)getIndexGuard(lexer, true);
     if (lexer[getIndexGuard(lexer)].token != LexToken::R_CURLY)
@@ -209,10 +215,12 @@ const ASTParamListExpression *Parser::parseArgs(const std::vector<lexToken> &lex
                 break;
         } while (true);
         (void)getIndexGuard(lexer, true);
+        if (lexer[getIndexGuard(lexer)].token == LexToken::R_CURLY)
+            (void)getIndexGuard(lexer, true);
     }
     else
         (void)getIndexGuard(lexer, true);
-    return new ASTParamListExpression(std::ReadOnlyVector<const ASTExpression *>::lock(prams));
+    return new ASTParamListExpression(std::ReadOnlyVector<const ASTNode *>::lock(prams));
 }
 
 ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer)
@@ -244,8 +252,7 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer)
                 if (isBinaryExpr(lexer[std::min((uint32_t)lexer.size() - 1, fake_i)]))
                 {
                     const ASTBinaryExpression *expr = parseBinaryExpr(0, lexer);
-                    [[unlikely]] if (!expr)
-                        expr = new ASTBinaryExpression();
+                    [[unlikely]] if (!expr) expr = new ASTBinaryExpression();
                     node->child = expr;
                 }
                 else if (!isInteger(lexer[getIndexGuard(lexer)]) && !isValidName(lexer[getIndexGuard(lexer)]))
@@ -260,8 +267,7 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer)
                 else
                 {
                     ASTLiteral *literal = parseLiteral(lexer);
-                    [[unlikely]] if (!literal)
-                        literal = new ASTLiteral();
+                    [[unlikely]] if (!literal) literal = new ASTLiteral();
                     if (lexer[(int64_t)getIndexGuard(lexer) - 2].token == LexToken::DOT)
                         literal->data_type = DataType::ANY_FLOAT;
                     else if (lexer[(int64_t)getIndexGuard(lexer) - 1].token == LexToken::IDENTIFIER &&
@@ -287,14 +293,110 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer)
                 error(lexer[getIndexGuard(lexer, true)], "this is not a valid in this scope");
 
         } while (lexer[getIndexGuard(lexer)].token != LexToken::R_SQUIGGLY);
+        if (lexer[getIndexGuard(lexer)].token == LexToken::R_SQUIGGLY)
+            (void)getIndexGuard(lexer, true);
     }
     else
         (void)getIndexGuard(lexer, true);
     return block;
 }
 
-void Parser::parse(const std::string &&source) noexcept
+ASTModule *Parser::parseModule(const std::vector<lexToken> &&lexer, const std::string module_name)
 {
+    lexer_index = 0;
+    ASTModule *module_ = new ASTModule(module_name);
+    for (; lexer_index < (lexer.size() - 1);)
+    {
+        if (lexer[getIndexGuard(lexer)].token == LexToken::FUNC ||
+            lexer[getIndexGuard(lexer)].token == LexToken::PUBLIC_FUNC)
+        {
+            bool public_ = lexer[getIndexGuard(lexer, true)].token != LexToken::FUNC;
+            [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
+                error(lexer[getIndexGuard(lexer)], "this is not a valid function name");
+            ASTFuncDef *node = new ASTFuncDef(std::move(lexer[getIndexGuard(lexer, true)].str_token), public_);
+            if (lexer[getIndexGuard(lexer)].token != LexToken::L_CURLY)
+                error(lexer[getIndexGuard(lexer, true)], "this is not a valid function args opener");
+            node->args = parseArgs(lexer);
+            if (lexer[getIndexGuard(lexer)].token != LexToken::S_ARROW)
+            {
+                if (isDataType(lexer[getIndexGuard(lexer)]))
+                    error(lexer[getIndexGuard(lexer, true)],
+                          "you forgot to declare the return type -> to tell me what you are returning");
+                else if (lexer[getIndexGuard(lexer)].token != LexToken::L_SQUIGGLY)
+                    error(lexer[getIndexGuard(lexer, true)], "syntax error garbage return type");
+                else
+                    node->return_type = DataType::VOID;
+            }
+            else
+            {
+                (void)getIndexGuard(lexer, true);
+                if (!isDataType(lexer[getIndexGuard(lexer)]))
+                    error(lexer[getIndexGuard(lexer, true)], "this is not a supported data type");
+                node->return_type = parseDataType(lexer[getIndexGuard(lexer, true)]);
+            }
+            if (lexer[getIndexGuard(lexer)].token != LexToken::L_SQUIGGLY)
+            {
+                error(lexer[getIndexGuard(lexer)], "this is not a valid function block opener");
+                break;
+            }
+            else
+                node->body = parseBlock(lexer);
+            module_->children.emplace_back(std::move(node));
+
+            if (node->return_type == DataType::VOID &&
+                (node->body->list.empty() || node->body->list.back()->getType() != NodeType::RETURN))
+                node->body->list.emplace_back(new ASTNoReturnExpression());
+            else if (node->return_type != DataType::VOID &&
+                     (node->body->list.empty() || node->body->list.back()->getType() != NodeType::RETURN))
+                error(lexer[getIndexGuard(lexer)], "a data expected return type must explicitly return a value");
+        }
+        else if (isDataType(lexer[getIndexGuard(lexer)]))
+            module_->children.emplace_back(parseVar(lexer, false));
+        else if (lexer[getIndexGuard(lexer)].token == LexToken::GLOBAL && isDataType(lexer[getIndexGuard(lexer) + 1]))
+        {
+            (void)getIndexGuard(lexer, true);
+            module_->children.emplace_back(parseVar(lexer, true));
+        }
+        else
+        {
+            error(lexer[getIndexGuard(lexer)], "this is not a valid in global scope");
+        }
+    }
+    lexer_index = 0;
+    return module_;
+}
+
+losResult fileRead(const std::string path, char **buf, data_size_t *buf_size) noexcept
+{
+    losFileHandle handle;
+    losFileOpenInfo file;
+    file.fileBits = LOS_FILE_BIT_READ;
+    file.path = path.c_str();
+    file.path_size = path.size();
+    losResult res;
+    if ((res = losOpenFile(&handle, file)) != LOS_SUCCESS)
+        return res;
+    if ((res = losReadFile(handle, (void **)buf, buf_size)) != LOS_SUCCESS)
+        return res;
+    if ((res = losCloseFile(handle)) != LOS_SUCCESS)
+        return res;
+    return LOS_SUCCESS;
+}
+
+const inline std::string createP(std::string path) noexcept
+{
+    return std::string("$[asset_base]/") += path += ".lls";
+}
+
+void Parser::parse(const std::string &&source, bool debug) noexcept
+{
+    if (debug)
+    {
+        puts(std::string("\n\x1B[32mSrc:\x1B[33m").c_str());
+        puts(colourSrcText(source).c_str());
+        puts(std::string("\x1B[32mSrc End:\x1B[33m\n").c_str());
+    }
+    lexer_index = 0;
     try
     {
         std::vector<lexToken> lexer;
@@ -364,58 +466,73 @@ void Parser::parse(const std::string &&source) noexcept
         // end lexer here
         //------------------------------------------------------------------------------------
         // now we parse
-        for (; lexer_index < lexer.size(); lexer_index++)
+        if (lexer[getIndexGuard(lexer, true)].token != LexToken::MODULE_NAME)
         {
-            if (lexer[getIndexGuard(lexer)].token == LexToken::FUNC ||
-                lexer[getIndexGuard(lexer)].token == LexToken::PUBLIC_FUNC)
-            {
-                bool public_ = lexer[getIndexGuard(lexer, true)].token != LexToken::FUNC;
-                [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
-                    error(lexer[getIndexGuard(lexer)], "this is not a valid function name");
-                ASTFuncDef *node = new ASTFuncDef(std::move(lexer[getIndexGuard(lexer, true)].str_token), public_);
-                if (lexer[getIndexGuard(lexer)].token != LexToken::L_CURLY)
-                    error(lexer[getIndexGuard(lexer, true)], "this is not a valid function args opener");
-                node->args = parseArgs(lexer);
-                if (lexer[getIndexGuard(lexer)].token != LexToken::S_ARROW)
-                {
-                    if (isDataType(lexer[getIndexGuard(lexer)]))
-                        error(lexer[getIndexGuard(lexer, true)],
-                              "you forgot to declare the return type -> to tell me what you are returning");
-                    else if (lexer[getIndexGuard(lexer)].token != LexToken::L_SQUIGGLY)
-                        error(lexer[getIndexGuard(lexer, true)], "syntax error garbage return type");
-                    else
-                        node->return_type = DataType::VOID;
-                }
-                else
-                {
-                    (void)getIndexGuard(lexer, true);
-                    if (!isDataType(lexer[getIndexGuard(lexer)]))
-                        error(lexer[getIndexGuard(lexer, true)], "this is not a supported data type");
-                    node->return_type = parseDataType(lexer[getIndexGuard(lexer, true)]);
-                }
-                if (lexer[getIndexGuard(lexer)].token != LexToken::L_SQUIGGLY)
-                {
-                    error(lexer[getIndexGuard(lexer)], "this is not a valid function block opener");
-                    break;
-                }
-                else
-                    node->body = parseBlock(lexer);
-                root->children.emplace_back(std::move(node));
-
-                if (node->return_type == DataType::VOID &&
-                    (node->body->list.empty() || node->body->list.back()->getExprType() != ExpressionType::RETURN))
-                    node->body->list.emplace_back(new ASTNoReturnExpression());
-                else if (node->return_type != DataType::VOID &&
-                         (node->body->list.empty() || node->body->list.back()->getExprType() != ExpressionType::RETURN))
-                    error(lexer[getIndexGuard(lexer)], "a data expected return type must explicitly return a value");
-            }
-            else if (isDataType(lexer[getIndexGuard(lexer)]))
-                root->children.emplace_back(parseVar(lexer, true));
-            else
-            {
-                error(lexer[getIndexGuard(lexer)], "this is not a valid in global scope");
-            }
+            error(lexer[getIndexGuard(lexer, true)], "the source file dose not start with module keyword");
+            return;
         }
+
+        std::string module_name = lexer[getIndexGuard(lexer, true)].str_token;
+        last_modules.push_back(module_name);
+
+        for (; lexer_index < lexer.size();)
+        {
+            if (lexer[getIndexGuard(lexer)].token == LexToken::IMPORT)
+            {
+                (void)getIndexGuard(lexer, true);
+                std::string name = "";
+                while (true)
+                {
+                    if (lexer[getIndexGuard(lexer)].token != LexToken::IDENTIFIER)
+                        error(lexer[getIndexGuard(lexer, true)], "this is not a valid import name");
+                    else
+                        name += lexer[getIndexGuard(lexer, true)].str_token;
+
+                    if (lexer[getIndexGuard(lexer)].token != LexToken::DOT)
+                        break;
+                    (void)getIndexGuard(lexer, true);
+                    name += "/";
+                }
+
+                if (std::any_of(last_modules.begin(), last_modules.end(),
+                                [&name](std::string mod) { return mod == name; }))
+                {
+                    warn(lexer[getIndexGuard(lexer)],
+                         std::string(std::string(name) += " is already loaded so will be ignored").c_str());
+                    continue;
+                }
+
+                char *src;
+                data_size_t src_size = 0;
+                if (fileRead(createP(name), &src, &src_size) != LOS_SUCCESS)
+                    error(lexer[getIndexGuard(lexer)], "could not find or read import");
+                else
+                {
+                    uint64_t index = getIndexGuard(lexer);
+                    if (debug)
+                    {
+                        printf("\x1B[94mParsing Dependency Module: \x1B[33m %s \x1B[00m -> \x1B[94m For "
+                               "Module:\x1B[33m %s "
+                               "\x1B[00m\n",
+                               name.c_str(), module_name.c_str());
+                    }
+                    parse(std::string(src, 0, src_size), debug);
+                    lexer_index = index;
+                }
+            }
+            else
+                break;
+        }
+        if (hasErrors())
+            return;
+        std::vector<lexToken> module_data;
+        for (uint64_t i = lexer_index; i < lexer.size(); i++)
+            module_data.emplace_back(lexer.at(i));
+        if (debug)
+            printf("\x1B[94mParsing Module: \x1B[33m %s \x1B[00m\n", module_name.c_str());
+        root->modules.push_back(parseModule(std::move(module_data), module_name));
+        if (debug)
+            puts("\x1B[94mParsed\x1B[00m\n");
     }
     catch (const std::exception &e)
     {

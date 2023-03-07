@@ -1,1 +1,2 @@
+module bad_syntax_2
 foat64 x

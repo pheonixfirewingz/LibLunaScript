@@ -1,1 +1,2 @@
+module parse_var_binary_expr_10
 int64 x = 20 or 35

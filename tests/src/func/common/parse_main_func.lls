@@ -1,3 +1,4 @@
+module parse_main_func
 public main() -> int32
 {
     ret 0

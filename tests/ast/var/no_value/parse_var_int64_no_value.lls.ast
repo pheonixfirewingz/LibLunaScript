@@ -1,13 +1,18 @@
 {
-    "type": "Program",
-    "body": [
+    "type": "program",
+    "modules": [
         {
-            "type": "Expression",
-            "id": "VariableDefinition",
-            "data_type": "int64",
-            "name": "x",
-            "value": "0"
+            "type": "module",
+            "name": "parse_var_int64_no_value",
+            "data": [
+                {
+                    "type": "variable_definition",
+                    "data_type": "int64",
+                    "is_global": false,
+                    "name": "x",
+                    "value": "0"
+                }
+            ]
         }
-    ],
-    "module": "parse_var_int64_no_value"
+    ]
 }

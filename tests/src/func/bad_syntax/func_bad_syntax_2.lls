@@ -1,3 +1,4 @@
+module func_bad_syntax_2
 pblic main() -> int32
 {
     

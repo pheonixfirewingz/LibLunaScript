@@ -23,19 +23,13 @@ typedef struct Compiler_T *Compiler;
  * \param[out] compiler
  * \param[in] src
  * \param[in] src_size
- * \param[in] filename
- * \param[in] filename_size
  * \return losResult
  * \brief compile as it say creates and compiles source
  */
-EXPORT_DLL losResult compile(Compiler *compiler, const char *src, const data_size_t src_size, const char *filename,
-                             const data_size_t filename_size);
-
+EXPORT_DLL losResult compile(Compiler *compiler, const char *src, const data_size_t src_size,const uint8_t debug);
 EXPORT_DLL uint8_t hasErrorOnStack(Compiler compiler);
 EXPORT_DLL void getErrorOffStack(Compiler compiler, char **str, data_size_t *str_size);
 EXPORT_DLL void astToString(Compiler compiler, char **str, data_size_t *str_size);
-EXPORT_DLL void toByteCode(Compiler compiler, char **str, data_size_t *str_size);
-
 EXPORT_DLL void freeCompiler(Compiler compiler);
 
 #ifdef __cplusplus
@@ -46,9 +40,11 @@ class LunaScriptCompiler
     losResult err;
 
   public:
-    explicit LunaScriptCompiler(std::string src, std::string filename)
+    explicit LunaScriptCompiler(std::string src,bool print_errors = false,bool debug = false)
     {
-        err = compile(&compiler, src.c_str(), src.size(), filename.c_str(), filename.size());
+        err = compile(&compiler, src.c_str(), src.size(),debug);
+        if(didScriptCompile() != LOS_SUCCESS && print_errors)
+            puts(getErrors().c_str());
     }
 
     ~LunaScriptCompiler()
@@ -81,14 +77,6 @@ class LunaScriptCompiler
         data_size_t json_size = 0;
         astToString(compiler, &json, &json_size);
         return std::string(json, 0, json_size);
-    }
-
-    std::string getByteCode()
-    {
-        char *bytecode = nullptr;
-        data_size_t bytecode_size = 0;
-        toByteCode(compiler, &bytecode, &bytecode_size);
-        return std::string(bytecode, 0, bytecode_size);
     }
 };
 #endif

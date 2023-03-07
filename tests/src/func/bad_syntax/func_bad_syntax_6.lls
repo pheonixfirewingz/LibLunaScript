@@ -1,3 +1,4 @@
+module func_bad_syntax_6
 public main() -> int32
 {
     re

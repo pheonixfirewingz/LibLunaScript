@@ -17,12 +17,30 @@ class Parser
 {
     std::stack<std::string> *gf_error_stack;
     ASTRoot *root;
+
+    inline void replace_all(std::string &inout, std::string_view what, std::string_view with)
+    {
+        std::size_t count{};
+        for (std::string::size_type pos{}; inout.npos != (pos = inout.find(what.data(), pos, what.length()));
+             pos += with.length(), ++count)
+            inout.replace(pos, what.length(), with.data(), with.length());
+    }
+
+    inline char tolower(char in)
+    {
+        if (in <= 'Z' && in >= 'A')
+            return in - ('Z' - 'z');
+        return in;
+    }
+
     // this public section is stupid but for speed / optimizations sake init tables for ever ast create would be a
     // nightmare
   public:
     enum class LexToken : uint8_t
     {
         ERROR,
+        IMPORT,
+        MODULE_NAME,
         IDENTIFIER,
         FUNC,
         PUBLIC_FUNC,
@@ -49,6 +67,7 @@ class Parser
         SINGLE_LETTER_QUOTE,
         // types
         NO_RETURN,
+        GLOBAL,
         INT8,
         INT16,
         INT32,
@@ -88,6 +107,8 @@ class Parser
 
   private:
     uint32_t lexer_index = 0;
+    std::vector<std::string> last_modules;
+
     inline uint32_t getIndexGuard(const std::vector<lexToken> &lexer, bool inc = false) noexcept
     {
         if (inc && lexer_index < (lexer.size() - 1))
@@ -126,8 +147,7 @@ class Parser
         case LexToken::FLOAT64:
         case LexToken::STRING:
             return true;
-        [[unlikely]] default:
-            return false;
+            [[unlikely]] default : return false;
         }
     }
 
@@ -196,8 +216,7 @@ class Parser
             return std::make_tuple<uint8_t, OperatorType>(80, OperatorType::XOR);
         case LexToken::MODULO:
             return std::make_tuple<uint8_t, OperatorType>(50, OperatorType::MOD);
-        [[unlikely]] default:
-            return std::make_tuple<uint8_t, OperatorType>(0, OperatorType::NOT_DETERMINED);
+            [[unlikely]] default : return std::make_tuple<uint8_t, OperatorType>(0, OperatorType::NOT_DETERMINED);
         }
     }
 
@@ -225,8 +244,7 @@ class Parser
             return DataType::FLOAT32;
         case LexToken::FLOAT64:
             return DataType::FLOAT64;
-        [[unlikely]] default:
-            return DataType::NOT_DETERMINED;
+            [[unlikely]] default : return DataType::NOT_DETERMINED;
         }
     }
 
@@ -273,9 +291,9 @@ class Parser
         case LexToken::EQUAL:
             return "=";
         case LexToken::R_ARROW:
-            return ">";
-        case LexToken::L_ARROW:
             return "<";
+        case LexToken::L_ARROW:
+            return ">";
         case LexToken::S_ARROW:
             return "->";
         case LexToken::QUOTE:
@@ -327,7 +345,7 @@ class Parser
     uint8_t error_count = 0;
     void error(const lexToken &token, const char *msg_text)
     {
-        if(error_count >= 20)
+        if (error_count >= 20)
             throw std::runtime_error("Too many errors");
         else
             error_count++;
@@ -360,19 +378,19 @@ class Parser
     }
 
     ASTLiteral *parseLiteral(const std::vector<lexToken> &lexer);
-    const ASTBinaryExpression *parseBinaryExpr(const uint8_t precedence_inflator,
-                                               const std::vector<lexToken> &lexer);
-    const ASTExpression *parseVar(const std::vector<lexToken> &lexer, bool is_global = false);
+    const ASTBinaryExpression *parseBinaryExpr(const uint8_t precedence_inflator, const std::vector<lexToken> &lexer);
+    const ASTVarDef *parseVar(const std::vector<lexToken> &lexer, bool is_global = false);
     const ASTParamListExpression *parseArgs(const std::vector<lexToken> &lexer);
     ASTBlock *parseBlock(const std::vector<lexToken> &lexer);
-    void parse(const std::string &&source) noexcept;
+    ASTModule *parseModule(const std::vector<lexToken> &&lexer, const std::string module_name);
+    void parse(const std::string &&source,bool debug) noexcept;
 
   public:
-    explicit Parser(const std::string &&source, const std::string &&file_name) noexcept
+    explicit Parser(const std::string &&source,bool debug) noexcept
         : gf_error_stack(new std::stack<std::string>())
-        , root(new ASTRoot(file_name))
+        , root(new ASTRoot())
     {
-        parse((const std::string &&)source);
+        parse((const std::string &&)source,debug);
     }
 
     bool hasErrors() const noexcept
@@ -402,6 +420,26 @@ class Parser
     {
         delete gf_error_stack;
         delete root;
+    }
+
+    std::string colourSrcText(std::string text)
+    {
+        static const char *const src_words[] = {"Import",  "Module",  "Global", "Const", "Uint8", "Uint16",
+                                                "Uint32",  "Uint64",  "Int8",   "Int16", "Int32", "Int64",
+                                                "Float32", "Float64", "Ret",    "Func",  "Public"};
+        for (uint16_t i = 0; i < sizeof(src_words) / sizeof(const char *); i++)
+        {
+            std::string word(src_words[i]);
+            std::string e("\x1B[94m");
+            e += word;
+            e += "\x1B[00m";
+            std::string t;
+            t += tolower(word[0]);
+            t += std::string(word.c_str(), 1, word.size());
+            replace_all(text, t, e);
+            replace_all(text, word, t);
+        }
+        return text;
     }
 };
 } // namespace LunaScript::compiler::front

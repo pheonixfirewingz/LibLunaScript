@@ -1,10 +1,15 @@
+module test
+import test2
+
+global uint64 lol = 8 * 9
+
 public main() -> int32
 {
-    uint64 v = 8 * 5
-    ret v / 10 + 6
+    uint8 x = test()
+    ret v / x + lol
 }
 
 func test() -> int32
 {
-    ret 0
+    ret 9 + 1
 }

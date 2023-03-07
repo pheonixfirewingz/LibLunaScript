@@ -1,1 +1,2 @@
+module bad_syntax_6
 float64 x = 0.0 mo 8.0

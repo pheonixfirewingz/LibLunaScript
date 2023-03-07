@@ -1,1 +1,2 @@
+module parse_var_float64_with_value
 float64 x = 20.0

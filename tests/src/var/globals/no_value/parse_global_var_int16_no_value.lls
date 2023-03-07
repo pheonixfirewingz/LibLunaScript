@@ -1,0 +1,2 @@
+module parse_global_var_int16_no_value
+global int16 x

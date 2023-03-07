@@ -1,1 +1,2 @@
+module parse_var_int32_with_value
 int32 x = 20

@@ -1,1 +1,2 @@
+module parse_var_uint64_no_value
 uint64 x

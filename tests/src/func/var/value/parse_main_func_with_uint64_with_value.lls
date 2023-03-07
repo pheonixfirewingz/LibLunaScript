@@ -1,3 +1,4 @@
+module parse_main_func_with_uint64_with_value
 func main() -> int32
 {
     uint64 x = 20

@@ -1,13 +1,18 @@
 {
-    "type": "Program",
-    "body": [
+    "type": "program",
+    "modules": [
         {
-            "type": "Expression",
-            "id": "VariableDefinition",
-            "data_type": "uint16",
-            "name": "x",
-            "value": "0"
+            "type": "module",
+            "name": "parse_var_uint16_no_value",
+            "data": [
+                {
+                    "type": "variable_definition",
+                    "data_type": "uint16",
+                    "is_global": false,
+                    "name": "x",
+                    "value": "0"
+                }
+            ]
         }
-    ],
-    "module": "parse_var_uint16_no_value"
+    ]
 }

@@ -1,1 +1,2 @@
+module bad_syntax_9
 in64 x = 20

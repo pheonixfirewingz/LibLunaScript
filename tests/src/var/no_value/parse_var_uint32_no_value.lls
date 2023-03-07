@@ -1,1 +1,2 @@
+module parse_var_uint32_no_value
 uint32 x

@@ -1,1 +1,2 @@
+module parse_var_uint16_no_value
 uint16 x

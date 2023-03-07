@@ -6,7 +6,7 @@ set ( CMAKE_CXX_STANDARD_REQUIRED ON )
 set ( DEBUG_MODE ON )
 set ( STATIC_BUILD OFF )
 set ( FUZZING OFF )
-set ( COMPILER_TESTING OFF )
+set ( COMPILER_TESTING ON )
 # options end
 
 configure_file ( ${PROJECT_SOURCE_DIR}/src/application/Cmake.h.in ${PROJECT_SOURCE_DIR}/src/application/Cmake.h @ONLY )
@@ -14,7 +14,6 @@ configure_file ( ${PROJECT_SOURCE_DIR}/src/application/Cmake.h.in ${PROJECT_SOUR
 set(compiler_source
     ${PROJECT_SOURCE_DIR}/src/compiler/CompilerAPI.cpp
     ${PROJECT_SOURCE_DIR}/src/compiler/front/Parser.cpp
-    ${PROJECT_SOURCE_DIR}/src/compiler/back/CodeGen.cpp
     ${PROJECT_SOURCE_DIR}/src/compiler/front/Json.cpp
 )
 

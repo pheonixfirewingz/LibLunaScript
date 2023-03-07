@@ -1,26 +1,29 @@
 {
-    "type": "Program",
-    "body": [
+    "type": "program",
+    "modules": [
         {
-            "type": "FunctionDef",
-            "is_public": true,
-            "name": "main",
-            "return_type": "void",
-            "parameters": {
-                "type": "Expression",
-                "id": "ParameterList",
-                "Parameters": []
-            },
-            "body": {
-                "type": "ExecutionBlock",
-                "execution": [
-                    {
-                        "type": "Expression",
-                        "id": "NoDataReturn"
+            "type": "module",
+            "name": "parse_main_with_no_return",
+            "data": [
+                {
+                    "type": "function_definition",
+                    "is_public": true,
+                    "name": "main",
+                    "return_type": "void",
+                    "parameters": {
+                        "type": "parameter_list",
+                        "parameters": []
+                    },
+                    "body": {
+                        "type": "execution_block",
+                        "execution": [
+                            {
+                                "type": "no_data_return"
+                            }
+                        ]
                     }
-                ]
-            }
+                }
+            ]
         }
-    ],
-    "module": "parse_main_with_no_return"
+    ]
 }

@@ -1,1 +1,2 @@
+module bad_syntax_8
 float64 x = 0.0 mod .0
