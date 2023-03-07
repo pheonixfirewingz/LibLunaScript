@@ -8,6 +8,7 @@ set_target_properties(libos PROPERTIES
 )
 
 add_library ( liblunascript SHARED ${compiler_source} )
+target_link_libraries(liblunascript PRIVATE libos)
 target_include_directories ( liblunascript PRIVATE ${PROJECT_SOURCE_DIR}/src/share/rapidjson/include STATIC )
 target_include_directories (liblunascript PRIVATE  ${PROJECT_SOURCE_DIR}/src/share STATIC )
 target_include_directories (liblunascript PRIVATE  ${PROJECT_SOURCE_DIR}/libs/include STATIC )
