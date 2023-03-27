@@ -1,15 +1,10 @@
-module test
-import test2
-
-global uint64 lol = 8 * 9
+module parse_main_with_another_function_call
+func getOne(int8 x) -> int8
+{
+    ret x
+}
 
 public main() -> int32
 {
-    uint8 x = test()
-    ret v / x + lol
-}
-
-func test() -> int32
-{
-    ret 9 + 1
+    ret getOne(1)
 }

@@ -1,31 +1,98 @@
-cmake_minimum_required ( VERSION 3.16.3 )
-project ( libLunaScript CXX )
-set ( CMAKE_CXX_STANDARD_REQUIRED ON )
+cmake_minimum_required(VERSION 3.22.1)
+project(liblunascript C CXX)
+#options
+set(BUILD_DOCS OFF)
+set(ENABLE_TESTS ON)
+set(STATIC_BUILD OFF)
+set(TERMIANL_MODE ON)
+#options end
 
-# options
-set ( DEBUG_MODE ON )
-set ( STATIC_BUILD OFF )
-set ( FUZZING OFF )
-set ( COMPILER_TESTING ON )
-# options end
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
-configure_file ( ${PROJECT_SOURCE_DIR}/src/application/Cmake.h.in ${PROJECT_SOURCE_DIR}/src/application/Cmake.h @ONLY )
+include(FlagControl)
+include(LocalLibrary)
 
-set(compiler_source
-    ${PROJECT_SOURCE_DIR}/src/compiler/CompilerAPI.cpp
-    ${PROJECT_SOURCE_DIR}/src/compiler/front/Parser.cpp
-    ${PROJECT_SOURCE_DIR}/src/compiler/front/Json.cpp
-)
+add_definitions(-DPROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
-set ( app_source 
-${PROJECT_SOURCE_DIR}/src/application/Main.cpp
-)
+# Debug mode by default.
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
 
-if ( ${COMPILER_TESTING} )
-    set ( app_source 
-    ${PROJECT_SOURCE_DIR}/src/application/Test.cpp
-    )
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+    add_definitions(-DWITH_DEBUG)
+endif()
 
+if(${TERMIANL_MODE})
+    add_definitions(-DTERMIANL_MODE)
+endif()
+
+if(${ENABLE_TESTS})
+    add_definitions(-DENABLE_TESTS)
+endif()
+
+if(CMAKE_SYSTEM_NAME MATCHES Linux)
+    message(INFO "[SOFTRENDER] - building for Linux....")
+    add_definitions(-DON_LINUX)
+    set(ON_LINUX ON)
+    set(CMAKE_CXX_STANDARD 23)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+elseif(CMAKE_SYSTEM_NAME MATCHES WindowsStore)
+    message(INFO "[SOFTRENDER] -  building for WindowsStore....")
+   add_definitions(-DON_UWP)
+   set(ON_UWP ON)
+   set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+elseif(CMAKE_SYSTEM_NAME MATCHES Windows)
+    message(INFO "[SOFTRENDER] - building for Windows....")
+    add_definitions(-DON_WINDOWS)
+    set(ON_WINDOWS ON)
+    set(CMAKE_CXX_STANDARD 23)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+elseif(CMAKE_SYSTEM_NAME MATCHES Android)
+    message(INFO "[SOFTRENDER] - building for Android....")
+    add_definitions(-DON_ANDROID)
+    if(${STATIC_BUILD})
+        set(STATIC_BUILD OFF)
+    endif()
+    set(ON_ANDROID ON)
+    set(CMAKE_CXX_STANDARD 23)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+else()
+    message(FATAL_ERROR "system not supported")
+endif()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
+    add_definitions(-DIS_CLANG)
+elseif (CMAKE_CXX_COMPILER_ID MATCHES GNU)
+    if(CMAKE_C_COMPILER_VERSION VERSION_LESS 12)
+        message(FATAL_ERROR "anything lower that gcc-12 compiler not supported")
+    endif()
+    add_definitions(-DIS_GCC)
+elseif (CMAKE_CXX_COMPILER_ID MATCHES MSVC)
+    add_definitions(-DIS_MSVC)
+else()
+    message(FATAL_ERROR "compiler not supported")
+endif()
+
+add_local_library(libos shared)
+add_library(${CMAKE_PROJECT_NAME}  SHARED ${PROJECT_SOURCE_DIR}/src/API.cpp)
+flagsSetup(${CMAKE_PROJECT_NAME})
+
+target_include_directories (${CMAKE_PROJECT_NAME} PRIVATE  ${PROJECT_SOURCE_DIR}/libs/include STATIC)
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/Includes STATIC)
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/src STATIC)
+
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE  libos)
+include(SourceList)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src)
+
+add_executable(LunaScript  ${PROJECT_SOURCE_DIR}/Main.cpp)
+target_include_directories (LunaScript PRIVATE  ${PROJECT_SOURCE_DIR}/libs/include STATIC)
+target_include_directories (LunaScript PRIVATE  ${PROJECT_SOURCE_DIR}/src/API STATIC)
+flagsSetup(LunaScript)
+
+if(${ENABLE_TESTS})
     include ( FetchContent )
     include ( GoogleTest )
     FetchContent_Declare (
@@ -35,44 +102,8 @@ if ( ${COMPILER_TESTING} )
     set ( gtest_force_shared_crt ON CACHE BOOL "" FORCE )
     FetchContent_MakeAvailable ( googletest )
     enable_testing ()
-endif ()
-
-add_library ( libos SHARED IMPORTED )
-
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    message(INFO " - building for Linux....")
-    include(${PROJECT_SOURCE_DIR}/CMake_Build_Platforms/Linux.cmake)
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    message(INFO " - building for Windows....")
-    include(${PROJECT_SOURCE_DIR}/CMake_Build_Platforms/Windows.cmake)
-else()
-    message(FATAL_ERROR "system not supported")
-endif()
-
-add_executable ( LunaScript ${app_source} )
-target_link_libraries(LunaScript PRIVATE liblunascript libos)
-target_include_directories (LunaScript PRIVATE  ${PROJECT_SOURCE_DIR}/libs/include STATIC )
-target_include_directories (LunaScript PRIVATE  ${PROJECT_SOURCE_DIR}/src/share STATIC )
-if ( ${COMPILER_TESTING} )
     gtest_discover_tests ( LunaScript )
-    target_link_libraries(LunaScript PRIVATE GTest::gtest_main liblunascript libos)
-endif ()
-
-if(MSVC AND ${DEBUG_MODE})
-    target_compile_options(LunaScript PRIVATE /Od /W4 /WX /RTC1 /Z7  /EHsc /sdl /JMC /external:anglebrackets /external:W0)
-    target_link_options(LunaScript PRIVATE /DEBUG:FULL)
-endif ()
-
-if(NOT MSVC AND ${FUZZING})
-    if ( NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU") )
-        target_compile_options ( LunaScript PRIVATE -fsanitize=fuzzer,undefined )
-        target_link_options ( LunaScript PRIVATE -fsanitize=fuzzer,undefined )
-    endif()
-endif()
-
-if(NOT MSVC AND NOT ${FUZZING})
-    if ( NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU") )
-        target_compile_options ( LunaScript PRIVATE -fsanitize=address,undefined )
-        target_link_options ( LunaScript PRIVATE -fsanitize=address,undefined )
-    endif()
+    target_link_libraries(LunaScript PRIVATE GTest::gtest_main ${CMAKE_PROJECT_NAME} libos)
+else()
+    target_link_libraries(LunaScript PRIVATE ${CMAKE_PROJECT_NAME} libos)
 endif()
