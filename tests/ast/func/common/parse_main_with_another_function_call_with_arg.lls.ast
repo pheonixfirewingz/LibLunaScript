@@ -1,0 +1,72 @@
+{
+    "type": "program",
+    "modules": [
+        {
+            "type": "module",
+            "name": "parse_main_with_another_function_call_with_arg",
+            "data": [
+                {
+                    "type": "function_definition",
+                    "is_public": false,
+                    "name": "getOne",
+                    "return_type": "int8",
+                    "parameters": {
+                        "type": "parameter_list",
+                        "parameters": [
+                            {
+                                "type": "literal",
+                                "data_type": "int8",
+                                "value": "x"
+                            }
+                        ]
+                    },
+                    "body": {
+                        "type": "execution_block",
+                        "execution": [
+                            {
+                                "type": "data_return",
+                                "declaration": {
+                                    "type": "literal",
+                                    "data_type": "to_be_determined",
+                                    "value": "x"
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "function_definition",
+                    "is_public": true,
+                    "name": "main",
+                    "return_type": "int32",
+                    "parameters": {
+                        "type": "parameter_list",
+                        "parameters": []
+                    },
+                    "body": {
+                        "type": "execution_block",
+                        "execution": [
+                            {
+                                "type": "data_return",
+                                "declaration": {
+                                    "type": "function_call",
+                                    "name": "getOne",
+                                    "parameters": {
+                                        "type": "parameter_list",
+                                        "parameters": [
+                                            {
+                                                "type": "literal",
+                                                "data_type": "to_be_determined",
+                                                "value": "1"
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}

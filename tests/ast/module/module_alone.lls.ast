@@ -1,0 +1,10 @@
+{
+    "type": "program",
+    "modules": [
+        {
+            "type": "module",
+            "name": "module_alone",
+            "data": []
+        }
+    ]
+}

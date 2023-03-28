@@ -6,6 +6,11 @@
  * \brief this is the api for the library libLunaScript
  */
 #pragma once
+#if ON_WINDOWS
+#    if __has_include(<windows.h>)
+#        include <windows.h>
+#    endif
+#endif
 // LIBOS LICENCE
 //
 // GNU Lesser General Public License Version 3.0
@@ -26,25 +31,35 @@ typedef struct Compiler_T *Compiler;
  * \return losResult
  * \brief compile as it say creates and compiles source
  */
-EXPORT_DLL losResult compile(Compiler *compiler, const char *src, const data_size_t src_size,const uint8_t debug);
+EXPORT_DLL losResult compile(Compiler *compiler, const char *src, const data_size_t src_size, const uint8_t debug);
 EXPORT_DLL uint8_t hasErrorOnStack(Compiler compiler);
 EXPORT_DLL void getErrorOffStack(Compiler compiler, char **str, data_size_t *str_size);
 EXPORT_DLL void astToString(Compiler compiler, char **str, data_size_t *str_size);
 EXPORT_DLL void freeCompiler(Compiler compiler);
 
 #ifdef __cplusplus
-#include <string>
+#    include <string>
 class LunaScriptCompiler
 {
     Compiler compiler = nullptr;
     losResult err;
 
   public:
-    explicit LunaScriptCompiler(std::string src,bool print_errors = false,bool debug = false)
+    explicit LunaScriptCompiler(std::string src, bool print_errors = false, bool debug = false)
     {
-        err = compile(&compiler, src.c_str(), src.size(),debug);
-        if(didScriptCompile() != LOS_SUCCESS && print_errors)
+        err = compile(&compiler, src.c_str(), src.size(), debug);
+        if (didScriptCompile() != LOS_SUCCESS && print_errors)
+#    if ON_WINDOWS
+#        if __has_include(<windows.h>)
+        {
+            std::string t = getErrors();
+            OutputDebugString(t.c_str());
+            puts(t.c_str());
+        }
+#        endif
+#    else
             puts(getErrors().c_str());
+#    endif
     }
 
     ~LunaScriptCompiler()
@@ -65,7 +80,7 @@ class LunaScriptCompiler
             char *buffer = nullptr;
             data_size_t size = 0;
             getErrorOffStack(compiler, &buffer, &size);
-            error += std::string(buffer, 0,size);
+            error += std::string(buffer, 0, size);
             error += "\n";
         }
         return error;

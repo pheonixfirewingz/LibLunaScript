@@ -1,0 +1,2 @@
+module parse_var_uint64_with_value
+global uint64 x = 20

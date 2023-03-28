@@ -1,2 +1,0 @@
-module parse_global_var_int8_no_value
-global int8 x

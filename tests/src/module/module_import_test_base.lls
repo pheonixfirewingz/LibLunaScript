@@ -1,0 +1,2 @@
+module module_import_test_base
+import module_import_test_called

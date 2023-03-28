@@ -99,7 +99,8 @@ const ASTBinaryExpression *Parser::parseBinaryExpr(const uint8_t precedence_infl
     if (isBinaryExpr(lexer[std::min((size_t)lexer.size() - 1, fake_i)]))
     {
         const ASTBinaryExpression *r_expr = parseBinaryExpr(1 + precedence_inflator, lexer);
-        [[unlikely]] if (!r_expr) r_expr = new ASTBinaryExpression();
+        [[unlikely]] if (!r_expr)
+            r_expr = new ASTBinaryExpression();
         expr->right = std::move(r_expr);
     }
     else
@@ -156,7 +157,7 @@ const ASTVarDef *Parser::parseVar(const std::vector<lexToken> &lexer, bool is_gl
             [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
                 error(lexer[getIndexGuard(lexer)], "this is not a valid function name");
             std::string name = lexer[getIndexGuard(lexer, true)].str_token;
-            node->child = new ASTFuncCall(name, std::move(parseArgs(lexer)));
+            node->child = new ASTFuncCall(name, std::move(parseArgs(lexer,true)));
         }
         else if (!isInteger(lexer[getIndexGuard(lexer)]) && !isValidName(lexer[getIndexGuard(lexer)]))
         {
@@ -182,7 +183,7 @@ const ASTVarDef *Parser::parseVar(const std::vector<lexToken> &lexer, bool is_gl
     return std::move(node);
 }
 
-ASTParamListExpression *Parser::parseArgs(const std::vector<lexToken> &lexer)
+ASTParamListExpression *Parser::parseArgs(const std::vector<lexToken> &lexer, bool call_mode)
 {
     std::vector<const ASTNode *> prams;
     if (lexer[getIndexGuard(lexer)].token == LexToken::L_CURLY)
@@ -190,31 +191,54 @@ ASTParamListExpression *Parser::parseArgs(const std::vector<lexToken> &lexer)
     if (lexer[getIndexGuard(lexer)].token != LexToken::R_CURLY)
     {
         size_t n = 0;
-        do
+        if (!call_mode)
         {
-            [[unlikely]] if (n >= 100)
+            do
             {
-                error(lexer[getIndexGuard(lexer)], "too many arguments or bad syntax");
-                break;
-            }
-            [[unlikely]] if (!isDataType(lexer[getIndexGuard(lexer)]))
-                error(lexer[getIndexGuard(lexer)], "this is not a supported data type");
-            ASTLiteral *literal = new ASTLiteral();
-            literal->data_type = parseDataType(lexer[getIndexGuard(lexer, true)]);
-            [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
-                error(lexer[getIndexGuard(lexer)], "this is not a valid param name");
-            literal->value = lexer[getIndexGuard(lexer, true)].str_token;
-            prams.emplace_back(std::move(literal));
-            if (lexer[getIndexGuard(lexer)].token == LexToken::COMMA)
+                [[unlikely]] if (n >= 100)
+                {
+                    error(lexer[getIndexGuard(lexer)], "too many arguments or bad syntax");
+                    break;
+                }
+                [[unlikely]] if (!isDataType(lexer[getIndexGuard(lexer)]))
+                    error(lexer[getIndexGuard(lexer)], "this is not a supported data type");
+                ASTLiteral *literal = new ASTLiteral();
+                literal->data_type = parseDataType(lexer[getIndexGuard(lexer, true)]);
+                [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
+                    error(lexer[getIndexGuard(lexer)], "this is not a valid param name");
+                literal->value = lexer[getIndexGuard(lexer, true)].str_token;
+                prams.emplace_back(std::move(literal));
+                if (lexer[getIndexGuard(lexer)].token == LexToken::COMMA)
+                {
+                    (void)getIndexGuard(lexer, true);
+                    n++;
+                    continue;
+                }
+                else
+                    break;
+            } while (true);
+            (void)getIndexGuard(lexer, true);
+        }
+        else
+        {
+            do
             {
-                (void)getIndexGuard(lexer, true);
-
-                continue;
-            }
-            else
-                break;
-        } while (true);
-        (void)getIndexGuard(lexer, true);
+                [[unlikely]] if (n >= 100)
+                {
+                    error(lexer[getIndexGuard(lexer)], "too many arguments or bad syntax");
+                    break;
+                }
+                prams.emplace_back(std::move(parseLiteral(lexer)));
+                if (lexer[getIndexGuard(lexer)].token == LexToken::COMMA)
+                {
+                    (void)getIndexGuard(lexer, true);
+                    n++;
+                    continue;
+                }
+                else
+                    break;
+            } while (true);
+        }
         if (lexer[getIndexGuard(lexer)].token == LexToken::R_CURLY)
             (void)getIndexGuard(lexer, true);
     }
@@ -252,7 +276,8 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer)
                 if (isBinaryExpr(lexer[std::min((size_t)lexer.size() - 1, fake_i)]))
                 {
                     const ASTBinaryExpression *expr = parseBinaryExpr(0, lexer);
-                    [[unlikely]] if (!expr) expr = new ASTBinaryExpression();
+                    [[unlikely]] if (!expr)
+                        expr = new ASTBinaryExpression();
                     node->child = expr;
                 }
                 else if (!isInteger(lexer[getIndexGuard(lexer)]) && !isValidName(lexer[getIndexGuard(lexer)]))
@@ -262,13 +287,13 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer)
                     [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
                         error(lexer[getIndexGuard(lexer)], "this is not a valid function name");
                     std::string name = lexer[getIndexGuard(lexer, true)].str_token;
-                    node->child =
-                        new ASTFuncCall(name, std::move(parseArgs(lexer)));
+                    node->child = new ASTFuncCall(name, std::move(parseArgs(lexer,true)));
                 }
                 else
                 {
                     ASTLiteral *literal = parseLiteral(lexer);
-                    [[unlikely]] if (!literal) literal = new ASTLiteral();
+                    [[unlikely]] if (!literal)
+                        literal = new ASTLiteral();
                     if (lexer[(int64_t)getIndexGuard(lexer) - 2].token == LexToken::DOT)
                         literal->data_type = DataType::ANY_FLOAT;
                     else if (lexer[(int64_t)getIndexGuard(lexer) - 1].token == LexToken::IDENTIFIER &&
@@ -285,7 +310,7 @@ ASTBlock *Parser::parseBlock(const std::vector<lexToken> &lexer)
                 [[unlikely]] if (!isValidName(lexer[getIndexGuard(lexer)]))
                     error(lexer[getIndexGuard(lexer)], "this is not a valid function name");
                 std::string name = lexer[getIndexGuard(lexer, true)].str_token;
-                const ASTFuncCall *func_call = new ASTFuncCall(name, std::move(parseArgs(lexer)));
+                const ASTFuncCall *func_call = new ASTFuncCall(name, std::move(parseArgs(lexer,true)));
                 block->list.emplace_back(func_call);
             }
             else if (isDataType(lexer[getIndexGuard(lexer)]))
@@ -537,10 +562,7 @@ void Parser::parse(const std::string &&source, bool debug) noexcept
     }
     catch (const std::exception &e)
     {
-        if (gf_error_stack)
-            gf_error_stack->push(e.what());
-        else
-            puts(e.what());
+        gf_error_stack->push(e.what());
     }
 }
 } // namespace LunaScript::compiler::front

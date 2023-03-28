@@ -1,2 +1,0 @@
-module parse_global_var_int64_no_value
-global int64 x

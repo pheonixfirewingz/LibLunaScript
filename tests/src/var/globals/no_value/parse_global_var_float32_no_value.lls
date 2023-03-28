@@ -1,2 +1,0 @@
-module parse_global_var_float32_no_value
-global float32 x

@@ -1,0 +1,10 @@
+module parse_main_with_another_function_call_with_arg
+func getOne(int8 x) -> int8
+{
+    ret x
+}
+
+public main() -> int32
+{
+    ret getOne(1)
+}

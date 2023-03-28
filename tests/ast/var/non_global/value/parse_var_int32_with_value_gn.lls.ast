@@ -1,0 +1,18 @@
+{
+    "type": "program",
+    "modules": [
+        {
+            "type": "module",
+            "name": "parse_var_int32_with_value",
+            "data": [
+                {
+                    "type": "variable_definition",
+                    "data_type": "int32",
+                    "is_global": false,
+                    "name": "x",
+                    "value": "20"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,2 @@
+module parse_var_int16_with_value
+global int16 x = 20

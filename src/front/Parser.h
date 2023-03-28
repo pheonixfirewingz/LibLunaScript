@@ -119,9 +119,7 @@ class Parser
 
     inline constexpr bool isValidName(const lexToken &token) const noexcept
     {
-        if (token.token != LexToken::IDENTIFIER)
-            return false;
-        return true;
+        return token.token == LexToken::IDENTIFIER;
     }
 
     inline bool isValidFuncCall(const std::vector<lexToken> &lexer) noexcept
@@ -339,10 +337,7 @@ class Parser
     void warn(const lexToken &token, const char *msg_text) noexcept
     {
         std::string name;
-        if (token.token != LexToken::IDENTIFIER)
-            name = getTokenName(token.token);
-        else
-            name = std::string(token.str_token);
+        token.token != LexToken::IDENTIFIER ? name = getTokenName(token.token) : name = std::string(token.str_token);
         std::string out = msg_text;
         out.resize(out.size() + name.size() + 29);
 #if IS_MSVC
@@ -359,56 +354,26 @@ class Parser
     uint8_t error_count = 0;
     void error(const lexToken &token, const char *msg_text)
     {
-        if (error_count >= 20)
-            throw std::runtime_error("Too many errors");
-        else
-            error_count++;
-
-        if (gf_error_stack)
-        {
-            std::string name;
-            if (token.token != LexToken::IDENTIFIER)
-                name = getTokenName(token.token);
-            else
-                name = std::string(token.str_token);
-            std::string out = msg_text;
-            out.resize(out.size() + name.size() + 29);
+        error_count >= 20 ? throw std::runtime_error("Too many errors") : error_count++;
+        std::string name;
+        token.token != LexToken::IDENTIFIER ? name = getTokenName(token.token) : name = std::string(token.str_token);
+        std::string out = msg_text;
+        out.resize(out.size() + name.size() + 29);
 #if IS_MSVC
 #    pragma warning(push)
 #    pragma warning(disable : 4996)
 #endif
-            sprintf(out.data(), "[%s]:Line %" PRId64 " -> Error Msg: %s", name.c_str(), token.line, msg_text);
+        sprintf(out.data(), "[%s]:Line %" PRId64 " -> Error Msg: %s", name.c_str(), token.line, msg_text);
 #if IS_MSVC
 #    pragma warning(pop)
 #endif
-            gf_error_stack->push(out);
-        }
-        else
-        {
-            std::string name;
-            if (token.token != LexToken::IDENTIFIER)
-                name = getTokenName(token.token);
-            else
-                name = std::string(token.str_token);
-            std::string out = msg_text;
-            out.resize(out.size() + name.size() + 29);
-#if IS_MSVC
-#    pragma warning(push)
-#    pragma warning(disable : 4996)
-#endif
-            sprintf(out.data(), "[%s]:Line %" PRId64 " -> Error Msg: %s", name.c_str(), token.line, msg_text);
-#if IS_MSVC
-#    pragma warning(pop)
-#endif
-            puts(out.c_str());
-            exit(1);
-        }
+        gf_error_stack->push(out);
     }
 
     ASTLiteral *parseLiteral(const std::vector<lexToken> &lexer);
     const ASTBinaryExpression *parseBinaryExpr(const uint8_t precedence_inflator, const std::vector<lexToken> &lexer);
     const ASTVarDef *parseVar(const std::vector<lexToken> &lexer, bool is_global = false);
-    ASTParamListExpression *parseArgs(const std::vector<lexToken> &lexer);
+    ASTParamListExpression *parseArgs(const std::vector<lexToken> &lexer,const bool call_mode = false);
     ASTBlock *parseBlock(const std::vector<lexToken> &lexer);
     ASTModule *parseModule(const std::vector<lexToken> &&lexer, const std::string module_name);
     void parse(const std::string &&source, bool debug) noexcept;

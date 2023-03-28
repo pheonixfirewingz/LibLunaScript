@@ -1,0 +1,2 @@
+module parse_var_int8_with_value
+global int8 x = 20

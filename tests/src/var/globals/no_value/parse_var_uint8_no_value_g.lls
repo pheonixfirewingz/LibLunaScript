@@ -1,0 +1,2 @@
+module parse_var_uint8_no_value
+global uint8 x

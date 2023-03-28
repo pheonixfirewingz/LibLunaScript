@@ -1,0 +1,18 @@
+{
+    "type": "program",
+    "modules": [
+        {
+            "type": "module",
+            "name": "parse_var_uint16_with_value",
+            "data": [
+                {
+                    "type": "variable_definition",
+                    "data_type": "uint16",
+                    "is_global": false,
+                    "name": "x",
+                    "value": "20"
+                }
+            ]
+        }
+    ]
+}

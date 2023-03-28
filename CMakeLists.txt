@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22.1)
 project(liblunascript C CXX)
 #options
 set(BUILD_DOCS OFF)
-set(ENABLE_TESTS ON)
+set(ENABLE_REGRESSION_TESTS ON)
 set(STATIC_BUILD OFF)
 set(TERMIANL_MODE ON)
 #options end
@@ -27,7 +27,7 @@ if(${TERMIANL_MODE})
     add_definitions(-DTERMIANL_MODE)
 endif()
 
-if(${ENABLE_TESTS})
+if(${ENABLE_REGRESSION_TESTS})
     add_definitions(-DENABLE_TESTS)
 endif()
 
@@ -87,12 +87,17 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE  libos)
 include(SourceList)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src)
 
-add_executable(LunaScript  ${PROJECT_SOURCE_DIR}/Main.cpp)
+if(${ENABLE_REGRESSION_TESTS})
+    add_executable(LunaScript  ${PROJECT_SOURCE_DIR}/Main.cpp)
+else()
+    add_executable(LunaScript  ${PROJECT_SOURCE_DIR}/Main_Release.cpp)
+endif()
+
 target_include_directories (LunaScript PRIVATE  ${PROJECT_SOURCE_DIR}/libs/include STATIC)
 target_include_directories (LunaScript PRIVATE  ${PROJECT_SOURCE_DIR}/src/API STATIC)
 flagsSetup(LunaScript)
 
-if(${ENABLE_TESTS})
+if(${ENABLE_REGRESSION_TESTS})
     include ( FetchContent )
     include ( GoogleTest )
     FetchContent_Declare (

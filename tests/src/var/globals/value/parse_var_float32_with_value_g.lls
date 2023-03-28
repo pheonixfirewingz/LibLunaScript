@@ -1,0 +1,2 @@
+module parse_var_float32_with_value
+global float32 x = 20.0
