@@ -1,4 +1,10 @@
 {
     "type": "program",
-    "modules": []
+    "modules": [
+        {
+            "type": "module",
+            "name": "module_import_test_base",
+            "data": []
+        }
+    ]
 }

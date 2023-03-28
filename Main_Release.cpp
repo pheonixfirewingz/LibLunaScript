@@ -1,3 +1,4 @@
+#include <string>
 #if FUZZING == 1
 extern "C++" int LLVMFuzzerTestOneInputI(const uint8_t *Data, size_t Size)
 {
@@ -12,12 +13,43 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
     return LLVMFuzzerTestOneInputI(Data, Size);
 }
 #else
+#include <filesystem>
+#include <liblunascript/Compiler.h>
+#include <libos/Defines.h>
+#include <libos/FileIO.h>
+
+const inline std::string createP(const std::string extend, const char *file_name,
+                                 const char *file_ext = ".lls") noexcept
+{
+    std::string ret("$[asset_base]/");
+    ret += extend;
+    ret += file_name;
+    ret += file_ext;
+    return ret;
+}
+
+inline losResult fileRead(const std::string path, char **buf, data_size_t *buf_size) noexcept
+{
+    losFileHandle handle;
+    losFileOpenInfo file;
+    file.fileBits = LOS_FILE_BIT_READ;
+    file.path = path.c_str();
+    file.path_size = path.size();
+    losResult res;
+    if ((res = losOpenFile(&handle, file)) != LOS_SUCCESS)
+        return res;
+    if ((res = losReadFile(handle, (void **)buf, buf_size)) != LOS_SUCCESS)
+        return res;
+    if ((res = losCloseFile(handle)) != LOS_SUCCESS)
+        return res;
+    return LOS_SUCCESS;
+}
 
 int main(int, char **)
 {
     libOSInit();
+    losSetAssetPath(PROJECT_SOURCE_DIR);
     losResult res;
-    setRoot(PROJECT_SOURCE_DIR);
     char *src;
     data_size_t src_size = 0;
     if ((res = fileRead(createP("", "test", ".lls"), &src, &src_size)) != LOS_SUCCESS)

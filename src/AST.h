@@ -151,9 +151,9 @@ struct ASTFuncDef : public ASTNode
     {
         return NodeType::FUNC_DEF;
     }
-    ASTFuncDef(std::string name_in, bool is_public)
+    ASTFuncDef(std::string name_in, bool is_public_in)
         : name(name_in)
-        , is_public(is_public)
+        , is_public(is_public_in)
     {
     }
     virtual ~ASTFuncDef()

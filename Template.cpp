@@ -6,11 +6,6 @@
 
 #define GEN_TESTS
 
-inline void setRoot(const char *root) noexcept
-{
-    losSetAssetPath(root);
-}
-
 inline losResult fileRead(const std::string path, char **buf, data_size_t *buf_size) noexcept
 {
     losFileHandle handle;
@@ -40,7 +35,7 @@ inline losResult fileWrite(const std::string path, const T *buf, const data_size
                 if (!std::filesystem::create_directories(directory_path))
                     return LOS_ERROR_MALFORMED_DATA;
         }
-        catch (std::exception e)
+        catch (std::exception const &e)
         {
             puts(e.what());
             return LOS_ERROR_MALFORMED_DATA;
@@ -81,7 +76,7 @@ inline void fileDelete(const char *path, const int path_size)
 const inline std::string createP(const std::string extend, const char *file_name,
                                  const char *file_ext = ".lls") noexcept
 {
-    std::string ret(PROJECT_SOURCE_DIR "/");
+    std::string ret("$[asset_base]/");
     ret += extend;
     ret += "/";
     ret += file_name;
@@ -95,6 +90,7 @@ const inline std::string createP(const std::string extend, const char *file_name
         TEST(AST, test_name)                                                                                       \
         {                                                                                                          \
             libOSInit();                                                                                           \
+            losSetAssetPath(PROJECT_SOURCE_DIR);                                                                   \
             char *src = nullptr;                                                                                   \
             data_size_t src_size = 0;                                                                              \
             EXPECT_TRUE(fileRead(createP(std::string("tests/src") + extend, #test_name), &src, &src_size) ==       \
@@ -131,7 +127,8 @@ const inline std::string createP(const std::string extend, const char *file_name
     TEST(AST, test_name)                                                                            \
     {                                                                                               \
         libOSInit();                                                                                \
-        Compiler [[maybe_unused]] compiler = nullptr;                                               \
+        losSetAssetPath(PROJECT_SOURCE_DIR);                                                        \
+        [[maybe_unused]] Compiler compiler = nullptr;                                               \
         char *read_str_src = nullptr;                                                               \
         data_size_t read_str_src_size = 0;                                                          \
         EXPECT_TRUE(fileRead(createP(std::string("tests/src") + extend, #test_name), &read_str_src, \

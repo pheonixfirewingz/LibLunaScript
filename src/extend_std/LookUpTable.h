@@ -20,9 +20,9 @@ struct TableEntry
     Key key = 0;
     Value value;
     TableEntry() noexcept = default;
-    constexpr TableEntry(const Key key, const Value value) noexcept
-        : key(key)
-        , value(value)
+    constexpr TableEntry(const Key key_in, const Value value_in) noexcept
+        : key(key_in)
+        , value(value_in)
     {
     }
 

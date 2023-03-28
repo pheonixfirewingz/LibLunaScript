@@ -88,9 +88,9 @@ class Parser
         std::string str_token = "";
         size_t line = 0;
         lexToken() = default;
-        lexToken(LexToken in_tok, size_t int_in, std::string str_token) noexcept
+        lexToken(LexToken in_tok, size_t int_in, std::string str_token_in) noexcept
             : token(in_tok)
-            , str_token(str_token)
+            , str_token(str_token_in)
             , line(int_in)
         {
         }

@@ -4,7 +4,7 @@ function (add_local_library LIB_NAME LIB_TYPE)
         add_library(${LIB_NAME} SHARED IMPORTED)
 
         if(CMAKE_SYSTEM_NAME MATCHES Linux)
-            set_property ( TARGET ${LIB_NAME} PROPERTY IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/libs/binarys/lib${LIB_NAME}.so )
+            set_property ( TARGET ${LIB_NAME} PROPERTY IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/libs/binarys/${LIB_NAME}.so )
         elseif(CMAKE_SYSTEM_NAME MATCHES WindowsStore)
              set_target_properties(${LIB_NAME} PROPERTIES
               IMPORTED_IMPLIB  ${PROJECT_SOURCE_DIR}/libs/binarys/${LIB_NAME}.lib
@@ -23,7 +23,7 @@ function (add_local_library LIB_NAME LIB_TYPE)
         message(INFO "[BUILDING] getting static link info for - ${LIB_NAME}...")
         add_library( ${LIB_NAME} STATIC IMPORTED)
         if(CMAKE_SYSTEM_NAME MATCHES Linux)
-            set_property ( TARGET ${LIB_NAME} PROPERTY IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/libs/binarys/lib${LIB_NAME}.so )
+            set_property ( TARGET ${LIB_NAME} PROPERTY IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/libs/binarys/${LIB_NAME}.so )
         elseif(CMAKE_SYSTEM_NAME MATCHES WindowsStore)
               set_target_properties(${LIB_NAME} PROPERTIES
                 IMPORTED_IMPLIB  ${PROJECT_SOURCE_DIR}/libs/binarys/${LIB_NAME}.lib

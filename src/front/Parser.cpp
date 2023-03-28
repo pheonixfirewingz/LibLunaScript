@@ -509,7 +509,7 @@ void Parser::parse(const std::string &&source, bool debug) noexcept
                 std::string name = "";
                 while (true)
                 {
-                    if (lexer[getIndexGuard(lexer)].token != LexToken::IDENTIFIER)
+                    if (!isValidName(lexer[getIndexGuard(lexer)]))
                         error(lexer[getIndexGuard(lexer, true)], "this is not a valid import name");
                     else
                         name += lexer[getIndexGuard(lexer, true)].str_token;
@@ -520,8 +520,8 @@ void Parser::parse(const std::string &&source, bool debug) noexcept
                     name += "/";
                 }
 
-                if (std::any_of(last_modules.begin(), last_modules.end(),
-                                [&name](std::string mod) { return mod == name; }))
+                if (std::all_of(last_modules.begin(), last_modules.end(),
+                                [&name](std::string mod) { return mod.compare(name) != 0; }))
                 {
                     warn(lexer[getIndexGuard(lexer)],
                          std::string(std::string(name) += " is already loaded so will be ignored").c_str());
