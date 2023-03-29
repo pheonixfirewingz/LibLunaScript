@@ -2,5 +2,5 @@ build
 .vs
 .vscode
 .idea
-plugins/LunaScriptEXT/obj
-plugins/LunaScriptEXT/bin
+plugins/LunaScript_VisualStudio/obj
+plugins/LunaScript_VisualStudio/bin

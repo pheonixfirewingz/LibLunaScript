@@ -1,7 +1,7 @@
 module parse_main_with_another_function_no_call
 func add(int32 one,int32 two) -> int32
 {
-    ret 0
+    ret one + two
 }
 
 public main() -> int32
