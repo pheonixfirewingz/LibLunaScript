@@ -1,0 +1,13 @@
+﻿    [Export(typeof(EditorFormatDefinition))]
+    [ClassificationType(ClassificationTypeNames = "#")]
+    [Name("#")]
+    [UserVisible(false)]
+    [Order(Before = Priority.Default)]
+    internal sealed class @Type : ClassificationFormatDefinition
+    {
+        public @Type()
+        {
+            DisplayName = "#";
+            ForegroundColor = LunaScript.Share.Constants.GetCurrentTheme%Color();
+        }
+    }
