@@ -44,3 +44,8 @@ void freeCompiler(Compiler compiler)
     delete compiler->parser;
     delete compiler;
 }
+
+void freeString(char* src)
+{
+    free(src);
+}

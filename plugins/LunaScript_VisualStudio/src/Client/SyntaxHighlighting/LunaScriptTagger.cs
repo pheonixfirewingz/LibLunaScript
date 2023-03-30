@@ -21,14 +21,16 @@ namespace LunaScriptEXT.src.Client
 
     public class LunaScriptTag : ITag
     {
+        public string token { get; private set; }
         public bool isKeyword { get; private set; }
-        public LunaScriptTag(bool isKeywordIn)
+        public LunaScriptTag(bool isKeywordIn, string tokenIn)
         {
             isKeyword = isKeywordIn;
+            token = tokenIn;
         }
     }
 
-    internal sealed class LunaScriptTagger : ITagger<LunaScriptTag>
+    internal sealed class LunaScriptTagger : ITagger<LunaScriptTag> 
     {
         readonly IDictionary<string, bool> types = new Dictionary<string, bool>();
         internal LunaScriptTagger()
@@ -122,7 +124,7 @@ namespace LunaScriptEXT.src.Client
                     {
                         var tokenSpan = new SnapshotSpan(curSpan.Snapshot, new Span(curLoc, token.Length));
                         if (tokenSpan.IntersectsWith(curSpan))
-                            yield return new TagSpan<LunaScriptTag>(tokenSpan, new LunaScriptTag(types[token]));
+                            yield return new TagSpan<LunaScriptTag>(tokenSpan, new LunaScriptTag(types[token],token));
                     }
                     curLoc += token.Length;
                 }
