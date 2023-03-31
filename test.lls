@@ -1,1 +1,6 @@
-module test
+module parse_main_func_with_float32_with_value
+func main() -> int32
+{
+    float32 x = 20.0
+    ret 0
+}

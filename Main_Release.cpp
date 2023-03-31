@@ -45,7 +45,34 @@ inline losResult fileRead(const std::string path, char **buf, data_size_t *buf_s
     return LOS_SUCCESS;
 }
 
+char16_t *convertCharArrayToChar16Array(const char *src, size_t length)
+{
+    char16_t *dst = new char16_t[length];
+    for (size_t i = 0; i < length; i++)
+        dst[i] = static_cast<char16_t>(src[i]);
+    return dst;
+}
+
 int main(int, char **)
+{
+    libOSInit();
+    losSetAssetPath(PROJECT_SOURCE_DIR);
+    losResult res;
+    //TODO: add unicode support to libos
+    char *src;
+    data_size_t src_size = 0;
+    if ((res = fileRead(createP("", "test", ".lls"), &src, &src_size)) != LOS_SUCCESS)
+        return res;
+    char16_t *src_unicode = convertCharArrayToChar16Array(src, src_size);
+    testFeature(src_unicode, src_size);
+    libOSCleanUp();
+#    if ON_WINDOWS
+    system("pause");
+#    endif
+    return 0;
+}
+
+/* int main(int, char **)
 {
     libOSInit();
     losSetAssetPath(PROJECT_SOURCE_DIR);
@@ -72,5 +99,5 @@ int main(int, char **)
     system("pause");
 #    endif
     return 0;
-}
+}*/
 #endif

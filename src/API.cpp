@@ -1,6 +1,7 @@
 #include "front/Parser.h"
 #include <cstring>
 #include <liblunascript/Compiler.h>
+using namespace LunaScript;
 
 struct Compiler_T
 {
@@ -48,4 +49,18 @@ void freeCompiler(Compiler compiler)
 void freeString(char* src)
 {
     free(src);
+}
+
+//testing new parser
+#include "parser/Lexer.h"
+
+
+void testFeature(const char16_t *src, const data_size_t src_size)
+{
+    stl::unicodestring source(src,0, src_size);
+    std::vector<parser::lexer::LexicalTypedSpan> tokens = parser::lexer::tokenize(source);
+    for (auto& t : tokens)
+    {
+        t.print(source);
+    }
 }

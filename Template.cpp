@@ -4,8 +4,6 @@
 #include <libos/FileIO.h>
 #include <string>
 
-#define GEN_TESTS
-
 inline losResult fileRead(const std::string path, char **buf, data_size_t *buf_size) noexcept
 {
     losFileHandle handle;

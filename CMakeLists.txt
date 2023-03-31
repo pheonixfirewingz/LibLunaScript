@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 3.22.1)
 project(liblunascript C CXX)
 #options
 set(BUILD_DOCS OFF)
-set(ENABLE_REGRESSION_TESTS ON)
+set(ENABLE_REGRESSION_TESTS OFF)
+#danger using this option as it could damage tests that are working as expected do
+# a regression test first and check to see if the out put is as expected
+set(REGEN_TESTS_REGRESSION_TESTS OFF)
 set(STATIC_BUILD OFF)
 set(TERMIANL_MODE ON)
 #options end
@@ -13,6 +16,10 @@ include(FlagControl)
 include(LocalLibrary)
 
 add_definitions(-DPROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+if(${REGEN_TESTS_REGRESSION_TESTS})
+    add_definitions(-DGEN_TESTS)
+endif()
 
 # Debug mode by default.
 if(NOT CMAKE_BUILD_TYPE)

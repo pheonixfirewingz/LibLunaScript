@@ -37,6 +37,9 @@ EXPORT_DLL void getErrorOffStack(Compiler compiler, char **str, data_size_t *str
 EXPORT_DLL void astToString(Compiler compiler, char **str, data_size_t *str_size);
 EXPORT_DLL void freeCompiler(Compiler compiler);
 
+//temp
+EXPORT_DLL void testFeature(const char16_t *src, const data_size_t src_size);
+
 //used for compatibility with C#
 EXPORT_DLL void freeString(char *src);
 
