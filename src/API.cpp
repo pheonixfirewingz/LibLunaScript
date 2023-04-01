@@ -55,9 +55,9 @@ void freeString(char* src)
 #include "parser/Lexer.h"
 
 
-void testFeature(const char16_t *src, const data_size_t src_size)
+void testFeature(const char8_t *src, const data_size_t src_size)
 {
-    stl::unicodestring source(src,0, src_size);
+    std::unicodestring source(src,0, src_size);
     std::vector<parser::lexer::LexicalTypedSpan> tokens = parser::lexer::tokenize(source);
     for (auto& t : tokens)
     {

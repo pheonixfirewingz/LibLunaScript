@@ -1,5 +1,5 @@
 #pragma once
-#include <util/ComplierString.hpp>
+#include <libos/DataType.h>
 #include <vector>
 
 namespace LunaScript::parser::lexer
@@ -50,15 +50,15 @@ struct LexicalTypedSpan
         TAB,
         SPACE
     } type;
-    const stl::unicodespan span;
-    LexicalTypedSpan(const Type type_in, const stl::unicodespan span_in)
+    const std::u8string_view span;
+    LexicalTypedSpan(const Type type_in, const std::u8string_view span_in)
         : type(type_in)
         , span(span_in)
     {
     }
 
-    void print(stl::unicodestring src);
+    void print(std::unicodestring src);
 };
 
-std::vector<LexicalTypedSpan> tokenize(const stl::unicodestring &source);
+std::vector<LexicalTypedSpan> tokenize(const std::unicodestring &source);
 } // namespace LunaScript::parser::lexer

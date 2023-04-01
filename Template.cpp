@@ -74,7 +74,7 @@ inline void fileDelete(const char *path, const int path_size)
 const inline std::string createP(const std::string extend, const char *file_name,
                                  const char *file_ext = ".lls") noexcept
 {
-    std::string ret("$[asset_base]/");
+    std::string ret("$[asset_path]/");
     ret += extend;
     ret += "/";
     ret += file_name;

@@ -21,18 +21,18 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 const inline std::string createP(const std::string extend, const char *file_name,
                                  const char *file_ext = ".lls") noexcept
 {
-    std::string ret("$[asset_base]/");
+    std::string ret("$[asset_path]/");
     ret += extend;
     ret += file_name;
     ret += file_ext;
     return ret;
 }
 
-inline losResult fileRead(const std::string path, char **buf, data_size_t *buf_size) noexcept
+inline losResult fileRead(const std::string path, char8_t **buf, data_size_t *buf_size) noexcept
 {
     losFileHandle handle;
     losFileOpenInfo file;
-    file.fileBits = LOS_FILE_BIT_READ;
+    file.fileBits = LOS_FILE_BIT_READ | LOS_FILE_BIT_UNICODE;
     file.path = path.c_str();
     file.path_size = path.size();
     losResult res;
@@ -59,12 +59,11 @@ int main(int, char **)
     losSetAssetPath(PROJECT_SOURCE_DIR);
     losResult res;
     //TODO: add unicode support to libos
-    char *src;
+    char8_t *src;
     data_size_t src_size = 0;
     if ((res = fileRead(createP("", "test", ".lls"), &src, &src_size)) != LOS_SUCCESS)
         return res;
-    char16_t *src_unicode = convertCharArrayToChar16Array(src, src_size);
-    testFeature(src_unicode, src_size);
+    testFeature(src, src_size);
     libOSCleanUp();
 #    if ON_WINDOWS
     system("pause");

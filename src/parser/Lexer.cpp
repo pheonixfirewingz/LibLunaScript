@@ -2,7 +2,7 @@
 #include <iostream>
 namespace LunaScript::parser::lexer
 {
-std::vector<LexicalTypedSpan> tokenize(const stl::unicodestring & src)
+std::vector<LexicalTypedSpan> tokenize(const std::unicodestring &)
 {
     std::vector<LexicalTypedSpan> spans;
 
@@ -100,7 +100,7 @@ static const char* toString(LexicalTypedSpan::Type type)
     }
 }
 
-void LexicalTypedSpan::print(stl::unicodestring src)
+void LexicalTypedSpan::print(std::unicodestring)
 {
     std::wcout << "(TOKEN: {TYPE: ";
     std::wcout  << toString(type);
