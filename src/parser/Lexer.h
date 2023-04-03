@@ -47,6 +47,7 @@ struct LexicalTypedSpan
         STRING,
         LETTER,
         NEW_LINE,
+        EMOJI,
         TAB,
         SPACE
     } type;

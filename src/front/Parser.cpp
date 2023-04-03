@@ -49,7 +49,7 @@ static const std::ReadOnlyLookupTable<data_size_t, bool> reject = {
     {std::hash<std::string>{}("\t"), false},
 };
 static const std::regex regex(
-    "(([A-Za-z0-9_-]+)|(\\s)|([\\\",\\\\',\\(,\\),\\[,\\],\\<,\\>,\\{,\\},\\,:,\\.])|([+,=,*,/]+))",
+    R"((([A-Za-z0-9_-]+)|(\s)|([\",\',\(,\),\[,\],<,>,{,},\\,:,\.])|([+,=,*,/]+)))",
     std::regex_constants::icase);
 
 ASTLiteral *Parser::parseLiteral(const std::vector<lexToken> &lexer)

@@ -2,10 +2,14 @@
 #include <iostream>
 namespace LunaScript::parser::lexer
 {
-std::vector<LexicalTypedSpan> tokenize(const std::unicodestring &)
+std::vector<LexicalTypedSpan> tokenize(const std::unicodestring & src)
 {
     std::vector<LexicalTypedSpan> spans;
+    size_t last_pos = 0;
+    for (size_t i = 0; i < src.length(); i++)
+    {
 
+    }
     return spans;
 }
 
