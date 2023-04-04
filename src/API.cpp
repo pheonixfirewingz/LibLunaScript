@@ -46,20 +46,19 @@ void freeCompiler(Compiler compiler)
     delete compiler;
 }
 
-void freeString(char* src)
+void freeString(char *src)
 {
     free(src);
 }
 
-//testing new parser
+// testing new parser
 #include "parser/Lexer.h"
 
-
-void testFeature(const char8_t *src, const data_size_t src_size)
+void testFeature(const wchar_t *src, const data_size_t src_size)
 {
-    std::unicodestring source(src,0, src_size);
-    std::vector<parser::lexer::LexicalTypedSpan> tokens = parser::lexer::tokenize(source);
-    for (auto& t : tokens)
+    const std::wstring source(src, 0, src_size);
+    std::vector<parser::lexer::TypedStringView> tokens = LunaScript::parser::lexer::Lexer{}(source);
+    for (auto &t : tokens)
     {
         t.print(source);
     }

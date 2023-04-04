@@ -4,7 +4,7 @@
 
 namespace LunaScript::parser::lexer
 {
-struct LexicalTypedSpan
+struct TypedStringView
 {
     const enum class Type : uint8_t
     {
@@ -51,15 +51,27 @@ struct LexicalTypedSpan
         TAB,
         SPACE
     } type;
-    const std::u8string_view span;
-    LexicalTypedSpan(const Type type_in, const std::u8string_view span_in)
+    const std::wstring_view span;
+    const size_t line = 0;
+    TypedStringView(const Type type_in, const std::wstring_view span_in, const size_t line_in)
         : type(type_in)
         , span(span_in)
+        , line(line_in)
     {
     }
 
-    void print(std::unicodestring src);
+    void print(std::wstring src);
 };
 
-std::vector<LexicalTypedSpan> tokenize(const std::unicodestring &source);
+struct Lexer
+{
+  private:
+    static const std::vector<std::wstring_view> split(const std::wstring &str, const wchar_t delimiter);
+    static constexpr inline bool isUnicode(const wchar_t &c) noexcept;
+  public:
+    Lexer() = default;
+    ~Lexer() = default;
+    std::vector<TypedStringView> operator()(const std::wstring &input) const;
+};
+
 } // namespace LunaScript::parser::lexer

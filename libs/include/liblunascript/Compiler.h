@@ -38,7 +38,7 @@ EXPORT_DLL void astToString(Compiler compiler, char **str, data_size_t *str_size
 EXPORT_DLL void freeCompiler(Compiler compiler);
 
 //temp
-EXPORT_DLL void testFeature(const char8_t *src, const data_size_t src_size);
+EXPORT_DLL void testFeature(const wchar_t *src, const data_size_t src_size);
 
 //used for compatibility with C#
 EXPORT_DLL void freeString(char *src);

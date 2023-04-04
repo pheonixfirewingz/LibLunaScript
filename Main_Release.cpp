@@ -28,7 +28,7 @@ const inline std::string createP(const std::string extend, const char *file_name
     return ret;
 }
 
-inline losResult fileRead(const std::string path, char8_t **buf, data_size_t *buf_size) noexcept
+inline losResult fileRead(const std::string path, wchar_t **buf, data_size_t *buf_size) noexcept
 {
     losFileHandle handle;
     losFileOpenInfo file;
@@ -45,21 +45,13 @@ inline losResult fileRead(const std::string path, char8_t **buf, data_size_t *bu
     return LOS_SUCCESS;
 }
 
-char16_t *convertCharArrayToChar16Array(const char *src, size_t length)
-{
-    char16_t *dst = new char16_t[length];
-    for (size_t i = 0; i < length; i++)
-        dst[i] = static_cast<char16_t>(src[i]);
-    return dst;
-}
-
 int main(int, char **)
 {
     libOSInit();
     losSetAssetPath(PROJECT_SOURCE_DIR);
     losResult res;
     //TODO: add unicode support to libos
-    char8_t *src;
+    wchar_t *src;
     data_size_t src_size = 0;
     if ((res = fileRead(createP("", "test", ".lls"), &src, &src_size)) != LOS_SUCCESS)
         return res;
