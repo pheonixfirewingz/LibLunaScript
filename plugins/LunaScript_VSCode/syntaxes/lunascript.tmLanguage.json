@@ -1,0 +1,71 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "LunaScript",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#multi_comments"
+		},
+		{
+			"include": "#single_comments"
+		},
+		{
+			"include": "#variables"
+		},
+		{
+			"name": "constant.numeric.lunascript",
+			"match": "\\b(0x[0-9a-fA-F]+|\\d+\\.?\\d*)\\b"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [
+				{
+					"name": "keyword.control.lunascript",
+					"match": "\\b(if|while|for|ret|func|public|ref|ptr|import|module|int8|int16|int32|int64|uint8|uint16|uint32|uint64|float32|float64|void|global)\\b"
+				},
+				{
+					"name": "entity.name.function.lunascript",
+					"match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\s*\\("
+				}
+			]
+		},
+		"strings": {
+			"name": "string.quoted.double.lunascript",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.lunascript",
+					"match": "\\\\."
+				}
+			]
+		},
+		"single_comments": {
+			"name": "comment.line.double-slash.lunascript",
+			"match": "#.*$"
+		},
+		"multi_comments": {
+			"name": "comment.block.lunascript",
+			"begin": "/\\*",
+			"end": "\\*/",
+			"patterns": [
+				{
+					"name": "comment.block.lunascript.inner",
+					"begin": "\\*",
+					"end": "/"
+				}
+			]
+		},
+		"variables": {
+			"name": "variable.other.lunascript",
+			"match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b(?![^\\(]*\\))"
+		}
+	},
+	"scopeName": "source.lls"
+}

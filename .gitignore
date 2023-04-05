@@ -4,3 +4,7 @@ build
 .idea
 plugins/LunaScript_VisualStudio/obj
 plugins/LunaScript_VisualStudio/bin
+plugins/LunaScript_VSCode/out
+plugins/LunaScript_VSCode/node_modules
+plugins/LunaScript_VSCode/client/node_modules
+plugins/LunaScript_VSCode/server/node_modules

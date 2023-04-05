@@ -1,6 +1,8 @@
 module parse_main_func_with_float32_with_value
+# lol this is a single line comment
+/* this function is main */
 func main() -> int32
 {
-    float32 x  = 20.0
+    float32 x = 20.0
     ret 0
 }

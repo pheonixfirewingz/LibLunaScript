@@ -1,0 +1,15 @@
+{
+	"name": "luna-script-language-server",
+	"description": "LunaScript implementation of a language server in node.",
+	"version": "1.0.0",
+	"author": "Luke Shore",
+	"license": "MIT",
+	"engines": {
+		"node": "*"
+	},
+	"dependencies": {
+		"vscode-languageserver": "^8.1.0",
+		"vscode-languageserver-textdocument": "^1.0.8"
+	},
+	"scripts": {}
+}

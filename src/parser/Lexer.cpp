@@ -1,69 +1,67 @@
 #include "Lexer.h"
-#include <iostream>
 #include <cwctype>
+#include <iostream>
 
 namespace LunaScript::parser::lexer
 {
 
-#define CASE(X)                                               \
-    case LunaScript::parser::lexer::TypedStringView::Type::X: \
-        return L#X
+#define CASE(X) case LunaScript::parser::lexer::TypedStringView::Type::X:
 static const wchar_t *toString(TypedStringView::Type type)
 {
     switch (type)
     {
-        CASE(IDENTIFIER);
-        CASE(NUMBER_IDENTIFIER);
-        CASE(IMPORT);
-        CASE(MODULE);
-        CASE(FUNC);
-        CASE(PUBLIC_FUNC);
-        CASE(RET);
-        CASE(R_SQUIGGLY);
-        CASE(L_SQUIGGLY);
-        CASE(R_BOX);
-        CASE(L_BOX);
-        CASE(R_CURLY);
-        CASE(L_CURLY);
-        CASE(COMMA);
-        CASE(DOT);
-        CASE(HASH_TAG);
-        CASE(ADD);
-        CASE(ADD_EQUAL);
-        CASE(ADD_ONE);
-        CASE(SUB);
-        CASE(SUB_EQUAL);
-        CASE(SUB_ONE);
-        CASE(MUL);
-        CASE(MUL_EQUAL);
-        CASE(DIV);
-        CASE(DIV_EQUAL);
-        CASE(AND);
-        CASE(OR);
-        CASE(XOR);
-        CASE(MODULO);
-        CASE(EQUAL);
-        CASE(R_ARROW);
-        CASE(L_ARROW);
-        CASE(S_ARROW);
-        CASE(GLOBAL);
-        CASE(PTR);
-        CASE(REF);
-        CASE(INT8);
-        CASE(INT16);
-        CASE(INT32);
-        CASE(INT64);
-        CASE(UINT8);
-        CASE(UINT16);
-        CASE(UINT32);
-        CASE(UINT64);
-        CASE(FLOAT32);
-        CASE(FLOAT64);
-        CASE(STRING);
-        CASE(NEW_LINE);
-        CASE(EMOJI);
-        CASE(TAB);
-        CASE(SPACE);
+        CASE(IDENTIFIER) return L"IDENTIFIER";
+        CASE(NUMBER_IDENTIFIER) return L"NUMBER_IDENTIFIER";
+        CASE(IMPORT) return L"IMPORT";
+        CASE(MODULE) return L"MODULE";
+        CASE(FUNC) return L"FUNC";
+        CASE(PUBLIC_FUNC) return L"PUBLIC_FUNC";
+        CASE(RET) return L"RET";
+        CASE(R_SQUIGGLY) return L"R_SQUIGGLY";
+        CASE(L_SQUIGGLY) return L"L_SQUIGGLY";
+        CASE(R_BOX) return L"R_BOX";
+        CASE(L_BOX) return L"L_BOX";
+        CASE(R_CURLY) return L"R_CURLY";
+        CASE(L_CURLY) return L"L_CURLY";
+        CASE(COMMA) return L"COMMA";
+        CASE(DOT) return L"DOT";
+        CASE(HASH_TAG) return L"HASH_TAG";
+        CASE(ADD) return L"ADD";
+        CASE(ADD_EQUAL) return L"ADD_EQUAL";
+        CASE(ADD_ONE) return L"ADD_ONE";
+        CASE(SUB) return L"SUB";
+        CASE(SUB_EQUAL) return L"SUB_EQUAL";
+        CASE(SUB_ONE) return L"SUB_ONE";
+        CASE(MUL) return L"MUL";
+        CASE(MUL_EQUAL) return L"MUL_EQUAL";
+        CASE(DIV) return L"DIV";
+        CASE(DIV_EQUAL) return L"DIV_EQUAL";
+        CASE(AND) return L"AND";
+        CASE(OR) return L"OR";
+        CASE(XOR) return L"XOR";
+        CASE(MODULO) return L"MODULO";
+        CASE(EQUAL) return L"EQUAL";
+        CASE(R_ARROW) return L"R_ARROW";
+        CASE(L_ARROW) return L"L_ARROW";
+        CASE(S_ARROW) return L"S_ARROW";
+        CASE(GLOBAL) return L"GLOBAL";
+        CASE(PTR) return L"PTR";
+        CASE(REF) return L"REF";
+        CASE(INT8) return L"INT8";
+        CASE(INT16) return L"INT16";
+        CASE(INT32) return L"INT32";
+        CASE(INT64) return L"INT64";
+        CASE(UINT8) return L"UINT8";
+        CASE(UINT16) return L"UINT16";
+        CASE(UINT32) return L"UINT32";
+        CASE(UINT64) return L"UINT64";
+        CASE(FLOAT32) return L"FLOAT32";
+        CASE(FLOAT64) return L"FLOAT64";
+        CASE(STRING) return L"STRING";
+        CASE(NEW_LINE) return L"NEW_LINE";
+        CASE(EMOJI) return L"EMOJI";
+        CASE(TAB) return L"TAB";
+        CASE(SPACE) return L"SPACE";
     default:
         return L"ERROR";
     }
@@ -145,7 +143,7 @@ static inline bool is_number(const std::wstring_view &str) noexcept
     return (*end_ptr == L'\0');
 }
 
-static const inline TypedStringView::Type determineType(const std::wstring_view &src)
+static inline TypedStringView::Type determineType(const std::wstring_view &src)
 {
     if (is_number(src))
         return TypedStringView::Type::NUMBER_IDENTIFIER;
