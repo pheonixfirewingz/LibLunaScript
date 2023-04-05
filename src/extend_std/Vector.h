@@ -11,10 +11,10 @@ template<typename T> struct ReadOnlyVector : public ForwardIterator<T>
 {
   private:
     T *ptr_;
-    data_size_t size_;
+    size_t size_;
 
   public:
-    constexpr ReadOnlyVector(T *data_in, data_size_t size) noexcept
+    constexpr ReadOnlyVector(T *data_in, size_t size) noexcept
         : size_(size)
     {
         ptr_ = new T[size_];
@@ -41,30 +41,30 @@ template<typename T> struct ReadOnlyVector : public ForwardIterator<T>
         return ptr_;
     }
 
-    constexpr T operator[](const data_size_t i) const
+    constexpr T operator[](const size_t i) const
     {
         assert(i < size_);
         return *(begin() + i);
     }
 
-    constexpr T &operator[](const data_size_t i)
+    constexpr T &operator[](const size_t i)
     {
         assert(i < size_);
         return begin() + i;
     }
 
-    constexpr const T &at(const data_size_t i) const
+    constexpr const T &at(const size_t i) const
     {
         assert(i < size_);
         return *(begin() + i);
     }
 
-    virtual data_size_t i_size() const noexcept override final
+    virtual size_t i_size() const noexcept override final
     {
         return size_;
     }
 
-    constexpr data_size_t size() const noexcept
+    constexpr size_t size() const noexcept
     {
         return size_;
     }

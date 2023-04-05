@@ -1,0 +1,7 @@
+module parse_main_func_with_float32_with_value
+
+fonc main() -> enti32
+{
+    déci32 x  = 20.0
+    renv 0
+}

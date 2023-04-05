@@ -56,6 +56,8 @@ namespace LunaScriptEXT.src.Client
             types["global"] = true;
             types["import"] = true;
             types["module"] = true;
+            types["ptr"] = true;
+            types["ref"] = true;
             types["->"] = false;
             types["{"] = false;
             types["}"] = false;

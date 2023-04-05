@@ -28,7 +28,7 @@ const inline std::string createP(const std::string extend, const char *file_name
     return ret;
 }
 
-inline losResult fileRead(const std::string path, wchar_t **buf, data_size_t *buf_size) noexcept
+inline losResult fileRead(const std::string path, wchar_t **buf, size_t *buf_size) noexcept
 {
     losFileHandle handle;
     losFileOpenInfo file;
@@ -52,7 +52,7 @@ int main(int, char **)
     losResult res;
     //TODO: add unicode support to libos
     wchar_t *src;
-    data_size_t src_size = 0;
+    size_t src_size = 0;
     if ((res = fileRead(createP("", "test", ".lls"), &src, &src_size)) != LOS_SUCCESS)
         return res;
     testFeature(src, src_size);
@@ -69,7 +69,7 @@ int main(int, char **)
     losSetAssetPath(PROJECT_SOURCE_DIR);
     losResult res;
     char *src;
-    data_size_t src_size = 0;
+    size_t src_size = 0;
     if ((res = fileRead(createP("", "test", ".lls"), &src, &src_size)) != LOS_SUCCESS)
         return res;
     puts(std::string("\x1B[32mCompiler Output:\x1B[33m").c_str());

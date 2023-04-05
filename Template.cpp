@@ -4,7 +4,7 @@
 #include <libos/FileIO.h>
 #include <string>
 
-inline losResult fileRead(const std::string path, char **buf, data_size_t *buf_size) noexcept
+inline losResult fileRead(const std::string path, char **buf, size_t *buf_size) noexcept
 {
     losFileHandle handle;
     losFileOpenInfo file;
@@ -22,7 +22,7 @@ inline losResult fileRead(const std::string path, char **buf, data_size_t *buf_s
 }
 
 template<typename T>
-inline losResult fileWrite(const std::string path, const T *buf, const data_size_t buf_size) noexcept
+inline losResult fileWrite(const std::string path, const T *buf, const size_t buf_size) noexcept
 {
     if (losDoseFileExist(path.c_str()) != LOS_SUCCESS)
     {
@@ -90,7 +90,7 @@ const inline std::string createP(const std::string extend, const char *file_name
             libOSInit();                                                                                           \
             losSetAssetPath(PROJECT_SOURCE_DIR);                                                                   \
             char *src = nullptr;                                                                                   \
-            data_size_t src_size = 0;                                                                              \
+            size_t src_size = 0;                                                                                   \
             EXPECT_TRUE(fileRead(createP(std::string("tests/src") + extend, #test_name), &src, &src_size) ==       \
                         LOS_SUCCESS);                                                                              \
             LunaScriptCompiler compiler(std::string(src, 0, src_size), true);                                      \
@@ -106,14 +106,14 @@ const inline std::string createP(const std::string extend, const char *file_name
         {                                                                                                    \
             libOSInit();                                                                                     \
             char *src = nullptr;                                                                             \
-            data_size_t src_size = 0;                                                                        \
+            size_t src_size = 0;                                                                             \
             EXPECT_TRUE(fileRead(createP(std::string("tests/src") + extend, #test_name), &src, &src_size) == \
                         LOS_SUCCESS);                                                                        \
             LunaScriptCompiler compiler(std::string(src, 0, src_size), true);                                \
             std::string err = compiler.getJsonAST();                                                         \
             EXPECT_FALSE(compiler.didScriptCompile() != LOS_SUCCESS);                                        \
             char *ast;                                                                                       \
-            data_size_t ast_size = 0;                                                                        \
+            size_t ast_size = 0;                                                                             \
             EXPECT_TRUE(fileRead(createP(std::string("tests/ast") + extend, #test_name, ".lls.ast"), &ast,   \
                                  &ast_size) == LOS_SUCCESS);                                                 \
             EXPECT_STREQ(compiler.getJsonAST().c_str(), std::string(ast, 0, ast_size).c_str());              \
@@ -128,7 +128,7 @@ const inline std::string createP(const std::string extend, const char *file_name
         losSetAssetPath(PROJECT_SOURCE_DIR);                                                        \
         [[maybe_unused]] Compiler compiler = nullptr;                                               \
         char *read_str_src = nullptr;                                                               \
-        data_size_t read_str_src_size = 0;                                                          \
+        size_t read_str_src_size = 0;                                                               \
         EXPECT_TRUE(fileRead(createP(std::string("tests/src") + extend, #test_name), &read_str_src, \
                              &read_str_src_size) == LOS_SUCCESS);                                   \
         EXPECT_TRUE(compile(&compiler, read_str_src, read_str_src_size, false) != LOS_SUCCESS);     \

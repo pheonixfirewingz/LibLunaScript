@@ -1,12 +1,11 @@
 #pragma once
-#include <stddef.h>
 #include <libos/DataType.h>
 namespace std
 {
 struct Iterator
 {
   protected:
-    virtual constexpr data_size_t i_size() const noexcept = 0;
+    virtual constexpr size_t i_size() const noexcept = 0;
   public:
     virtual ~Iterator() noexcept = default;
 };

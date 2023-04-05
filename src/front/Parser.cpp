@@ -3,7 +3,7 @@
 #include <libos/FileIO.h>
 namespace LunaScript::compiler::front
 {
-static const std::ReadOnlyLookupTable<data_size_t, Parser::LexToken> lookup = {
+static const std::ReadOnlyLookupTable<size_t, Parser::LexToken> lookup = {
     {std::hash<std::string>{}("void"), Parser::LexToken::NO_RETURN},
     {std::hash<std::string>{}("int8"), Parser::LexToken::INT8},
     {std::hash<std::string>{}("int16"), Parser::LexToken::INT16},
@@ -42,7 +42,7 @@ static const std::ReadOnlyLookupTable<data_size_t, Parser::LexToken> lookup = {
     {std::hash<std::string>{}("module"), Parser::LexToken::MODULE_NAME},
 };
 
-static const std::ReadOnlyLookupTable<data_size_t, bool> reject = {
+static const std::ReadOnlyLookupTable<size_t, bool> reject = {
     {std::hash<std::string>{}("\n"), true},
     {std::hash<std::string>{}("\r"), false},
     {std::hash<std::string>{}(" "), false},
@@ -392,7 +392,7 @@ ASTModule *Parser::parseModule(const std::vector<lexToken> &&lexer, const std::s
     return module_;
 }
 
-losResult fileRead(const std::string path, char **buf, data_size_t *buf_size) noexcept
+losResult fileRead(const std::string path, char **buf, size_t *buf_size) noexcept
 {
     losFileHandle handle;
     losFileOpenInfo file;
@@ -529,7 +529,7 @@ void Parser::parse(const std::string &&source, bool debug) noexcept
                 }
 
                 char *src;
-                data_size_t src_size = 0;
+                size_t src_size = 0;
                 if (fileRead(createP(name), &src, &src_size) != LOS_SUCCESS)
                     error(lexer[getIndexGuard(lexer)], "could not find or read import");
                 else
