@@ -54,6 +54,7 @@ void freeString(char *src)
 
 // testing new parser
 #include "parser/Lexer.h"
+#include "parser/Translator.h"
 
 static inline std::wstring prep(const wchar_t *src, const size_t src_size)
 {
@@ -62,6 +63,8 @@ static inline std::wstring prep(const wchar_t *src, const size_t src_size)
         str.erase(std::remove(str.begin(), str.end(), L'\r'), str.end());
     if (str.contains(L';'))
         str.erase(std::remove(str.begin(), str.end(), L';'), str.end());
+    if (str.starts_with(L"lang"))
+        str = LunaScript::parser::lexer::Translator{}(str);
     return str;
 }
 
@@ -74,6 +77,7 @@ static constexpr inline bool isUnicode(const wchar_t &c) noexcept
 void testFeature(const wchar_t *src, const size_t src_size)
 {
     const std::wstring source = prep(src, src_size);
+
     std::vector<parser::lexer::TypedStringView> tokens = LunaScript::parser::lexer::Lexer{}(source);
     for (auto &t : tokens)
     {

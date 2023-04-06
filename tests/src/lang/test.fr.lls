@@ -1,4 +1,4 @@
-module parse_main_func_with_float32_with_value
+module analyse_fonction_principale_avec_entier32_avec_valeur
 
 fonc main() -> enti32
 {

@@ -1,7 +1,6 @@
 #include "Lexer.h"
 #include <cwctype>
 #include <iostream>
-
 namespace LunaScript::parser::lexer
 {
 
