@@ -13,10 +13,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
     return LLVMFuzzerTestOneInputI(Data, Size);
 }
 #else
-#include <filesystem>
 #include <liblunascript/Compiler.h>
 #include <libos/Defines.h>
 #include <libos/FileIO.h>
+#include <iostream>
+#include <string>
 
 const inline std::string createP(const std::string extend, const char *file_name,
                                  const char *file_ext = ".lls") noexcept
@@ -55,7 +56,10 @@ int main(int, char **)
     size_t src_size = 0;
     if ((res = fileRead(createP("", "test", ".lls"), &src, &src_size)) != LOS_SUCCESS)
         return res;
-    testFeature(src, src_size);
+    wchar_t* data;
+    size_t data_size = 0;
+    newCompile(src, src_size,&data,&data_size);
+    std::wcout << std::wstring(data,0,data_size) << std::endl;
     libOSCleanUp();
 #    if ON_WINDOWS
     system("pause");

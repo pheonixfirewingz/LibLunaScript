@@ -56,7 +56,7 @@
                                         "parameters": [
                                             {
                                                 "type": "literal",
-                                                "data_type": "to_be_determined",
+                                                "data_type": "any_uint",
                                                 "value": "1"
                                             }
                                         ]

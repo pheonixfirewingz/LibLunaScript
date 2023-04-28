@@ -39,7 +39,7 @@ EXPORT_DLL void astToString(Compiler compiler, char **str, size_t *str_size);
 EXPORT_DLL void freeCompiler(Compiler compiler);
 
 //temp
-EXPORT_DLL void testFeature(const wchar_t *src, const size_t src_size);
+EXPORT_DLL void newCompile(const wchar_t *src, const size_t src_size,wchar_t** data_out,size_t* data_out_size);
 
 //used for compatibility with C#
 EXPORT_DLL void freeString(char *src);
@@ -48,50 +48,32 @@ EXPORT_DLL void freeString(char *src);
 #    include <string>
 class LunaScriptCompiler
 {
-    Compiler compiler = nullptr;
-    losResult err;
-
+    std::wstring src_hold;
   public:
-    explicit LunaScriptCompiler(std::string src, bool print_errors = false, bool debug = false)
+    explicit LunaScriptCompiler(std::wstring src) :src_hold(src)
     {
-        err = compile(&compiler, src.c_str(), src.size(), debug);
-        if (didScriptCompile() != LOS_SUCCESS && print_errors)
-        {
-            std::string t = getErrors();
-            losPrintInfo(t.c_str());
-        }
     }
 
     ~LunaScriptCompiler()
     {
-        freeCompiler(compiler);
     }
 
     losResult didScriptCompile() const noexcept
     {
-        return err;
+        return LOS_SUCCESS;
     }
 
     std::string getErrors()
     {
-        std::string error;
-        while (hasErrorOnStack(compiler))
-        {
-            char *buffer = nullptr;
-            size_t size = 0;
-            getErrorOffStack(compiler, &buffer, &size);
-            error += std::string(buffer, 0, size);
-            error += "\n";
-        }
-        return error;
+        return "";
     }
 
-    std::string getJsonAST()
+    std::wstring getJsonAST()
     {
-        char *json = nullptr;
+        wchar_t *json = nullptr;
         size_t json_size = 0;
-        astToString(compiler, &json, &json_size);
-        return std::string(json, 0, json_size);
+        newCompile(src_hold.c_str(),src_hold.size(), &json, &json_size);
+        return std::wstring(json, 0, json_size);
     }
 };
 #endif

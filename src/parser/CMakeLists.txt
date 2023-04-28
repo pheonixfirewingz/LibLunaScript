@@ -1,4 +1,7 @@
 ADD_FILES(
+	Json.cpp
+	Parser.cpp
+	Parser.h	
 	Lexer.cpp
 	Lexer.h
 	Translator.cpp

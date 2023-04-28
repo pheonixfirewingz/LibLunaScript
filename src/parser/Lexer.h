@@ -1,5 +1,4 @@
 #pragma once
-#include <libos/DataType.h>
 #include <string>
 #include <vector>
 
@@ -71,8 +70,6 @@ struct TypedStringView
         , line(line_in)
     {
     }
-
-    void print(std::wstring src);
 };
 
 struct Lexer
