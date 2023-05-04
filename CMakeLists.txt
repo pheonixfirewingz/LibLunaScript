@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22.1)
 project(liblunascript C CXX)
 #options
 set(BUILD_DOCS OFF)
-set(ENABLE_REGRESSION_TESTS OFF)
+set(ENABLE_REGRESSION_TESTS ON)
 #danger using this option as it could damage tests that are working as expected do
 # a regression test first and check to see if the out put is as expected
 set(REGEN_TESTS_REGRESSION_TESTS OFF)

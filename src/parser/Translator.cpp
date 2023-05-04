@@ -5,7 +5,7 @@
 #    pragma warning(disable : 26451)
 #    pragma warning(disable : 26495)
 #endif
-#include "rapidjson/document.h"
+#include <rapidjson/document.h>
 #if IS_MSVC
 #    pragma warning(pop)
 #endif
@@ -13,6 +13,8 @@
 #include <libos/FileIO.h>
 #include <rapidjson/fwd.h>
 #include <unordered_map>
+#include <string>
+#include <sstream>
 #include <vector>
 namespace LunaScript::parser::lexer
 {
@@ -31,6 +33,43 @@ static const inline std::vector<std::wstring> split(const std::wstring &str)
     return result;
 }
 
+static const inline std::vector<std::wstring> split(const std::wstring &str, const wchar_t *delimiter)
+{
+    std::vector<std::wstring> result;
+    size_t start = 0;
+    size_t end = str.find_first_of(delimiter);
+    while (end != std::wstring::npos)
+    {
+        std::wstring view(str.data() + start, end - start);
+        if (!view.empty())
+            result.push_back(view);
+        result.push_back(std::wstring(str.data() + end, 1));
+        start = end + 1;
+        end = str.find_first_of(delimiter, start);
+    }
+    std::wstring last(str.data() + start, str.length() - start);
+    if (!last.empty())
+        result.push_back(last);
+    return result;
+}
+
+static inline std::wstring replace_words(const std::wstring& old, const std::unordered_map<std::wstring, std::wstring>& words)
+{
+    std::wstring str = old.substr(old.find_first_of(L"\n") + 1);
+    std::wstring data;
+    const std::vector<std::wstring> splits = split(str,L"\n\"\'(){}[]-=+/*<>.,\\| \t;#");
+    //todo replace with words from map
+    for(std::wstring _str:splits)
+    {
+        auto word = words.find(_str);
+        if(word != words.end())
+            data += word->second;
+        else
+            data += _str;
+    }
+    return data;
+}
+
 std::wstring Translator::operator()(const std::wstring input) const
 {
     std::unordered_map<std::wstring, std::wstring> words;
@@ -42,7 +81,7 @@ std::wstring Translator::operator()(const std::wstring input) const
         line = line.substr(pos + 1, 5);
     char *str;
     losUnicodeToBytes(line.c_str(), &str);
-    path.replace(path.find('@'),1, str);
+    path.replace(path.find('@'), 1, str);
     delete str;
     losFileHandle handle;
     losFileOpenInfo file;
@@ -72,7 +111,7 @@ std::wstring Translator::operator()(const std::wstring input) const
     document.Parse(json_string.c_str());
     if (!document.IsObject())
     {
-        losPrintError("LunaLux::LunaScript<Translator>: JSON document is not an object" );
+        losPrintError("LunaLux::LunaScript<Translator>: JSON document is not an object");
         return input;
     }
 
@@ -83,14 +122,9 @@ std::wstring Translator::operator()(const std::wstring input) const
             losPrintError("LunaLux::LunaScript<Translator>: JSON object contains non-string values");
             return input;
         }
-        words[it->name.GetString()] = it->value.GetString();
+        words[it->value.GetString()] = it->name.GetString();
     }
-
-    lines.erase(lines.begin());
-    for (std::wstring line_data : lines)
-    {
-    }
-    return std::wstring();
+    return replace_words(input, words);
 }
 
 } // namespace LunaScript::parser::lexer

@@ -1,9 +1,7 @@
-lang hu-hu
-modul parse_main_func_with_float32_with_value
-# lol this is a single line comment
-/* this function is main */
-függv main() -> 32egész
+module base
+import test
+
+func temp() -> int32
 {
-    32lebegő x = 20.0
-    visszat 0
+    ret 0
 }

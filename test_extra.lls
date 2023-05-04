@@ -1,0 +1,6 @@
+module test
+
+func hi() -> int32
+{
+    ret 0
+}

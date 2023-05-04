@@ -31,9 +31,19 @@
                             {
                                 "type": "data_return",
                                 "declaration": {
-                                    "type": "literal",
-                                    "data_type": "any_uint",
-                                    "value": "0"
+                                    "type": "binary_operation",
+                                    "precedence": 10,
+                                    "op": "+",
+                                    "right": {
+                                        "type": "literal",
+                                        "data_type": "any_uint",
+                                        "value": "two"
+                                    },
+                                    "left": {
+                                        "type": "literal",
+                                        "data_type": "any_uint",
+                                        "value": "one"
+                                    }
                                 }
                             }
                         ]

@@ -1,7 +1,0 @@
-module analyse_fonction_principale_avec_entier32_avec_valeur
-
-fonc main() -> enti32
-{
-    déci32 x  = 20.0
-    renv 0
-}

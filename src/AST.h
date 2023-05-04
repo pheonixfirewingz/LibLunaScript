@@ -62,10 +62,10 @@ struct ASTNode
 
 struct ASTModule: public ASTNode
 {
-    const std::string name;
+    const std::wstring name;
     std::vector<const ASTNode *> children;
 
-    explicit ASTModule(const std::string module_name) : name(module_name) {}
+    explicit ASTModule(const std::wstring module_name) : name(module_name) {}
 
     NodeType getType() const noexcept override
     {
@@ -121,8 +121,8 @@ struct ASTParamListExpression : public ASTNode
 struct ASTFuncCall : public ASTNode
 {
     const ASTParamListExpression *args;
-    std::string func_name = "";
-    explicit ASTFuncCall(std::string name_in, const ASTParamListExpression *args_in)
+    std::wstring func_name = L"";
+    explicit ASTFuncCall(std::wstring name_in, const ASTParamListExpression *args_in)
         : args(args_in)
         , func_name(name_in)
     {
@@ -142,7 +142,7 @@ struct ASTFuncCall : public ASTNode
 
 struct ASTFuncDef : public ASTNode
 {
-    std::string name = "";
+    std::wstring name = L"";
     bool is_public = false;
     ASTParamListExpression *args = nullptr;
     ASTBlock *body = nullptr;
@@ -151,7 +151,7 @@ struct ASTFuncDef : public ASTNode
     {
         return NodeType::FUNC_DEF;
     }
-    ASTFuncDef(std::string name_in, bool is_public_in)
+    ASTFuncDef(std::wstring name_in, bool is_public_in)
         : name(name_in)
         , is_public(is_public_in)
     {
@@ -192,8 +192,8 @@ struct ASTReturnExpression : public ASTNode
 struct ASTVarDef : public ASTNode
 {
     bool global = false;
-    std::string name = "";
-    std::string value = "";
+    std::wstring name = L"";
+    std::wstring value = L"";
     DataType data_type = DataType::NOT_DETERMINED;
     const ASTNode *child = nullptr;
 
@@ -210,7 +210,7 @@ struct ASTVarDef : public ASTNode
 
 struct ASTLiteral : public ASTNode
 {
-    std::string value = "";
+    std::wstring value = L"";
     DataType data_type = DataType::NOT_DETERMINED;
     NodeType getType() const noexcept override
     {

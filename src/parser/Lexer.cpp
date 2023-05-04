@@ -1,76 +1,7 @@
 #include "Lexer.h"
 #include <cwctype>
-#include <iostream>
 namespace LunaScript::parser::lexer
 {
-
-#define CASE(X) case LunaScript::parser::lexer::TypedStringView::Type::X:
-static const wchar_t *toString(TypedStringView::Type type)
-{
-    switch (type)
-    {
-        CASE(IDENTIFIER) return L"IDENTIFIER";
-        CASE(NUMBER_IDENTIFIER) return L"NUMBER_IDENTIFIER";
-        CASE(IMPORT) return L"IMPORT";
-        CASE(MODULE) return L"MODULE";
-        CASE(FUNC) return L"FUNC";
-        CASE(PUBLIC_FUNC) return L"PUBLIC_FUNC";
-        CASE(RET) return L"RET";
-        CASE(R_SQUIGGLY) return L"R_SQUIGGLY";
-        CASE(L_SQUIGGLY) return L"L_SQUIGGLY";
-        CASE(R_BOX) return L"R_BOX";
-        CASE(L_BOX) return L"L_BOX";
-        CASE(R_CURLY) return L"R_CURLY";
-        CASE(L_CURLY) return L"L_CURLY";
-        CASE(COMMA) return L"COMMA";
-        CASE(DOT) return L"DOT";
-        CASE(HASH_TAG) return L"HASH_TAG";
-        CASE(ADD) return L"ADD";
-        CASE(ADD_EQUAL) return L"ADD_EQUAL";
-        CASE(ADD_ONE) return L"ADD_ONE";
-        CASE(SUB) return L"SUB";
-        CASE(SUB_EQUAL) return L"SUB_EQUAL";
-        CASE(SUB_ONE) return L"SUB_ONE";
-        CASE(MUL) return L"MUL";
-        CASE(MUL_EQUAL) return L"MUL_EQUAL";
-        CASE(DIV) return L"DIV";
-        CASE(DIV_EQUAL) return L"DIV_EQUAL";
-        CASE(AND) return L"AND";
-        CASE(OR) return L"OR";
-        CASE(XOR) return L"XOR";
-        CASE(MODULO) return L"MODULO";
-        CASE(EQUAL) return L"EQUAL";
-        CASE(R_ARROW) return L"R_ARROW";
-        CASE(L_ARROW) return L"L_ARROW";
-        CASE(S_ARROW) return L"S_ARROW";
-        CASE(GLOBAL) return L"GLOBAL";
-        CASE(PTR) return L"PTR";
-        CASE(REF) return L"REF";
-        CASE(INT8) return L"INT8";
-        CASE(INT16) return L"INT16";
-        CASE(INT32) return L"INT32";
-        CASE(INT64) return L"INT64";
-        CASE(UINT8) return L"UINT8";
-        CASE(UINT16) return L"UINT16";
-        CASE(UINT32) return L"UINT32";
-        CASE(UINT64) return L"UINT64";
-        CASE(FLOAT32) return L"FLOAT32";
-        CASE(FLOAT64) return L"FLOAT64";
-        CASE(STRING) return L"STRING";
-        CASE(NEW_LINE) return L"NEW_LINE";
-        CASE(EMOJI) return L"EMOJI";
-        CASE(TAB) return L"TAB";
-        CASE(SPACE) return L"SPACE";
-    default:
-        return L"ERROR";
-    }
-}
-
-void TypedStringView::print(std::wstring)
-{
-    std::wcout << L"(TOKEN: {TYPE: " << toString(type) << L", STRING: \"";
-    std::wcout << span << L"\", LINE: " << line << L"})\n";
-}
 
 static constexpr struct Combiners
 {
@@ -86,19 +17,19 @@ static inline bool canCombine(const std::vector<std::wstring_view> &result)
     return false;
 }
 
-static const inline std::vector<std::wstring_view> split(const std::wstring &str, const wchar_t *delimiter)
+static const inline std::vector<std::wstring_view> split(const std::wstring &src)
 {
     std::vector<std::wstring_view> result;
     size_t start = 0;
-    size_t end = str.find_first_of(delimiter);
+    size_t end = src.find_first_of(L"\n\"\'(){}[]-=+/*<>.,\\| \t;#");
     while (end != std::wstring::npos)
     {
-        std::wstring_view view(str.data() + start, end - start);
+        std::wstring_view view(src.data() + start, end - start);
         if (!view.empty())
             result.push_back(view);
-        result.push_back(std::wstring_view(str.data() + end, 1));
+        result.push_back(std::wstring_view(src.data() + end, 1));
         start = end + 1;
-        end = str.find_first_of(delimiter, start);
+        end = src.find_first_of(L"\n\"\'(){}[]-=+/*<>.,\\| \t;#", start);
         // Check if the previous and current views form a special case
         if (result.back().size() == 1)
         {
@@ -123,30 +54,29 @@ static const inline std::vector<std::wstring_view> split(const std::wstring &str
             }
         }
     }
-    std::wstring_view last(str.data() + start, str.length() - start);
+    std::wstring_view last(src.data() + start, src.length() - start);
     if (!last.empty())
         result.push_back(last);
     return result;
 }
 
-static inline bool is_number(const std::wstring_view &str) noexcept
+static inline bool is_number(const std::wstring_view &src) noexcept
 {
-    if (str.empty())
+    if (src.empty())
         return false;
-    else if (!std::iswdigit(str[0]))
+    else if (!std::iswdigit(src[0]))
         return false;
-    std::wstring test(str.begin(), str.end());
+    std::wstring test(src.begin(), src.end());
     wchar_t *end_ptr = nullptr;
     (void)std::wcstoul(test.c_str(), &end_ptr, 10);
 
     return (*end_ptr == L'\0');
 }
 
-static inline TypedStringView::Type determineType(const std::wstring_view &src)
+static inline TypedStringView::Type determineType(const std::wstring_view &src) noexcept
 {
     if (is_number(src))
         return TypedStringView::Type::NUMBER_IDENTIFIER;
-
     switch (src.size())
     {
     case 1: {
@@ -196,87 +126,93 @@ static inline TypedStringView::Type determineType(const std::wstring_view &src)
     }
     break;
     case 2: {
-        const wchar_t str[2] = {src[0], src[1]};
-        if (wcscmp(str, L"/*") || wcscmp(str, L"*/"))
+        if (src.compare(L"/*") == 0 || src.compare(L"*/") == 0)
             return TypedStringView::Type::MULTI_COMMENT;
-        if (wcscmp(str, L"=+") || wcscmp(str, L"+="))
+        else if (src.compare(L"=+") == 0 || src.compare(L"+=") == 0)
             return TypedStringView::Type::ADD_EQUAL;
-        else if (wcscmp(str, L"=-") || wcscmp(str, L"-="))
+        else if (src.compare(L"=-") == 0 || src.compare(L"-=") == 0)
             return TypedStringView::Type::SUB_EQUAL;
-        else if (wcscmp(str, L"=/") || wcscmp(str, L"/="))
+        else if (src.compare(L"=/") == 0 || src.compare(L"/=") == 0)
             return TypedStringView::Type::SUB_EQUAL;
-        else if (wcscmp(str, L"++"))
+        else if (src.compare(L"++") == 0)
             return TypedStringView::Type::ADD_ONE;
-        else if (wcscmp(str, L"--"))
+        else if (src.compare(L"--") == 0)
             return TypedStringView::Type::SUB_ONE;
-        else if (wcscmp(str, L"or"))
+        else if (src.compare(L"or") == 0)
             return TypedStringView::Type::OR;
+        else if (src.compare(L"->") == 0)
+            return TypedStringView::Type::S_ARROW;
         else
             return TypedStringView::Type::IDENTIFIER;
     }
     break;
     case 3: {
-        const wchar_t str[3] = {src[0], src[1], src[2]};
-        if (wcscmp(str, L"ret"))
+        if (src.compare(L"ret") == 0)
             return TypedStringView::Type::RET;
-        else if (wcscmp(str, L"mod"))
+        else if (src.compare(L"mod") == 0)
             return TypedStringView::Type::MODULO;
-        else if (wcscmp(str, L"and"))
+        else if (src.compare(L"and") == 0)
             return TypedStringView::Type::AND;
-        else if (wcscmp(str, L"xor"))
+        else if (src.compare(L"xor") == 0)
             return TypedStringView::Type::XOR;
-        else if (wcscmp(str, L"ptr"))
+        else if (src.compare(L"ptr") == 0)
             return TypedStringView::Type::PTR;
-        else if (wcscmp(str, L"ref"))
+        else if (src.compare(L"ref") == 0)
             return TypedStringView::Type::REF;
         else
             return TypedStringView::Type::IDENTIFIER;
     }
     break;
     case 4: {
-        const wchar_t str[4] = {src[0], src[1], src[2], src[3]};
-        if (wcscmp(str, L"    "))
+        if (src.compare(L"    ") == 0)
             return TypedStringView::Type::TAB;
-        else if (wcscmp(str, L"func"))
+        else if (src.compare(L"func") == 0)
             return TypedStringView::Type::FUNC;
-        else if (wcscmp(str, L"int8"))
-            return TypedStringView::Type::FUNC;
+        else if (src.compare(L"int8") == 0)
+            return TypedStringView::Type::INT8;
         else
             return TypedStringView::Type::IDENTIFIER;
     }
     break;
     case 5: {
-        const wchar_t str[5] = {src[0], src[1], src[2], src[3], src[4]};
-        if (wcscmp(str, L"uint8"))
+        if (src.compare(L"uint8") == 0)
             return TypedStringView::Type::UINT8;
-        else if (wcscmp(str, L"int16"))
+        else if (src.compare(L"int16") == 0)
             return TypedStringView::Type::INT16;
-        else if (wcscmp(str, L"int32"))
+        else if (src.compare(L"int32") == 0)
             return TypedStringView::Type::INT32;
-        else if (wcscmp(str, L"int64"))
+        else if (src.compare(L"int64") == 0)
             return TypedStringView::Type::INT64;
         else
             return TypedStringView::Type::IDENTIFIER;
     }
     break;
     case 6: {
-        const wchar_t str[6] = {src[0], src[1], src[2], src[3], src[4], src[5]};
-        if (wcscmp(str, L"string"))
+        if (src.compare(L"string") == 0)
             return TypedStringView::Type::STRING;
-        else if (wcscmp(str, L"public"))
+        else if (src.compare(L"public") == 0)
             return TypedStringView::Type::PUBLIC_FUNC;
-        else if (wcscmp(str, L"global"))
+        else if (src.compare(L"global") == 0)
             return TypedStringView::Type::GLOBAL;
-        else if (wcscmp(str, L"module"))
+        else if (src.compare(L"module") == 0)
             return TypedStringView::Type::MODULE;
-        else if (wcscmp(str, L"import"))
+        else if (src.compare(L"import") == 0)
             return TypedStringView::Type::IMPORT;
-        else if (wcscmp(str, L"uint16"))
+        else if (src.compare(L"uint16") == 0)
             return TypedStringView::Type::UINT16;
-        else if (wcscmp(str, L"uint32"))
+        else if (src.compare(L"uint32") == 0)
             return TypedStringView::Type::UINT32;
-        else if (wcscmp(str, L"uint64"))
+        else if (src.compare(L"uint64") == 0)
             return TypedStringView::Type::UINT64;
+        else
+            return TypedStringView::Type::IDENTIFIER;
+    }
+    break;
+    case 7: {
+        if (src.compare(L"float32") == 0)
+            return TypedStringView::Type::FLOAT32;
+        else if (src.compare(L"float64") == 0)
+            return TypedStringView::Type::FLOAT64;
         else
             return TypedStringView::Type::IDENTIFIER;
     }
@@ -288,16 +224,34 @@ static inline TypedStringView::Type determineType(const std::wstring_view &src)
 
 std::vector<TypedStringView> Lexer::operator()(const std::wstring &src) const
 {
-
     std::vector<TypedStringView> tokens;
-    const std::vector<std::wstring_view> splits = split(src, L"\n\"\'(){}[]-=+/*<>.,\\| \t;#");
+    const std::vector<std::wstring_view> splits = split(src);
     size_t line = 0;
+    bool toggle_push = false;
     for (std::wstring_view split : splits)
     {
         TypedStringView view(determineType(split), split, line);
-        tokens.push_back(view);
-        if (split.compare(L"\n"))
+        if (view.type == TypedStringView::Type::MULTI_COMMENT)
+        {
+            toggle_push ? toggle_push = false : toggle_push = true;
+            continue;
+        }
+        if (view.type == TypedStringView::Type::HASH_TAG && !toggle_push)
+        {
+            toggle_push = true;
+            continue;
+        }
+        if (view.type == TypedStringView::Type::NEW_LINE && toggle_push)
+        {
+            if (tokens.back().type == TypedStringView::Type::NEW_LINE)
+                tokens.pop_back();
+            if (toggle_push)
+                toggle_push = false;
             line++;
+            continue;
+        }
+        if (!toggle_push)
+            tokens.push_back(view);
     }
     return tokens;
 }
